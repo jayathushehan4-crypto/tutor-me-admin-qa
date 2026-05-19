@@ -9,7 +9,8 @@ export default function SentryExamplePage() {
         </p>
         <h1 className="mt-3 text-2xl font-semibold">Send a sample error</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
-          Use this page after adding the Sentry DSN in your environment.
+          Use this page after adding the Sentry DSN in your environment. This
+          sends an error event without crashing the page.
         </p>
         <div className="mt-6">
           <SentryExampleButton />

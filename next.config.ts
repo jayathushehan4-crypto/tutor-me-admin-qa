@@ -48,6 +48,7 @@ export default withSentryConfig(nextConfig, {
   sourcemaps: {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
+  tunnelRoute: "/monitoring",
   webpack: {
     treeshake: {
       removeDebugLogging: true,
