@@ -1,8 +1,11 @@
 "use client";
 
 import DataTable from "@/components/tables/DataTable";
+import { TABLE_CONFIG } from "@/configs/table";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchTuitionRatesQuery } from "@/store/api/splits/tuition-rates";
-import { useState } from "react";
+import { Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { DeleteTuitionRate } from "./DeleteTuitionRate";
 import { TuitionRateDetails } from "./ViewDetails";
 import { UpdateTuitionRate } from "./edit-tuition-rates/UpdateTuitionRate";
@@ -29,17 +32,27 @@ interface TuitionRateData {
 }
 
 export default function TuitionRatesTable() {
-  const [page, setPage] = useState(1);
-  const limit = 10;
+  const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
+  const [searchTerm, setSearchTerm] = useState("");
+  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  const { data, isLoading } = useFetchTuitionRatesQuery({
-    page,
-    limit,
-    sortBy: "updatedAt:desc",
-  });
+  const tuitionRatesQuery = useMemo(
+    () => ({
+      page,
+      limit,
+      sortBy: "createdAt:desc",
+      ...(debouncedSearchTerm.trim()
+        ? { search: debouncedSearchTerm.trim() }
+        : {}),
+    }),
+    [debouncedSearchTerm, limit, page],
+  );
+
+  const { data, isFetching } = useFetchTuitionRatesQuery(tuitionRatesQuery);
 
   const tuitionRates = data?.results || [];
-  const totalPages = data?.totalPages || 0;
+  const totalPages = data?.totalPages || 1;
   const totalResults = data?.totalResults || 0;
 
   const handlePageChange = (newPage: number) => {
@@ -120,15 +133,55 @@ export default function TuitionRatesTable() {
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={tuitionRates}
-      page={page}
-      totalPages={totalPages}
-      onPageChange={handlePageChange}
-      totalResults={totalResults}
-      limit={limit}
-      isLoading={isLoading}
-    />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/5 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-semibold text-gray-800 dark:text-white/90">
+            Tuition Rates
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-white/60">
+            Search rates by grade or subject. Results load page by page.
+          </p>
+        </div>
+
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            value={searchTerm}
+            onChange={(event) => {
+              setSearchTerm(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search grade or subject"
+            className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setPage(1);
+              }}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={tuitionRates}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        totalResults={totalResults}
+        limit={limit}
+        isLoading={isFetching}
+        emptyMessage="No tuition rates found for the current search."
+      />
+    </div>
   );
 }

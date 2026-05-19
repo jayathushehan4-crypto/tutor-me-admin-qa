@@ -221,8 +221,9 @@ export type UpdateTuitionRateRequest = {
 };
 
 export type FetchTuitionRatesRequest = {
-  subject?: string[];
-  grade?: string[];
+  search?: string;
+  subject?: string | string[];
+  grade?: string | string[];
   universityStudentsRate?: TuitionRate;
   partTimeTutorRate?: TuitionRate;
   fullTimeTutorRate?: TuitionRate;
