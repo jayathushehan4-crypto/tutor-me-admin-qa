@@ -2,10 +2,10 @@
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
-import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { DeleteGrade } from "./DeleteGrade";
@@ -29,13 +29,21 @@ export default function GradesTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  // TODO:Best for small/medium datasets. For very large datasets, move search to the backend.
-  const { data, isLoading } = useFetchGradesQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "updatedAt:desc",
-  });
+  const gradesQuery = useMemo(
+    () => ({
+      page,
+      limit,
+      sortBy: "createdAt:desc",
+      ...(debouncedSearchTerm.trim()
+        ? { title: debouncedSearchTerm.trim() }
+        : {}),
+    }),
+    [debouncedSearchTerm, limit, page],
+  );
+
+  const { data, isFetching } = useFetchGradesQuery(gradesQuery);
 
   const getSafeValue = (
     value: string | undefined | null,
@@ -52,32 +60,9 @@ export default function GradesTable() {
     return value;
   };
 
-  // Filter against the full fetched dataset
-  const filteredGrades = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    const grades = data?.results || [];
-
-    if (!query) return sortByLatestTimestampDesc(grades);
-
-    return sortByLatestTimestampDesc(
-      grades.filter((grade: Grade) => {
-        const title = getSafeValue(grade.title, "").toLowerCase();
-        const description = getSafeValue(grade.description, "").toLowerCase();
-
-        return title.includes(query) || description.includes(query);
-      }),
-    );
-  }, [data, searchTerm]);
-
-  // Apply pagination after filtering
-  const paginatedGrades = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filteredGrades.slice(startIndex, endIndex);
-  }, [filteredGrades, page, limit]);
-
-  const totalResults = filteredGrades.length;
-  const totalPages = Math.ceil(totalResults / limit);
+  const grades = data?.results || [];
+  const totalResults = data?.totalResults || 0;
+  const totalPages = data?.totalPages || 1;
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -200,9 +185,7 @@ export default function GradesTable() {
       >
         <div>
           <h2 className="font-semibold">Grades</h2>
-          <p className="text-sm text-gray-500">
-            Filter grades by title or description
-          </p>
+          <p className="text-sm text-gray-500">Search grades by title</p>
         </div>
 
         <div className="relative w-full sm:max-w-xs">
@@ -213,21 +196,35 @@ export default function GradesTable() {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            placeholder="Filter grades..."
-            className="h-11 w-full rounded-xl border pl-10 pr-4 text-sm"
+            placeholder="Search by title"
+            className="h-11 w-full rounded-xl border pl-10 pr-10 text-sm"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setPage(TABLE_CONFIG.DEFAULT_PAGE);
+              }}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </motion.div>
 
       <DataTable
         columns={columns}
-        data={paginatedGrades}
+        data={grades}
         page={page}
         totalPages={totalPages}
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
-        isLoading={isLoading}
+        isLoading={isFetching}
+        emptyMessage="No grades found for the current search."
       />
     </motion.div>
   );

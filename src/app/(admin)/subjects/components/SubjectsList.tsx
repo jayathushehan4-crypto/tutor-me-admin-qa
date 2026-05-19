@@ -2,10 +2,10 @@
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
-import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { DeleteSubject } from "./DeleteSubject";
@@ -23,13 +23,25 @@ export default function SubjectsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  // ✅ FETCH MORE DATA (for full filtering)
-  const { data, isLoading } = useFetchSubjectsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "updatedAt:desc",
-  });
+  const subjectsQuery = useMemo(
+    () => ({
+      page,
+      limit,
+      sortBy: "createdAt:desc",
+      ...(debouncedSearchTerm.trim()
+        ? { title: debouncedSearchTerm.trim() }
+        : {}),
+    }),
+    [debouncedSearchTerm, limit, page],
+  );
+
+  const { data, isFetching } = useFetchSubjectsQuery(subjectsQuery);
+
+  const subjects = data?.results || [];
+  const totalResults = data?.totalResults || 0;
+  const totalPages = data?.totalPages || 1;
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -44,30 +56,6 @@ export default function SubjectsTable() {
     }
     return value;
   };
-
-  // ✅ FILTER FULL DATASET
-  const filteredSubjects = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    const subjects = data?.results || [];
-
-    if (!query) return sortByLatestTimestampDesc(subjects);
-
-    return sortByLatestTimestampDesc(
-      subjects.filter((subject: Subject) =>
-        getSafeValue(subject.title, "").toLowerCase().includes(query),
-      ),
-    );
-  }, [data, searchTerm]);
-
-  // ✅ PAGINATE AFTER FILTER
-  const paginatedSubjects = useMemo(() => {
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    return filteredSubjects.slice(start, end);
-  }, [filteredSubjects, page, limit]);
-
-  const totalResults = filteredSubjects.length;
-  const totalPages = Math.ceil(totalResults / limit);
 
   const columns: Column<Subject>[] = [
     {
@@ -156,39 +144,54 @@ export default function SubjectsTable() {
       variants={staggerContainer}
       className="space-y-4"
     >
-      {/* FILTER BAR */}
       <motion.div
         variants={fadeUp}
         className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm dark:bg-gray-900 sm:flex-row sm:justify-between"
       >
         <div>
           <h2 className="font-semibold">Subjects</h2>
-          <p className="text-sm text-gray-500">Filter subjects by title</p>
+          <p className="text-sm text-gray-500">
+            Search subjects by title. Results load page by page.
+          </p>
         </div>
 
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setPage(1);
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
-            placeholder="Filter subjects..."
-            className="h-11 w-full rounded-xl border pl-10 pr-4 text-sm"
+            placeholder="Search by title"
+            className="h-11 w-full rounded-xl border pl-10 pr-10 text-sm"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setPage(TABLE_CONFIG.DEFAULT_PAGE);
+              }}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </motion.div>
 
       <DataTable
         columns={columns}
-        data={paginatedSubjects}
+        data={subjects}
         page={page}
         totalPages={totalPages}
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
-        isLoading={isLoading}
+        isLoading={isFetching}
+        emptyMessage="No subjects found for the current search."
       />
     </motion.div>
   );
