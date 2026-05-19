@@ -145,6 +145,7 @@ export type FetchPapersRequest = {
   year?: string;
   medium?: string;
   sortBy?: string;
+  order?: string;
 };
 
 export type CreateTagRequest = {
