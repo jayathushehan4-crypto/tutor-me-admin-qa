@@ -1,10 +1,20 @@
 "use client";
 
 import DataTable from "@/components/tables/DataTable";
+import TablePagination from "@/components/tables/Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useFetchGradesQuery } from "@/store/api/splits/grades";
 import { useFetchPapersQuery } from "@/store/api/splits/papers";
-import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Copy, FileText, Search } from "lucide-react";
+import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
+import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -62,15 +72,42 @@ const staggerContainer: Variants = {
 
 export default function PapersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+  const [gradeFilter, setGradeFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const debouncedTitleFilter = useDebounce(titleFilter, 400);
 
-  // TODO: Best for small/medium datasets. For very large datasets, move search to the backend.
-  const { data, isLoading } = useFetchPapersQuery({
+  const papersQuery = useMemo(
+    () => ({
+      page,
+      limit,
+      sortBy: "createdAt:desc",
+      ...(debouncedTitleFilter.trim()
+        ? { title: debouncedTitleFilter.trim() }
+        : {}),
+      ...(gradeFilter ? { grade: gradeFilter } : {}),
+      ...(subjectFilter ? { subject: subjectFilter } : {}),
+    }),
+    [debouncedTitleFilter, gradeFilter, limit, page, subjectFilter],
+  );
+
+  const { data, isFetching } = useFetchPapersQuery(papersQuery);
+  const { data: gradesData } = useFetchGradesQuery({
     page: 1,
     limit: 1000,
-    sortBy: "updatedAt:desc",
+    sortBy: "title:asc",
   });
+  const { data: subjectsData } = useFetchSubjectsQuery({
+    page: 1,
+    limit: 1000,
+    sortBy: "title:asc",
+  });
+
+  const papers = data?.results || [];
+  const totalResults = data?.totalResults || 0;
+  const totalPages = data?.totalPages || 1;
+  const hasFilters = Boolean(titleFilter || gradeFilter || subjectFilter);
 
   const getSafeValue = (value: unknown, fallback = "N/A"): string => {
     if (value === undefined || value === null) {
@@ -157,54 +194,15 @@ export default function PapersTable() {
     }
   };
 
-  // Filter against the full fetched dataset
-  const filteredPapers = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    const papers = data?.results || [];
-
-    if (!query) return sortByLatestTimestampDesc(papers);
-
-    return sortByLatestTimestampDesc(
-      papers.filter((paper: Paper) => {
-        const title = getSafeValue(paper.title, "").toLowerCase();
-        const subject = getSafeNestedValue(
-          paper.subject,
-          "title",
-          "",
-        ).toLowerCase();
-        const grade = getSafeNestedValue(
-          paper.grade,
-          "title",
-          "",
-        ).toLowerCase();
-        const year = getSafeValue(paper.year, "").toLowerCase();
-        const medium = getSafeMedium(paper.medium, "").toLowerCase();
-        const url = getSafeValue(paper.url, "").toLowerCase();
-
-        return (
-          title.includes(query) ||
-          subject.includes(query) ||
-          grade.includes(query) ||
-          year.includes(query) ||
-          medium.includes(query) ||
-          url.includes(query)
-        );
-      }),
-    );
-  }, [data, searchTerm]);
-
-  // Apply pagination after filtering
-  const paginatedPapers = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filteredPapers.slice(startIndex, endIndex);
-  }, [filteredPapers, page, limit]);
-
-  const totalResults = filteredPapers.length;
-  const totalPages = Math.ceil(totalResults / limit);
-
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const resetFilters = () => {
+    setTitleFilter("");
+    setGradeFilter("");
+    setSubjectFilter("");
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
   const columns = [
@@ -391,18 +389,88 @@ export default function PapersTable() {
           </p>
         </div>
 
-        <motion.div layout className="relative w-full sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
+        <motion.div
+          layout
+          className="grid w-full gap-3 sm:max-w-3xl sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+        >
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={titleFilter}
+              onChange={(e) => {
+                setTitleFilter(e.target.value);
+                setPage(TABLE_CONFIG.DEFAULT_PAGE);
+              }}
+              placeholder="Filter by title"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-10 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
+            />
+            {titleFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTitleFilter("");
+                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
+                }}
+                aria-label="Clear title filter"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <Select
+            value={gradeFilter || "all"}
+            onValueChange={(value) => {
+              setGradeFilter(value === "all" ? "" : value);
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
-            placeholder="Filter papers..."
-            className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
-          />
+          >
+            <SelectTrigger className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+              <SelectValue placeholder="All grades" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All grades</SelectItem>
+              {(gradesData?.results || []).map((grade) => (
+                <SelectItem key={grade.id} value={grade.id}>
+                  {grade.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={subjectFilter || "all"}
+            onValueChange={(value) => {
+              setSubjectFilter(value === "all" ? "" : value);
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
+            }}
+          >
+            <SelectTrigger className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+              <SelectValue placeholder="All subjects" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All subjects</SelectItem>
+              {(subjectsData?.results || []).map((subject) => (
+                <SelectItem key={subject.id} value={subject.id}>
+                  {subject.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              aria-label="Reset filters"
+              title="Reset filters"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
         </motion.div>
       </motion.div>
 
@@ -410,13 +478,14 @@ export default function PapersTable() {
         <motion.div layout className="overflow-hidden rounded-2xl">
           <DataTable
             columns={columns}
-            data={paginatedPapers}
+            data={papers}
             page={page}
             totalPages={totalPages}
             onPageChange={handlePageChange}
             totalResults={totalResults}
             limit={limit}
-            isLoading={isLoading}
+            isLoading={isFetching}
+            emptyMessage="No papers found for the current filters."
           />
         </motion.div>
       </motion.div>
@@ -427,7 +496,7 @@ export default function PapersTable() {
         animate="show"
         className="grid gap-4 md:hidden"
       >
-        {isLoading ? (
+        {isFetching ? (
           Array.from({ length: 4 }).map((_, index) => (
             <motion.div
               key={index}
@@ -440,8 +509,8 @@ export default function PapersTable() {
               <div className="mt-4 h-9 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
             </motion.div>
           ))
-        ) : paginatedPapers.length > 0 ? (
-          paginatedPapers.map((row) => {
+        ) : papers.length > 0 ? (
+          papers.map((row) => {
             const safeTitle = getSafeValue(row.title, "No title provided");
             const safeMedium = getSafeMedium(row.medium);
             const safeSubject = getSafeNestedValue(
@@ -572,7 +641,17 @@ export default function PapersTable() {
         )}
       </motion.div>
 
-      {!isLoading && paginatedPapers.length === 0 && (
+      {!isFetching && totalResults > limit && (
+        <div className="flex justify-center md:hidden">
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
+
+      {!isFetching && papers.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
