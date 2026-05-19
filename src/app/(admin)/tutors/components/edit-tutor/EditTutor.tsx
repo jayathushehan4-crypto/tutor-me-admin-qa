@@ -842,9 +842,7 @@ export function EditTutor({ id }: EditTutorProps) {
                   }
                 />
                 {uploadErrorMessage && (
-                  <p className="text-sm text-red-500">
-                    {uploadErrorMessage}
-                  </p>
+                  <p className="text-sm text-red-500">{uploadErrorMessage}</p>
                 )}
               </div>
 

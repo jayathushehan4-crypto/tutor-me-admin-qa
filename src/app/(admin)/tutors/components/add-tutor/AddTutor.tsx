@@ -1059,10 +1059,8 @@ export function AddTutor() {
                   }
                 />
                 {formState.isSubmitted && uploadErrorMessage && (
-                    <p className="text-sm text-red-500">
-                      {uploadErrorMessage}
-                    </p>
-                  )}
+                  <p className="text-sm text-red-500">{uploadErrorMessage}</p>
+                )}
               </div>
 
               <div className="space-y-3 pt-2">

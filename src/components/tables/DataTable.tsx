@@ -113,7 +113,10 @@ export default function DataTable<T extends { id: string | number }>({
     totalPages,
     siblingCount: 1,
   });
-  const latestSortedData = useMemo(() => sortByLatestTimestampDesc(data), [data]);
+  const latestSortedData = useMemo(
+    () => sortByLatestTimestampDesc(data),
+    [data],
+  );
 
   const rowsToRender = isLoading
     ? Array.from({ length: limit }).map((_, currentPage) => ({

@@ -21,7 +21,7 @@ import readline from "readline";
 
 const API_BASE =
   "https://tutorme-backend-api-d7a6cjdkgnedbxf0.southeastasia-01.azurewebsites.net";
-const PAPERS_DIR = "D:/Download/AL-Papers";
+const PAPERS_DIR = process.env.PAPERS_DIR ?? "D:/Download/AL-Papers";
 
 const AZURE_ACCOUNT = "tutormeuploads";
 const AZURE_CONTAINER = "uploads";

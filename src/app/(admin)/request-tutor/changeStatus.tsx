@@ -24,12 +24,14 @@ import toast from "react-hot-toast";
 interface ChangeStatusDialogProps {
   requestId: string;
   currentStatus: "Pending" | "Rejected";
+  currentRejectionReason?: string;
   onStatusChange?: () => void;
 }
 
 export function ChangeStatusDialog({
   requestId,
   currentStatus,
+  currentRejectionReason = "",
   onStatusChange,
 }: ChangeStatusDialogProps) {
   const [open, setOpen] = useState(false);
@@ -40,25 +42,41 @@ export function ChangeStatusDialog({
   const rejectionReasonRef = useRef<HTMLTextAreaElement | null>(null);
 
   const isRejected = status === "Rejected";
+  const hasStatusChanged = status !== currentStatus;
+  const isExistingRejectedStatus =
+    currentStatus === "Rejected" && !hasStatusChanged;
+  const isRejectionReasonMissing =
+    status === "Rejected" && rejectionReason.trim().length === 0;
   const isSaveDisabled = useMemo(() => {
-    if (status === "Rejected") {
-      return rejectionReason.trim().length === 0;
+    if (!hasStatusChanged) {
+      return true;
+    }
+
+    if (isRejectionReasonMissing) {
+      return true;
     }
 
     return false;
-  }, [rejectionReason, status]);
+  }, [hasStatusChanged, isRejectionReasonMissing]);
 
   useEffect(() => {
     if (open) {
       setStatus(currentStatus);
-      setRejectionReason("");
+      setRejectionReason(
+        currentStatus === "Rejected" ? currentRejectionReason : "",
+      );
       setValidationError("");
     }
-  }, [currentStatus, open]);
+  }, [currentRejectionReason, currentStatus, open]);
 
   const handleSave = async () => {
     const nextRejectionReason =
       rejectionReasonRef.current?.value.trim() || rejectionReason.trim();
+
+    if (!hasStatusChanged) {
+      setValidationError("Change the request status before saving.");
+      return;
+    }
 
     if (status === "Rejected" && !nextRejectionReason) {
       setValidationError(
@@ -144,10 +162,21 @@ export function ChangeStatusDialog({
                 }}
                 placeholder="Explain why this request was rejected"
                 rows={4}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                required={status === "Rejected"}
+                aria-invalid={
+                  hasStatusChanged && isRejectionReasonMissing
+                    ? "true"
+                    : "false"
+                }
+                disabled={isExistingRejectedStatus}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:disabled:border-gray-800 dark:disabled:bg-gray-800/60 dark:disabled:text-gray-500"
               />
               <p className="text-xs text-gray-500">
-                This reason will be emailed to the requester.
+                {isExistingRejectedStatus
+                  ? "Change the status before saving updates to this request."
+                  : hasStatusChanged && isRejectionReasonMissing
+                    ? "Rejection reason is required before saving."
+                    : "This reason will be emailed to the requester."}
               </p>
             </div>
           )}

@@ -18,7 +18,7 @@ import path from "path";
 const BASE_URL = "https://govdoc.lk";
 const START_URL =
   "https://govdoc.lk/category/past-papers/gce-advance-level-exam";
-const OUTPUT_DIR = "D:/Download/AL-Papers";
+const OUTPUT_DIR = process.env.PAPERS_DIR ?? "D:/Download/AL-Papers";
 const DELAY_MS = 1500; // polite delay between requests
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────

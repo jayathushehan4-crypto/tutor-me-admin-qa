@@ -18,18 +18,17 @@ import {
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import {
-  useFetchRequestForTutorsQuery,
-} from "@/store/api/splits/request-tutor";
+import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { FetchRequestForTutor } from "@/types/request-types";
 import { RequestTutors } from "@/types/response-types";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Edit, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssignTutorDialog } from "./assignTutor";
 import { ChangeStatusDialog } from "./changeStatus";
 import { DeleteTutorRequest } from "./DeleteTutor";
+import { UnassignTutor, type UnassignTutorRow } from "./UnassignTutor";
 import { ViewTutorRequests } from "./ViewTutor";
 
 type RequestTutorStatusFilter =
@@ -421,23 +420,42 @@ export default function RequestForTutorsList() {
           "min-w-[190px] max-w-[190px] sticky right-[250px] z-20 bg-white dark:bg-gray-900",
         render: (row: RequestTutors) => {
           const effectiveStatus = getEffectiveStatus(row);
+          const isAssignedOrPartial =
+            effectiveStatus !== "Rejected" &&
+            getSafeTutorBlocks(row.tutors).some((t) =>
+              hasAssignedTutor(t.assignedTutor),
+            );
+
+          const unassignRow: UnassignTutorRow = {
+            id: row.id,
+            tutors: getSafeTutorBlocks(row.tutors).map((t) => ({
+              _id: t._id,
+              subject: t.subject,
+              assignedTutor: t.assignedTutor,
+              classType: t.classType,
+              preferredClassType: t.preferredClassType,
+              preferredTutorType: t.preferredTutorType,
+              duration: t.duration,
+              frequency: t.frequency,
+            })),
+          };
+
           return (
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center justify-center gap-2">
                 <RequestTutorStatusBadge status={effectiveStatus} />
-                {effectiveStatus === "Tutor Assigned" ? (
-                  <button
-                    type="button"
-                    disabled
-                    aria-label="Assigned status cannot be changed manually"
-                    className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center text-gray-300 dark:text-gray-600"
-                  >
-                    <Edit className="h-5 w-5" />
-                  </button>
+                {isAssignedOrPartial ? (
+                  <UnassignTutor
+                    row={unassignRow}
+                    onUnassigned={() => refetch()}
+                  />
                 ) : (
                   <ChangeStatusDialog
                     requestId={row.id}
-                    currentStatus={effectiveStatus}
+                    currentStatus={
+                      effectiveStatus === "Rejected" ? "Rejected" : "Pending"
+                    }
+                    currentRejectionReason={row.rejectionReason}
                     onStatusChange={() => refetch()}
                   />
                 )}
@@ -456,7 +474,10 @@ export default function RequestForTutorsList() {
           <AssignTutorDialog
             row={{
               id: row.id,
-              status: getEffectiveStatus(row) === "Rejected" ? "Rejected" : row.status,
+              status:
+                getEffectiveStatus(row) === "Rejected"
+                  ? "Rejected"
+                  : row.status,
               grade: getGradeId(row.grade),
               district: getSafeValue(row.city, ""),
               medium: getSafeValue(row.medium, ""),

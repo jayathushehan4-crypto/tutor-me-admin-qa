@@ -57,10 +57,7 @@ type EmailAvailabilityState = "available" | "unavailable" | null;
 const hasExistingEmail = (
   users: Array<{ email?: string }> | undefined,
   email: string,
-) =>
-  Boolean(
-    users?.some((user) => user.email?.trim().toLowerCase() === email),
-  );
+) => Boolean(users?.some((user) => user.email?.trim().toLowerCase() === email));
 
 const isDuplicateEmailError = (error: string) => {
   const normalizedError = error.toLowerCase();
@@ -131,7 +128,10 @@ export default function AddAdminForm() {
         return;
       }
 
-      const emailExists = hasExistingEmail(result.data?.results, normalizedEmail);
+      const emailExists = hasExistingEmail(
+        result.data?.results,
+        normalizedEmail,
+      );
 
       if (emailExists) {
         setEmailAvailability("unavailable");
@@ -149,13 +149,7 @@ export default function AddAdminForm() {
     }, EMAIL_CHECK_DELAY_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [
-    clearErrors,
-    email,
-    errors.email?.type,
-    fetchUsersByEmail,
-    setError,
-  ]);
+  }, [clearErrors, email, errors.email?.type, fetchUsersByEmail, setError]);
 
   const onSubmit = async (values: CreateAdminSchema) => {
     const cleanedValues: CreateAdminSchema = {

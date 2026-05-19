@@ -365,6 +365,7 @@ export type RequestTutors = BaseEntity & {
   medium: string;
   // "Assiged" and "Assigned" are kept only for older API records.
   status: "Pending" | "Rejected" | "Tutor Assigned" | "Assiged" | "Assigned";
+  rejectionReason?: string;
   grade: string;
   tutors: RequestTutorTutor[];
   createdAt: string;
