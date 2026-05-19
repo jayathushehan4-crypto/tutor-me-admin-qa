@@ -115,6 +115,11 @@ const getAssignedTutorDisplayItems = (
 const hasAssignedTutor = (assignedTutor: unknown) =>
   getAssignedTutorIds(assignedTutor).length > 0;
 
+const getRequestReference = (id?: string | null) => {
+  const safeId = String(id || "").trim();
+  return safeId ? safeId.slice(-6).toUpperCase() : "N/A";
+};
+
 const isRequestFullyAssigned = (
   tutorBlocks?: Array<{ assignedTutor?: unknown }>,
 ) => {
@@ -261,6 +266,8 @@ export function ViewTutorRequests({ tutorId }: ViewTutorProps) {
     [subjectsData?.results],
   );
   const effectiveStatus = useMemo(() => getEffectiveStatus(tutor), [tutor]);
+  const requestId = String(tutor?.id || tutorId || "").trim();
+  const requestReference = getRequestReference(requestId);
   const isTelegramOutreachSent =
     Boolean(tutor?.telegramOutreachSentAt) || telegramOutreachSent;
   const canSendTelegramOutreach =
@@ -395,6 +402,11 @@ export function ViewTutorRequests({ tutorId }: ViewTutorProps) {
 
           <div className="grid gap-4">
             <div className="grid gap-3">
+              <Label>Tutor Request Ref</Label>
+              <div className={displayFieldClass}>{requestReference}</div>
+            </div>
+
+            <div className="grid gap-3">
               <Label>Full Name</Label>
               <div className={displayFieldClass}>
                 {getSafeValue(tutor?.name)}
@@ -480,6 +492,13 @@ export function ViewTutorRequests({ tutorId }: ViewTutorProps) {
                         key={t._id || idx}
                         className="p-3 border rounded space-y-1 bg-gray-50 dark:bg-gray-700"
                       >
+                        <div className="flex items-center justify-between gap-2">
+                          <strong>Request {idx + 1}</strong>
+                          <span className="text-xs text-gray-500 dark:text-white/60">
+                            Request Ref: {getRequestReference(t.id || t._id)}
+                          </span>
+                        </div>
+
                         <div>
                           Subject:{" "}
                           <span className={tagClass}>

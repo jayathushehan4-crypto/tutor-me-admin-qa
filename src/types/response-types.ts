@@ -346,6 +346,7 @@ export type TutorEmailAvailabilityResponse = {
 };
 
 export type RequestTutorTutor = {
+  id?: string;
   _id: string;
   subject: string;
   classType?: string | string[];
