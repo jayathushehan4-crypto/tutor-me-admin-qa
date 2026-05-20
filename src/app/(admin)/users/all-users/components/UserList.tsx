@@ -237,7 +237,7 @@ export default function UsersTable() {
     () => ({
       page,
       limit,
-      sortBy: "updatedAt:desc",
+      sortBy: "createdAt:desc",
       ...(debouncedSearchTerm.trim()
         ? { search: debouncedSearchTerm.trim() }
         : {}),
@@ -246,10 +246,10 @@ export default function UsersTable() {
     [debouncedSearchTerm, limit, page, roleFilter],
   );
 
-  const { data, isLoading } = useFetchUsersQuery(queryParams);
+  const { data, isFetching } = useFetchUsersQuery(queryParams);
 
   const users = data?.results || [];
-  const totalPages = data?.totalPages || 0;
+  const totalPages = data?.totalPages || 1;
   const totalResults = data?.totalResults || 0;
 
   const handlePageChange = (newPage: number) => {
@@ -533,7 +533,7 @@ export default function UsersTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
-        isLoading={isLoading}
+        isLoading={isFetching}
         emptyMessage="No users found for the current search or role filter."
         className="w-full max-w-full"
       />
