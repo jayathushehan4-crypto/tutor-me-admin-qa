@@ -123,6 +123,9 @@ export type FetchFaqRequest = {
 export type FetchInquiryRequest = {
   page: number;
   limit: number;
+  message?: string;
+  name?: string;
+  email?: string;
   sortBy?: string;
 };
 
