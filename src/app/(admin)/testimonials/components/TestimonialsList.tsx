@@ -3,11 +3,18 @@
 /* eslint-disable @next/next/no-img-element */
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
+import TablePagination from "@/components/tables/Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useFetchTestimonialsQuery } from "@/store/api/splits/testimonials";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
-import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Search, Star, User } from "lucide-react";
+import { RotateCcw, Star, User } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { DeleteTestimonial } from "./DeleteTestimonial";
@@ -28,15 +35,25 @@ interface Testimonial {
 
 export default function TestimonialsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("all");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
 
-  // TODO: Best for small/medium datasets. For very large datasets, move search to the backend.
-  const { data, isLoading } = useFetchTestimonialsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "updatedAt:desc",
-  });
+  const testimonialsQuery = useMemo(
+    () => ({
+      page,
+      limit,
+      sortBy: "createdAt:desc",
+      ...(ratingFilter !== "all" ? { rating: Number(ratingFilter) } : {}),
+    }),
+    [limit, page, ratingFilter],
+  );
+
+  const { data, isFetching } = useFetchTestimonialsQuery(testimonialsQuery);
+
+  const testimonials = data?.results || [];
+  const totalResults = data?.totalResults || 0;
+  const totalPages = data?.totalPages || 1;
+  const hasFilters = ratingFilter !== "all";
 
   const getSafeValue = (value: unknown, fallback = "N/A"): string => {
     if (value === undefined || value === null) return fallback;
@@ -44,42 +61,13 @@ export default function TestimonialsTable() {
     return str.trim() === "" ? fallback : str;
   };
 
-  // Filter against the full fetched dataset
-  const filteredTestimonials = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
-    const testimonials = data?.results || [];
-
-    if (!query) return sortByLatestTimestampDesc(testimonials);
-
-    return sortByLatestTimestampDesc(
-      testimonials.filter((t: Testimonial) => {
-        const ownerName = getSafeValue(t.owner?.name, "").toLowerCase();
-        const ownerRole = getSafeValue(t.owner?.role, "").toLowerCase();
-        const content = getSafeValue(t.content, "").toLowerCase();
-        const rating = getSafeValue(t.rating, "").toLowerCase();
-
-        return (
-          ownerName.includes(query) ||
-          ownerRole.includes(query) ||
-          content.includes(query) ||
-          rating.includes(query)
-        );
-      }),
-    );
-  }, [data, searchTerm]);
-
-  // Apply pagination after filtering
-  const paginatedTestimonials = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filteredTestimonials.slice(startIndex, endIndex);
-  }, [filteredTestimonials, page, limit]);
-
-  const totalResults = filteredTestimonials.length;
-  const totalPages = Math.ceil(totalResults / limit);
-
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const resetFilters = () => {
+    setRatingFilter("all");
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
   const columns: Column<Testimonial>[] = [
@@ -214,85 +202,134 @@ export default function TestimonialsTable() {
         <div>
           <h2 className="font-semibold">Testimonials</h2>
           <p className="text-sm text-gray-500">
-            Filter testimonials across the full dataset
+            Filter testimonials by rating. Results load page by page.
           </p>
         </div>
 
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
+        <div className="grid w-full gap-3 sm:max-w-[220px] sm:grid-cols-[minmax(0,1fr)_44px]">
+          <Select
+            value={ratingFilter}
+            onValueChange={(value) => {
+              setRatingFilter(value);
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
-            placeholder="filter testimonials..."
-            className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
-          />
+          >
+            <SelectTrigger className="h-11 rounded-xl border-gray-200 bg-gray-50 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+              <SelectValue placeholder="Rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All ratings</SelectItem>
+              {[5, 4, 3, 2, 1].map((rating) => (
+                <SelectItem key={rating} value={String(rating)}>
+                  {rating} star{rating === 1 ? "" : "s"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <button
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasFilters}
+            aria-label="Reset filters"
+            title="Reset filters"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-0 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
         </div>
       </motion.div>
 
       <motion.div variants={fadeUp} className="hidden md:block">
         <DataTable
           columns={columns}
-          data={paginatedTestimonials}
+          data={testimonials}
           page={page}
           totalPages={totalPages}
           onPageChange={handlePageChange}
           totalResults={totalResults}
           limit={limit}
-          isLoading={isLoading}
+          isLoading={isFetching}
+          emptyMessage="No testimonials found for the current filters."
         />
       </motion.div>
 
       <motion.div className="grid gap-4 md:hidden">
-        {paginatedTestimonials.map((row) => (
-          <motion.div
-            key={row.id}
-            variants={fadeUp}
-            className="rounded-2xl border bg-white p-4 dark:bg-gray-900"
-          >
-            <div className="flex items-center gap-3">
-              {row.owner?.avatar ? (
-                <img
-                  src={row.owner?.avatar || "/images/user/user.png"}
-                  alt={getSafeValue(row.owner?.name, "User avatar")}
-                  className="h-10 w-10 rounded-full"
-                />
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-300">
-                  <User size={14} />
+        {isFetching ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <motion.div
+              key={index}
+              variants={fadeUp}
+              className="rounded-2xl border bg-white p-4 dark:bg-gray-900"
+            >
+              <div className="h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="mt-3 h-3 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            </motion.div>
+          ))
+        ) : testimonials.length > 0 ? (
+          testimonials.map((row) => (
+            <motion.div
+              key={row.id}
+              variants={fadeUp}
+              className="rounded-2xl border bg-white p-4 dark:bg-gray-900"
+            >
+              <div className="flex items-center gap-3">
+                {row.owner?.avatar ? (
+                  <img
+                    src={row.owner?.avatar || "/images/user/user.png"}
+                    alt={getSafeValue(row.owner?.name, "User avatar")}
+                    className="h-10 w-10 rounded-full"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-300">
+                    <User size={14} />
+                  </div>
+                )}
+
+                <div>
+                  <p className="font-medium">{getSafeValue(row.owner?.name)}</p>
+                  <p className="text-xs text-gray-500">
+                    {getSafeValue(row.owner?.role)}
+                  </p>
                 </div>
-              )}
-
-              <div>
-                <p className="font-medium">{getSafeValue(row.owner?.name)}</p>
-                <p className="text-xs text-gray-500">
-                  {getSafeValue(row.owner?.role)}
-                </p>
               </div>
-            </div>
 
-            <p className="mt-3 text-sm text-gray-600">
-              {getSafeValue(row.content)}
-            </p>
+              <p className="mt-3 text-sm text-gray-600">
+                {getSafeValue(row.content)}
+              </p>
 
-            <div className="mt-2 flex gap-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  size={14}
-                  className={
-                    i < Number(row.rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-400"
-                  }
-                />
-              ))}
-            </div>
-          </motion.div>
-        ))}
+              <div className="mt-2 flex gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    size={14}
+                    className={
+                      i < Number(row.rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-400"
+                    }
+                  />
+                ))}
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed bg-white p-8 text-center text-sm text-gray-500 dark:bg-gray-900">
+            No testimonials found for the current filters.
+          </div>
+        )}
       </motion.div>
+
+      {!isFetching && totalResults > limit && (
+        <div className="flex justify-center md:hidden">
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
     </motion.div>
   );
 }
