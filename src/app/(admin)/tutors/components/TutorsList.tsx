@@ -10,11 +10,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  PREFERRED_LOCATION_OPTIONS,
   TUTOR_STATUS_BADGE_CLASSES,
   TUTOR_STATUS_FILTER_OPTIONS,
+  TUTOR_TYPE_OPTIONS,
 } from "@/configs/app-constants";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import {
   useFetchTutorsQuery,
   useUpdateTutorStatusMutation,
@@ -24,6 +28,7 @@ import { getAdminId } from "@/utils/auth";
 import {
   CheckCircle,
   Loader2,
+  RotateCcw,
   Search,
   ShieldOff,
   X,
@@ -69,6 +74,132 @@ type TutorStatusFilter =
   | "approved"
   | "suspended"
   | "rejected";
+
+type FilterOption = {
+  value: string;
+  label: string;
+};
+
+function SearchableFilterSelect({
+  value,
+  options,
+  placeholder,
+  searchPlaceholder,
+  onChange,
+}: {
+  value: string;
+  options: FilterOption[];
+  placeholder: string;
+  searchPlaceholder: string;
+  onChange: (value: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+        setSearchText("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((option) => option.value === value);
+  const filteredOptions = searchText.trim()
+    ? options.filter((option) =>
+        option.label.toLowerCase().includes(searchText.trim().toLowerCase()),
+      )
+    : options;
+
+  return (
+    <div ref={dropdownRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm text-gray-800 shadow-xs outline-none transition-[color,box-shadow] focus:border-brand-300 focus:ring-[3px] focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+      >
+        <span
+          className={
+            selectedOption?.value !== "all"
+              ? "truncate"
+              : "truncate text-gray-400 dark:text-white/30"
+          }
+        >
+          {selectedOption?.label || placeholder}
+        </span>
+        <svg
+          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full z-[9999] mt-1 w-full overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <div className="border-b border-gray-200 p-2 dark:border-gray-700">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="h-9 w-full rounded-md border border-gray-200 bg-white pl-8 pr-3 text-sm text-gray-800 outline-none focus:border-brand-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white/90"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto p-1">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                    setSearchText("");
+                  }}
+                  className={`flex w-full items-center justify-between rounded-sm px-2 py-2 text-left text-sm ${
+                    option.value === value
+                      ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
+                      : "text-gray-700 hover:bg-gray-50 dark:text-white/90 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {option.value === value && (
+                    <CheckCircle className="ml-2 h-4 w-4 shrink-0 text-brand-500" />
+                  )}
+                </button>
+              ))
+            ) : (
+              <p className="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                No results found
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Status badge ────────────────────────────────────────────────────────────
 
@@ -442,33 +573,117 @@ export default function TutorsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<TutorStatusFilter>("all");
+  const [tutorTypeFilter, setTutorTypeFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [gradeFilter, setGradeFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState("all");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   useEffect(() => {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  }, [debouncedSearchTerm, statusFilter]);
+  }, [
+    debouncedSearchTerm,
+    gradeFilter,
+    locationFilter,
+    statusFilter,
+    subjectFilter,
+    tutorTypeFilter,
+  ]);
 
   const queryParams = useMemo(
     () => ({
       page,
       limit,
-      sortBy: "updatedAt:desc",
+      sortBy: "createdAt:desc",
       ...(debouncedSearchTerm.trim()
         ? { search: debouncedSearchTerm.trim() }
         : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(tutorTypeFilter !== "all" ? { tutorType: tutorTypeFilter } : {}),
+      ...(locationFilter !== "all"
+        ? { preferredLocations: locationFilter }
+        : {}),
+      ...(gradeFilter !== "all" ? { gradeId: gradeFilter } : {}),
+      ...(subjectFilter !== "all" ? { subjectId: subjectFilter } : {}),
     }),
-    [debouncedSearchTerm, limit, page, statusFilter],
+    [
+      debouncedSearchTerm,
+      gradeFilter,
+      limit,
+      locationFilter,
+      page,
+      statusFilter,
+      subjectFilter,
+      tutorTypeFilter,
+    ],
   );
 
-  const { data, isLoading } = useFetchTutorsQuery(queryParams);
+  const { data, isFetching } = useFetchTutorsQuery(queryParams);
+  const { data: gradesData } = useFetchGradesQuery({
+    page: 1,
+    limit: 1000,
+    sortBy: "title:asc",
+  });
+  const { data: subjectsData } = useFetchSubjectsQuery({
+    page: 1,
+    limit: 1000,
+    sortBy: "title:asc",
+  });
 
   const tutors = data?.results || [];
   const totalPages = data?.totalPages || 1;
   const totalResults = data?.totalResults || tutors.length;
+  const locationOptions = useMemo(
+    () => [
+      { value: "all", label: "All locations" },
+      ...PREFERRED_LOCATION_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.text,
+      })),
+    ],
+    [],
+  );
+  const gradeOptions = useMemo(
+    () => [
+      { value: "all", label: "All grades" },
+      ...(gradesData?.results || []).map((grade) => ({
+        value: grade.id,
+        label: grade.title,
+      })),
+    ],
+    [gradesData],
+  );
+  const subjectOptions = useMemo(
+    () => [
+      { value: "all", label: "All subjects" },
+      ...(subjectsData?.results || []).map((subject) => ({
+        value: subject.id,
+        label: subject.title,
+      })),
+    ],
+    [subjectsData],
+  );
+  const hasFilters = Boolean(
+    searchTerm ||
+      statusFilter !== "all" ||
+      tutorTypeFilter !== "all" ||
+      locationFilter !== "all" ||
+      gradeFilter !== "all" ||
+      subjectFilter !== "all",
+  );
 
   const handlePageChange = (newPage: number) => setPage(newPage);
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setTutorTypeFilter("all");
+    setLocationFilter("all");
+    setGradeFilter("all");
+    setSubjectFilter("all");
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  };
 
   const getSafeValue = (
     value: string | number | undefined | null,
@@ -630,7 +845,7 @@ export default function TutorsList() {
             </p>
           </div>
 
-          <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[32rem]">
+          <div className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_44px]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
@@ -672,6 +887,55 @@ export default function TutorsList() {
                 </SelectContent>
               </Select>
             </div>
+
+            <Select value={tutorTypeFilter} onValueChange={setTutorTypeFilter}>
+              <SelectTrigger className="h-11 min-h-11 w-full">
+                <SelectValue placeholder="Tutor type" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="all">All tutor types</SelectItem>
+                {TUTOR_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.text}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <SearchableFilterSelect
+              value={locationFilter}
+              options={locationOptions}
+              placeholder="Location"
+              searchPlaceholder="Search locations..."
+              onChange={setLocationFilter}
+            />
+
+            <SearchableFilterSelect
+              value={gradeFilter}
+              options={gradeOptions}
+              placeholder="Grade"
+              searchPlaceholder="Search grades..."
+              onChange={setGradeFilter}
+            />
+
+            <SearchableFilterSelect
+              value={subjectFilter}
+              options={subjectOptions}
+              placeholder="Subject"
+              searchPlaceholder="Search subjects..."
+              onChange={setSubjectFilter}
+            />
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!hasFilters}
+              aria-label="Reset filters"
+              title="Reset filters"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-0 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -684,7 +948,7 @@ export default function TutorsList() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
-        isLoading={isLoading}
+        isLoading={isFetching}
         emptyMessage="No tutors found for the current search or status filter."
       />
     </div>
