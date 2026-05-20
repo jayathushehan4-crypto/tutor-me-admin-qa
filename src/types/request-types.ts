@@ -145,6 +145,7 @@ export type FetchPapersRequest = {
   year?: string;
   medium?: string;
   sortBy?: string;
+  order?: string;
 };
 
 export type CreateTagRequest = {
@@ -221,8 +222,9 @@ export type UpdateTuitionRateRequest = {
 };
 
 export type FetchTuitionRatesRequest = {
-  subject?: string[];
-  grade?: string[];
+  search?: string;
+  subject?: string | string[];
+  grade?: string | string[];
   universityStudentsRate?: TuitionRate;
   partTimeTutorRate?: TuitionRate;
   fullTimeTutorRate?: TuitionRate;
