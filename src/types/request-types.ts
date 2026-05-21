@@ -123,6 +123,9 @@ export type FetchFaqRequest = {
 export type FetchInquiryRequest = {
   page: number;
   limit: number;
+  message?: string;
+  name?: string;
+  email?: string;
   sortBy?: string;
 };
 
@@ -284,6 +287,7 @@ export type FetchTutorsRequest = {
   gender?: string;
   nationality?: string;
   tutorType?: string;
+  preferredLocations?: string;
   yearsExperience?: number;
   highestEducation?: string;
   page?: number;
@@ -376,6 +380,7 @@ export type UpdateTutorRequest = {
 export type FetchTestimonialsRequest = {
   page: number;
   limit: number;
+  rating?: number;
   sortBy?: string;
 };
 
