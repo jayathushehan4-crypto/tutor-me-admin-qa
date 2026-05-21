@@ -1,30 +1,9 @@
 import * as Sentry from "@sentry/nextjs";
+import { isSentryEnabled, sentryBaseConfig } from "@/lib/sentry";
 
-const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
-const sentryEnvironment =
-  process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT?.trim() ??
-  process.env.VERCEL_ENV?.trim() ??
-  process.env.NODE_ENV;
-
-const isProductionLikeEnvironment =
-  sentryEnvironment === "production" ||
-  sentryEnvironment === "staging" ||
-  sentryEnvironment === "preview";
-const sentryEnabled = process.env.NEXT_PUBLIC_SENTRY_ENABLED?.trim();
-const isExplicitlyEnabled = sentryEnabled === "true";
-const isExplicitlyDisabled = sentryEnabled === "false";
-
-if (
-  sentryDsn &&
-  !isExplicitlyDisabled &&
-  (isProductionLikeEnvironment || isExplicitlyEnabled)
-) {
+if (isSentryEnabled) {
   Sentry.init({
-    dsn: sentryDsn,
-    environment: sentryEnvironment,
-    enabled: true,
-    sendDefaultPii: false,
-    tracesSampleRate: 0.1,
+    ...sentryBaseConfig,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1,
     integrations: [

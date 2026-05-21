@@ -408,7 +408,9 @@ export function AddTutor() {
       return;
     }
 
-    const { confirmPassword: _, ...rest } = data;
+    const rest = { ...data };
+    Reflect.deleteProperty(rest, "confirmPassword");
+
     const cleanedData = {
       ...rest,
       email: normalizedEmail,

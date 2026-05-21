@@ -139,7 +139,8 @@ export function UpdateUser(props: UpdateUserProps) {
 
   const onSubmit = async (data: UpdateUserSchema) => {
     try {
-      const { email: _immutableEmail, ...editableData } = data;
+      const editableData = { ...data };
+      Reflect.deleteProperty(editableData, "email");
 
       const payload = {
         id: props.id,

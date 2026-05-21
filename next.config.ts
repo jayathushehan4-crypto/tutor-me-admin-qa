@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const canUploadSentrySourcemaps = Boolean(
+  process.env.SENTRY_AUTH_TOKEN &&
+    process.env.SENTRY_ORG &&
+    process.env.SENTRY_PROJECT,
+);
+
 const nextConfig: NextConfig = {
   turbopack: {
     rules: {
@@ -46,7 +52,12 @@ export default withSentryConfig(nextConfig, {
   silent: !process.env.CI,
   telemetry: false,
   sourcemaps: {
-    disable: !process.env.SENTRY_AUTH_TOKEN,
+    disable: !canUploadSentrySourcemaps,
+    deleteSourcemapsAfterUpload: true,
+  },
+  release: {
+    name: process.env.SENTRY_RELEASE,
+    create: canUploadSentrySourcemaps,
   },
   tunnelRoute: "/monitoring",
   webpack: {
