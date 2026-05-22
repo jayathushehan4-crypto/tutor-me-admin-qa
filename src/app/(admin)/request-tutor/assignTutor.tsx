@@ -122,11 +122,14 @@ function TutorBlockItem({
   const { data, isLoading } = useFetchTutorsQuery({
     page: 1,
     limit: LARGE_LIMIT,
+    status: "approved",
     gradeId: gradeId || undefined,
     subjectId: isObjectId ? tutorBlock.subject : undefined,
   });
 
   const tutors = (data?.results ?? []).filter((tutor) => {
+    const statusMatch = tutor.status?.toLowerCase() === "approved";
+
     const mediumMatch =
       !medium ||
       tutor.tutorMediums.some((m) => m.toLowerCase() === medium.toLowerCase());
@@ -162,7 +165,13 @@ function TutorBlockItem({
         tutor.classType.some((ct) => ct.toLowerCase() === requested),
       );
 
-    return mediumMatch && tutorTypeMatch && locationPass && classTypeMatch;
+    return (
+      statusMatch &&
+      mediumMatch &&
+      tutorTypeMatch &&
+      locationPass &&
+      classTypeMatch
+    );
   });
 
   const noResults = !isLoading && tutors.length === 0;
@@ -249,7 +258,7 @@ function TutorBlockItem({
 
             {tutors.map((tutor) => (
               <SelectItem key={tutor.id} value={tutor.id}>
-                {tutor.fullName}
+                {tutor.fullName || tutor.name}
               </SelectItem>
             ))}
           </SelectContent>
