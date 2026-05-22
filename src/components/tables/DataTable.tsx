@@ -135,7 +135,7 @@ export default function DataTable<T extends { id: string | number }>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3 dark:text-white/90 max-w-[73.5vw]",
+        "overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3 dark:text-white/90 w-full",
         className,
       )}
     >
