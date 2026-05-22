@@ -35,7 +35,7 @@ import {
 } from "@/store/api/splits/tuition-rates";
 
 import { getErrorInApiResult } from "@/utils/api";
-import { noWhitespaceInputRegisterOptions } from "@/utils/form-normalizers";
+import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -221,12 +221,12 @@ export function AddTuitionRate() {
 
                 <Input
                   placeholder="Minimum Rate"
+                  inputMode="decimal"
                   {...createTuitionRateForm.register(`${key}.minimumRate`, {
-                    ...noWhitespaceInputRegisterOptions(
+                    ...decimalInputRegisterOptions(
                       `${key}.minimumRate`,
                       setValue,
                       formState.isSubmitted,
-                      false,
                       () => {
                         createTuitionRateForm.trigger([
                           `${key}.minimumRate`,
@@ -244,12 +244,12 @@ export function AddTuitionRate() {
 
                 <Input
                   placeholder="Maximum Rate"
+                  inputMode="decimal"
                   {...createTuitionRateForm.register(`${key}.maximumRate`, {
-                    ...noWhitespaceInputRegisterOptions(
+                    ...decimalInputRegisterOptions(
                       `${key}.maximumRate`,
                       setValue,
                       formState.isSubmitted,
-                      false,
                       () => {
                         createTuitionRateForm.trigger([
                           `${key}.minimumRate`,

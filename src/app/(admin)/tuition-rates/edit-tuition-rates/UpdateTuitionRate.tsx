@@ -21,7 +21,7 @@ import {
 } from "@/store/api/splits/grades";
 import { useUpdateTuitionRateMutation } from "@/store/api/splits/tuition-rates";
 import { getErrorInApiResult } from "@/utils/api";
-import { noWhitespaceInputRegisterOptions } from "@/utils/form-normalizers";
+import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
@@ -227,9 +227,10 @@ export function UpdateTuitionRate({
 
               <Input
                 placeholder="Minimum Rate"
+                inputMode="decimal"
                 {...register(
                   `${key}.minimumRate` as const,
-                  noWhitespaceInputRegisterOptions(
+                  decimalInputRegisterOptions(
                     `${key}.minimumRate` as const,
                     setValue,
                   ),
@@ -243,9 +244,10 @@ export function UpdateTuitionRate({
 
               <Input
                 placeholder="Maximum Rate"
+                inputMode="decimal"
                 {...register(
                   `${key}.maximumRate` as const,
-                  noWhitespaceInputRegisterOptions(
+                  decimalInputRegisterOptions(
                     `${key}.maximumRate` as const,
                     setValue,
                   ),

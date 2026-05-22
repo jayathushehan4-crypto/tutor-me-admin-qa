@@ -18,7 +18,7 @@ const numericString = z
         },
         {
           message:
-            "Rate must be a non-negative number (digits only, optional decimal)",
+            "Rate must be a non-negative number using digits and an optional decimal point",
         },
       ),
   );
