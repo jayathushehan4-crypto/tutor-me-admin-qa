@@ -342,17 +342,52 @@ export default function RequestForTutorsList() {
     ? Math.max(1, Math.ceil(totalResults / limit))
     : data?.totalPages || 1;
 
-  const getGradeId = (grade: unknown): string => {
+  const getGradeId = useCallback((grade: unknown): string => {
+    const gradeTitle =
+      typeof grade === "string"
+        ? grade
+        : grade && typeof grade === "object"
+          ? ((grade as { title?: string; name?: string }).title ??
+            (grade as { title?: string; name?: string }).name ??
+            "")
+          : "";
+
     if (grade && typeof grade === "object") {
       const gradeRecord = grade as { id?: string };
       const id = gradeRecord.id ?? "";
-      return /^[a-f\d]{24}$/i.test(id) ? id : "";
+      if (/^[a-f\d]{24}$/i.test(id)) {
+        return id;
+      }
     }
     if (typeof grade === "string" && /^[a-f\d]{24}$/i.test(grade)) {
       return grade;
     }
+
+    const normalizedGradeTitle = gradeTitle.trim().toLowerCase();
+    const matchedGrade = (gradesData?.results || []).find(
+      (gradeOption) =>
+        gradeOption.title.trim().toLowerCase() === normalizedGradeTitle,
+    );
+
+    if (matchedGrade?.id && /^[a-f\d]{24}$/i.test(matchedGrade.id)) {
+      return matchedGrade.id;
+    }
+
     return "";
-  };
+  }, [gradesData?.results]);
+
+  const getGradeTitle = useCallback((grade: unknown): string => {
+    if (grade && typeof grade === "object") {
+      const gradeRecord = grade as {
+        title?: string;
+        name?: string;
+        id?: string;
+      };
+      return gradeRecord.title || gradeRecord.name || gradeRecord.id || "";
+    }
+
+    return typeof grade === "string" ? grade : "";
+  }, []);
 
   const columns = useMemo<Column<RequestTutors>[]>(
     () => [
@@ -504,6 +539,7 @@ export default function RequestForTutorsList() {
                   ? "Rejected"
                   : row.status,
               grade: getGradeId(row.grade),
+              gradeTitle: getGradeTitle(row.grade),
               district: getSafeValue(row.city, ""),
               medium: getSafeValue(row.medium, ""),
               tutors: getSafeTutorBlocks(row.tutors).map((t) => ({
@@ -530,7 +566,7 @@ export default function RequestForTutorsList() {
         render: (row: RequestTutors) => <DeleteTutorRequest tutorId={row.id} />,
       },
     ],
-    [getEffectiveStatus, refetch],
+    [getEffectiveStatus, getGradeId, getGradeTitle, refetch],
   );
 
   return (
