@@ -23,7 +23,6 @@ type Props = {
 export default function ResetPasswordForm({ token }: Props) {
   const router = useRouter();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   const form = useForm<ResetPasswordSchema>({
@@ -32,16 +31,12 @@ export default function ResetPasswordForm({ token }: Props) {
     mode: "onChange",
   });
 
-  const removeSpaces = (value: string) => value.replace(/\s/g, "");
-
   const onSubmit = async (values: ResetPasswordSchema) => {
-    setErrorMessage(null);
     setSuccessMessage(null);
 
     if (!token) {
       const message =
         "Reset token is missing. Please use the link from your email.";
-      setErrorMessage(message);
       toast.error(message);
       return;
     }
@@ -54,7 +49,6 @@ export default function ResetPasswordForm({ token }: Props) {
     const error = getErrorInApiResult(result);
 
     if (error) {
-      setErrorMessage(error);
       toast.error(error);
       return;
     }
