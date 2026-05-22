@@ -434,7 +434,7 @@ export default function RequestForTutorsList() {
         header: "View",
         align: "center",
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[390px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[440px] z-20 bg-white dark:bg-gray-900",
         render: (row: RequestTutors) => <ViewTutorRequests tutorId={row.id} />,
       },
       {
