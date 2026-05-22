@@ -4,6 +4,7 @@ import DataTable, { type Column } from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import { escapeRegex } from "@/utils/form";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { Search, X } from "lucide-react";
 import { motion } from "motion/react";
@@ -37,7 +38,7 @@ export default function GradesTable() {
       limit,
       sortBy: "createdAt:desc",
       ...(debouncedSearchTerm.trim()
-        ? { title: debouncedSearchTerm.trim() }
+        ? { title: escapeRegex(debouncedSearchTerm.trim()) }
         : {}),
     }),
     [debouncedSearchTerm, limit, page],
