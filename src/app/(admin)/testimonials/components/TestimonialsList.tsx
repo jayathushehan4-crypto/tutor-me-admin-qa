@@ -197,7 +197,7 @@ export default function TestimonialsTable() {
     >
       <motion.div
         variants={fadeUp}
-        className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm dark:bg-gray-900 sm:flex-row sm:justify-between"
+        className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:flex-row sm:justify-between"
       >
         <div>
           <h2 className="font-semibold">Testimonials</h2>
@@ -214,7 +214,7 @@ export default function TestimonialsTable() {
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="h-11 rounded-xl border-gray-200 bg-gray-50 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+            <SelectTrigger className="h-11 min-h-11 w-full">
               <SelectValue placeholder="Rating" />
             </SelectTrigger>
             <SelectContent>

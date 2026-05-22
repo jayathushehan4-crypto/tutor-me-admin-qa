@@ -1,6 +1,7 @@
 "use client";
 
 import DataTable from "@/components/tables/DataTable";
+import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchInquiriesQuery } from "@/store/api/splits/inquiries";
@@ -189,7 +190,7 @@ export default function InquiryTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/5 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-semibold text-gray-800 dark:text-white/90">
             Contact Inquiries
@@ -202,14 +203,14 @@ export default function InquiryTable() {
         <div className="grid w-full gap-3 sm:max-w-2xl sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
+            <Input
               value={nameSearch}
               onChange={(event) => {
                 setNameSearch(event.target.value);
                 setPage(TABLE_CONFIG.DEFAULT_PAGE);
               }}
               placeholder="Search name"
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+              className="h-11 w-full pl-10 pr-10"
             />
             {nameSearch && (
               <button
@@ -228,14 +229,14 @@ export default function InquiryTable() {
 
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
+            <Input
               value={emailSearch}
               onChange={(event) => {
                 setEmailSearch(event.target.value);
                 setPage(TABLE_CONFIG.DEFAULT_PAGE);
               }}
               placeholder="Search email"
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+              className="h-11 w-full pl-10 pr-10"
             />
             {emailSearch && (
               <button
