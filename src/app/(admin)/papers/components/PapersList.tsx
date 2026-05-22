@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import {
+  useFetchGradeByIdQuery,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { useFetchPapersQuery } from "@/store/api/splits/papers";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
@@ -25,6 +28,7 @@ import { PaperDetails } from "./ViewDetails";
 interface Grade {
   id: string;
   title: string;
+  subjects?: Subject[];
 }
 
 interface Subject {
@@ -98,11 +102,23 @@ export default function PapersTable() {
     limit: 1000,
     sortBy: "title:asc",
   });
+  const { data: selectedGradeData, isLoading: isGradeSubjectsLoading } =
+    useFetchGradeByIdQuery(gradeFilter, {
+      skip: !gradeFilter,
+    });
   const { data: subjectsData } = useFetchSubjectsQuery({
     page: 1,
     limit: 1000,
     sortBy: "title:asc",
   });
+
+  const subjectOptions = useMemo(
+    () =>
+      gradeFilter
+        ? selectedGradeData?.subjects || []
+        : subjectsData?.results || [],
+    [gradeFilter, selectedGradeData?.subjects, subjectsData?.results],
+  );
 
   const papers = data?.results || [];
   const totalResults = data?.totalResults || 0;
@@ -424,6 +440,7 @@ export default function PapersTable() {
             value={gradeFilter || "all"}
             onValueChange={(value) => {
               setGradeFilter(value === "all" ? "" : value);
+              setSubjectFilter("");
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
@@ -442,17 +459,21 @@ export default function PapersTable() {
 
           <Select
             value={subjectFilter || "all"}
+            disabled={Boolean(gradeFilter && isGradeSubjectsLoading)}
             onValueChange={(value) => {
               setSubjectFilter(value === "all" ? "" : value);
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+            <SelectTrigger
+              isLoading={Boolean(gradeFilter && isGradeSubjectsLoading)}
+              className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400"
+            >
               <SelectValue placeholder="All subjects" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">All subjects</SelectItem>
-              {(subjectsData?.results || []).map((subject) => (
+              {subjectOptions.map((subject) => (
                 <SelectItem key={subject.id} value={subject.id}>
                   {subject.title}
                 </SelectItem>
