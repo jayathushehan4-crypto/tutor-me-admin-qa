@@ -19,6 +19,7 @@ import { useFetchGradesQuery } from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { useUpdateTuitionRateMutation } from "@/store/api/splits/tuition-rates";
 import { getErrorInApiResult } from "@/utils/api";
+import { noWhitespaceInputRegisterOptions } from "@/utils/form-normalizers";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
@@ -53,6 +54,7 @@ export function UpdateTuitionRate({
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<UpdateTuitionSchema>({
     resolver: zodResolver(updateTuitionSchema),
@@ -205,7 +207,13 @@ export function UpdateTuitionRate({
 
               <Input
                 placeholder="Minimum Rate"
-                {...register(`${key}.minimumRate` as const)}
+                {...register(
+                  `${key}.minimumRate` as const,
+                  noWhitespaceInputRegisterOptions(
+                    `${key}.minimumRate` as const,
+                    setValue,
+                  ),
+                )}
               />
               {errors[key]?.minimumRate && (
                 <p className="text-red-500 text-sm">
@@ -215,7 +223,13 @@ export function UpdateTuitionRate({
 
               <Input
                 placeholder="Maximum Rate"
-                {...register(`${key}.maximumRate` as const)}
+                {...register(
+                  `${key}.maximumRate` as const,
+                  noWhitespaceInputRegisterOptions(
+                    `${key}.maximumRate` as const,
+                    setValue,
+                  ),
+                )}
               />
               {errors[key]?.maximumRate && (
                 <p className="text-red-500 text-sm">

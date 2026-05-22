@@ -37,6 +37,7 @@ import {
 } from "@/store/api/splits/grades";
 import { useCreatePaperMutation } from "@/store/api/splits/papers";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -146,7 +147,18 @@ export function AddPaper() {
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Title" {...register("title")} />
+              <Input
+                id="title"
+                placeholder="Title"
+                {...register(
+                  "title",
+                  liveTextInputRegisterOptions(
+                    "title",
+                    setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
+              />
               {formState.errors.title && (
                 <p className="text-sm text-red-500">
                   {formState.errors.title.message}
@@ -309,7 +321,14 @@ export function AddPaper() {
                 id="year"
                 placeholder="Year"
                 type="text"
-                {...register("year")}
+                {...register(
+                  "year",
+                  liveTextInputRegisterOptions(
+                    "year",
+                    setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.year && (
                 <p className="text-sm text-red-500">

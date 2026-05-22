@@ -37,6 +37,7 @@ import {
 } from "@/store/api/splits/grades";
 import { useUpdatePaperMutation } from "@/store/api/splits/papers";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -220,7 +221,13 @@ export function EditPaper({
           <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-4 grid min-w-0 gap-4">
             <div className="grid min-w-0 gap-3">
               <Label>Title</Label>
-              <Input {...register("title")} className="w-full min-w-0" />
+              <Input
+                {...register(
+                  "title",
+                  liveTextInputRegisterOptions("title", setValue),
+                )}
+                className="w-full min-w-0"
+              />
               {formState.errors.title && (
                 <p className="text-sm text-red-500">
                   {formState.errors.title.message}
@@ -371,7 +378,10 @@ export function EditPaper({
               <Label>Year</Label>
               <Input
                 type="text"
-                {...register("year")}
+                {...register(
+                  "year",
+                  liveTextInputRegisterOptions("year", setValue),
+                )}
                 className="w-full min-w-0"
               />
               {formState.errors.year && (

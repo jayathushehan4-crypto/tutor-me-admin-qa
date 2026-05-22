@@ -1,12 +1,22 @@
+import { normalizeTextSpaces, trimText } from "@/utils/form-normalizers";
 import { z } from "zod";
 
+const requiredText = (message: string) =>
+  z
+    .string()
+    .transform((value) => normalizeTextSpaces(value) as string)
+    .pipe(z.string().min(1, message));
+
 export const testimonialSchema = z.object({
-  content: z.string().min(1, "Content is required"),
+  content: requiredText("Content is required"),
   rating: z.number().min(1, "Rating is required"), // number instead of string
   owner: z.object({
-    name: z.string().min(1, "Owner name is required"),
-    role: z.string().min(1, "Owner role is required"),
-    avatar: z.string().url("Avatar is required."),
+    name: requiredText("Owner name is required"),
+    role: requiredText("Owner role is required"),
+    avatar: z
+      .string()
+      .transform((value) => trimText(value) as string)
+      .pipe(z.string().url("Avatar is required.")),
   }),
 });
 

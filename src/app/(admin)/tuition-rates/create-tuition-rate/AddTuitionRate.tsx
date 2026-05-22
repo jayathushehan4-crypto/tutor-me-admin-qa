@@ -34,6 +34,7 @@ import {
 } from "@/store/api/splits/tuition-rates";
 
 import { getErrorInApiResult } from "@/utils/api";
+import { noWhitespaceInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -222,12 +223,18 @@ export function AddTuitionRate() {
                 <Input
                   placeholder="Minimum Rate"
                   {...createTuitionRateForm.register(`${key}.minimumRate`, {
-                    onChange: () => {
-                      createTuitionRateForm.trigger([
-                        `${key}.minimumRate`,
-                        `${key}.maximumRate`,
-                      ]);
-                    },
+                    ...noWhitespaceInputRegisterOptions(
+                      `${key}.minimumRate`,
+                      setValue,
+                      formState.isSubmitted,
+                      false,
+                      () => {
+                        createTuitionRateForm.trigger([
+                          `${key}.minimumRate`,
+                          `${key}.maximumRate`,
+                        ]);
+                      },
+                    ),
                   })}
                 />
                 {formState.errors[key]?.minimumRate && (
@@ -239,12 +246,18 @@ export function AddTuitionRate() {
                 <Input
                   placeholder="Maximum Rate"
                   {...createTuitionRateForm.register(`${key}.maximumRate`, {
-                    onChange: () => {
-                      createTuitionRateForm.trigger([
-                        `${key}.minimumRate`,
-                        `${key}.maximumRate`,
-                      ]);
-                    },
+                    ...noWhitespaceInputRegisterOptions(
+                      `${key}.maximumRate`,
+                      setValue,
+                      formState.isSubmitted,
+                      false,
+                      () => {
+                        createTuitionRateForm.trigger([
+                          `${key}.minimumRate`,
+                          `${key}.maximumRate`,
+                        ]);
+                      },
+                    ),
                   })}
                 />
                 {formState.errors[key]?.maximumRate && (

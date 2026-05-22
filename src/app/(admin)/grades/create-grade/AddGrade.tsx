@@ -20,6 +20,7 @@ import {
 } from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -36,9 +37,9 @@ export function AddGrade() {
   const existingTitles =
     gradesData?.results.map((g) => g.title.toLowerCase()) || [];
 
-  const createGradeForm = useForm({
+  const createGradeForm = useForm<CreateGradeSchema>({
     resolver: zodResolver(createGradeSchema),
-    defaultValues: initialFormValues as CreateGradeSchema,
+    defaultValues: initialFormValues,
     mode: "onChange",
   });
   const { formState } = createGradeForm;
@@ -112,6 +113,11 @@ export function AddGrade() {
                 id="title"
                 placeholder="Title"
                 {...createGradeForm.register("title", {
+                  ...liveTextInputRegisterOptions(
+                    "title",
+                    createGradeForm.setValue,
+                    formState.isSubmitted,
+                  ),
                   validate: (value) => {
                     if (existingTitles.includes(value.toLowerCase())) {
                       return "This grade title already exists.";
@@ -133,7 +139,14 @@ export function AddGrade() {
                 id="description"
                 placeholder="Description"
                 type="text"
-                {...createGradeForm.register("description")}
+                {...createGradeForm.register(
+                  "description",
+                  liveTextInputRegisterOptions(
+                    "description",
+                    createGradeForm.setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.description && (
                 <p className="text-sm text-red-500">

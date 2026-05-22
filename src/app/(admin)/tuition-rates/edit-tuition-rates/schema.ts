@@ -1,21 +1,27 @@
+import { trimText } from "@/utils/form-normalizers";
 import { z } from "zod";
 
 const numericString = z
   .string()
-  .min(1, "Rate is required")
-  .refine(
-    (s) => {
-      const cleaned = s.replace(/,/g, "").trim();
-      if (cleaned === "") return false;
+  .transform((value) => trimText(value) as string)
+  .pipe(
+    z
+      .string()
+      .min(1, "Rate is required")
+      .refine(
+        (s) => {
+          const cleaned = s.replace(/,/g, "").trim();
+          if (cleaned === "") return false;
 
-      if (!/^\d+(\.\d+)?$/.test(cleaned)) return false;
-      const n = Number(cleaned);
-      return !Number.isNaN(n) && n >= 0;
-    },
-    {
-      message:
-        "Rate must be a non-negative number (digits only, optional decimal)",
-    },
+          if (!/^\d+(\.\d+)?$/.test(cleaned)) return false;
+          const n = Number(cleaned);
+          return !Number.isNaN(n) && n >= 0;
+        },
+        {
+          message:
+            "Rate must be a non-negative number (digits only, optional decimal)",
+        },
+      ),
   );
 
 const rateObject = z

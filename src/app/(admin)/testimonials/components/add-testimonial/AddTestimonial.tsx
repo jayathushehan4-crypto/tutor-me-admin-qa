@@ -22,6 +22,7 @@ import {
 } from "@/schemas/testimonial.schema";
 import { useCreateTestimonialMutation } from "@/store/api/splits/testimonials";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -107,7 +108,14 @@ export function AddTestimonial() {
               <Input
                 id="content"
                 placeholder="Content"
-                {...register("content")}
+                {...register(
+                  "content",
+                  liveTextInputRegisterOptions(
+                    "content",
+                    setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.content && (
                 <p className="text-sm text-red-500">
@@ -139,7 +147,14 @@ export function AddTestimonial() {
               <Input
                 id="owner.name"
                 placeholder="Owner name"
-                {...register("owner.name")}
+                {...register(
+                  "owner.name",
+                  liveTextInputRegisterOptions(
+                    "owner.name",
+                    setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.owner?.name && (
                 <p className="text-sm text-red-500">
@@ -153,7 +168,14 @@ export function AddTestimonial() {
               <Input
                 id="owner.role"
                 placeholder="Owner role"
-                {...register("owner.role")}
+                {...register(
+                  "owner.role",
+                  liveTextInputRegisterOptions(
+                    "owner.role",
+                    setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.owner?.role && (
                 <p className="text-sm text-red-500">
