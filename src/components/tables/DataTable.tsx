@@ -139,7 +139,7 @@ export default function DataTable<T extends { id: string | number }>({
         className,
       )}
     >
-      <div className="max-w-full overflow-x-auto">
+      <div className="custom-scrollbar max-w-full overflow-x-auto">
         <div className="min-w-[600px]">
           <Table>
             {/* Table Header */}
