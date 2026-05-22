@@ -18,7 +18,10 @@ import {
 } from "@/configs/app-constants";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import {
+  useFetchGradeByIdQuery,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import {
   useFetchTutorsQuery,
@@ -629,6 +632,9 @@ export default function TutorsList() {
     limit: 1000,
     sortBy: "title:asc",
   });
+  const { data: selectedGradeData } = useFetchGradeByIdQuery(gradeFilter, {
+    skip: gradeFilter === "all",
+  });
   const { data: subjectsData } = useFetchSubjectsQuery({
     page: 1,
     limit: 1000,
@@ -661,12 +667,16 @@ export default function TutorsList() {
   const subjectOptions = useMemo(
     () => [
       { value: "all", label: "All subjects" },
-      ...(subjectsData?.results || []).map((subject) => ({
+      ...(
+        gradeFilter !== "all"
+          ? selectedGradeData?.subjects || []
+          : subjectsData?.results || []
+      ).map((subject) => ({
         value: subject.id,
         label: subject.title,
       })),
     ],
-    [subjectsData],
+    [gradeFilter, selectedGradeData?.subjects, subjectsData?.results],
   );
   const hasFilters = Boolean(
     searchTerm ||
@@ -973,7 +983,10 @@ export default function TutorsList() {
               options={gradeOptions}
               placeholder="Filter by grade"
               searchPlaceholder="Search grades..."
-              onChange={setGradeFilter}
+              onChange={(value) => {
+                setGradeFilter(value);
+                setSubjectFilter("all");
+              }}
             />
           </div>
 
