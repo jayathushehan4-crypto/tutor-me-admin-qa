@@ -20,7 +20,7 @@ export const WithProviders: FC<Props> = ({ children }) => {
       <AuthProvider>{children}</AuthProvider>
       <Toaster
         position={TOAST_POSITION}
-        containerStyle={{ bottom: FOOTER_HEIGHT + TOAST_GUTTER }}
+        containerStyle={{ bottom: FOOTER_HEIGHT + TOAST_GUTTER, zIndex: 999999 }}
         gutter={TOAST_GUTTER}
         toastOptions={{
           className: "react-hot-toast",
