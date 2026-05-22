@@ -26,7 +26,11 @@ import {
 
 import { MEDIUM_OPTIONS } from "@/configs/app-constants";
 import { useDebounce } from "@/hooks/useDebounce";
-import { PaperSchema, paperSchema } from "@/schemas/paper.schema";
+import {
+  PaperFormValues,
+  PaperSchema,
+  paperSchema,
+} from "@/schemas/paper.schema";
 import {
   useFetchGradeByIdQuery,
   useFetchGradesQuery,
@@ -76,7 +80,7 @@ export function EditPaper({
   const debouncedGradeSearch = useDebounce(gradeSearch, 300);
   const [subjectSearch, setSubjectSearch] = useState("");
 
-  const updatePaperForm = useForm<PaperSchema>({
+  const updatePaperForm = useForm<PaperFormValues, unknown, PaperSchema>({
     resolver: zodResolver(paperSchema),
     mode: "onChange",
   });
@@ -94,7 +98,9 @@ export function EditPaper({
     updatePaperForm;
 
   const selectedGrade = watch("grade");
-  const [initialValues, setInitialValues] = useState<PaperSchema | null>(null);
+  const [initialValues, setInitialValues] = useState<PaperFormValues | null>(
+    null,
+  );
 
   const handleDialogClose = (isOpen: boolean) => {
     setOpen(isOpen);
@@ -130,7 +136,7 @@ export function EditPaper({
       (s: Subject) => s.id === subjectId,
     );
 
-    const defaults: PaperSchema = {
+    const defaults: PaperFormValues = {
       title,
       medium: medium as "Sinhala" | "English" | "Tamil",
       grade: gradeId,

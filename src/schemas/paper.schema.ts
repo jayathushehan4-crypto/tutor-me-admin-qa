@@ -1,4 +1,4 @@
-import { MEDIUM_VALUES } from "@/configs/app-constants";
+import { MEDIUM_VALUES, type MediumValue } from "@/configs/app-constants";
 import { z } from "zod";
 
 const noExtraSpaces = (field: string) =>
@@ -28,9 +28,12 @@ const paperTitle = () =>
 export const paperSchema = z.object({
   title: paperTitle(),
 
-  medium: z.enum(MEDIUM_VALUES, {
-    message: "Medium is required",
-  }),
+  medium: z
+    .union([z.literal(""), z.enum(MEDIUM_VALUES)])
+    .refine((value) => value !== "", {
+      message: "Medium is required",
+    })
+    .transform((value) => value as MediumValue),
 
   subject: z.string().min(1, "Subject is required"),
   grade: z.string().min(1, "Grade is required"),
@@ -39,10 +42,11 @@ export const paperSchema = z.object({
 });
 
 export type PaperSchema = z.infer<typeof paperSchema>;
+export type PaperFormValues = z.input<typeof paperSchema>;
 
-export const initialFormValues: PaperSchema = {
+export const initialFormValues: PaperFormValues = {
   title: "",
-  medium: "Sinhala",
+  medium: "",
   subject: "",
   grade: "",
   year: "",

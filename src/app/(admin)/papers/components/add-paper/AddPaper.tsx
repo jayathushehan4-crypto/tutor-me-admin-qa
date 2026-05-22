@@ -27,6 +27,7 @@ import { MEDIUM_VALUES } from "@/configs/app-constants";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   initialFormValues,
+  PaperFormValues,
   PaperSchema,
   paperSchema,
 } from "@/schemas/paper.schema";
@@ -49,7 +50,7 @@ export function AddPaper() {
   const [subjectSearch, setSubjectSearch] = useState("");
   const debouncedGradeSearch = useDebounce(gradeSearch, 300);
 
-  const createPaperForm = useForm<PaperSchema>({
+  const createPaperForm = useForm<PaperFormValues, unknown, PaperSchema>({
     resolver: zodResolver(paperSchema),
     defaultValues: initialFormValues,
     mode: "onChange",
