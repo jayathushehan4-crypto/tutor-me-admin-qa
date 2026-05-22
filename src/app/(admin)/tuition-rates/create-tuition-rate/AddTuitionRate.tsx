@@ -154,7 +154,9 @@ export function AddTuitionRate() {
                     shouldDirty: true,
                   })
                 }
-                placeholder={isGradesLoading ? "Loading grades..." : "Select grade"}
+                placeholder={
+                  isGradesLoading ? "Loading grades..." : "Select grade"
+                }
               />
 
               {formState.errors.grade && (
