@@ -28,6 +28,7 @@ import {
   CLASS_TYPE_VALUES,
   EDUCATION_VALUES_EDIT,
   NATIONALITY_VALUES,
+  NOT_PREFERRED_LOCATION_VALUE,
   PREFERRED_LOCATION_OPTIONS,
   PREFERRED_LOCATION_VALUES,
   RACE_VALUES,
@@ -79,6 +80,10 @@ const LEGACY_EDUCATION_VALUE_MAP: Partial<Record<string, EducationEditValue>> =
 
 const EMAIL_IMMUTABLE_MESSAGE =
   "Email cannot be modified after tutor creation.";
+
+const isOnlineOnlyClassTypes = (classTypes: string[] = []) =>
+  classTypes.length > 0 &&
+  classTypes.every((classType) => classType.toLowerCase().startsWith("online"));
 
 const getUploadErrorMessage = (error: unknown): string | undefined => {
   if (!error || typeof error !== "object") return undefined;
@@ -157,7 +162,8 @@ export function EditTutor({ id }: EditTutorProps) {
     mode: "onChange",
   });
 
-  const { formState, reset, setValue, watch, control, handleSubmit } = form;
+  const { formState, getValues, reset, setValue, watch, control, handleSubmit } =
+    form;
 
   const selectedGrades = useWatch({
     control,
@@ -168,6 +174,12 @@ export function EditTutor({ id }: EditTutorProps) {
   const selectedSubjects = useWatch({
     control,
     name: "subjects",
+    defaultValue: [] as string[],
+  }) as string[];
+
+  const selectedClassTypes = useWatch({
+    control,
+    name: "classType",
     defaultValue: [] as string[],
   }) as string[];
 
@@ -220,6 +232,47 @@ export function EditTutor({ id }: EditTutorProps) {
   };
 
   const selectedGradesJson = JSON.stringify(selectedGrades || []);
+  const hasSelectedClassTypes = selectedClassTypes.length > 0;
+  const isOnlineOnlyClassType = isOnlineOnlyClassTypes(selectedClassTypes);
+  const isPreferredLocationsDisabled =
+    !hasSelectedClassTypes || isOnlineOnlyClassType;
+  const preferredLocationOptions = isOnlineOnlyClassType
+    ? [
+        {
+          value: NOT_PREFERRED_LOCATION_VALUE,
+          text: NOT_PREFERRED_LOCATION_VALUE,
+        },
+      ]
+    : PREFERRED_LOCATION_OPTIONS;
+
+  useEffect(() => {
+    if (!hasSelectedClassTypes) {
+      setValue("preferredLocations", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    if (isOnlineOnlyClassType) {
+      setValue("preferredLocations", [NOT_PREFERRED_LOCATION_VALUE], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    if (
+      (getValues("preferredLocations") || []).includes(
+        NOT_PREFERRED_LOCATION_VALUE,
+      )
+    ) {
+      setValue("preferredLocations", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [getValues, hasSelectedClassTypes, isOnlineOnlyClassType, setValue]);
 
   useEffect(() => {
     const grades = JSON.parse(selectedGradesJson || "[]") as string[];
@@ -398,6 +451,9 @@ export function EditTutor({ id }: EditTutorProps) {
       const { email: immutableEmail, ...editableData } = data;
       const cleanedData: Omit<UpdateTutorSchema, "email"> = {
         ...editableData,
+        preferredLocations: isOnlineOnlyClassTypes(data.classType || [])
+          ? [NOT_PREFERRED_LOCATION_VALUE]
+          : data.preferredLocations,
         academicDetails: normalizeTextSpaces(
           data.academicDetails || "",
         ) as string,
@@ -849,7 +905,7 @@ export function EditTutor({ id }: EditTutorProps) {
               <div className="space-y-2">
                 <MultiSelect
                   label="Preferred Locations *"
-                  options={PREFERRED_LOCATION_OPTIONS}
+                  options={preferredLocationOptions}
                   defaultSelected={watch("preferredLocations")}
                   onChange={(selected) =>
                     setValue(
@@ -858,6 +914,7 @@ export function EditTutor({ id }: EditTutorProps) {
                       { shouldValidate: true },
                     )
                   }
+                  disabled={isPreferredLocationsDisabled}
                   searchable
                 />
                 {formState.errors.preferredLocations && (

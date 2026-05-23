@@ -15,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateInquiryMutation } from "@/store/api/splits/inquiries";
 import { getErrorInApiResult } from "@/utils/api";
+import {
+  liveTextInputRegisterOptions,
+  noWhitespaceInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -38,7 +42,8 @@ export function AddInquiry() {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    setValue,
+    formState: { errors, isSubmitted },
   } = inquiryForm;
 
   const [createInquiry, { isLoading }] = useCreateInquiryMutation();
@@ -103,7 +108,14 @@ export function AddInquiry() {
                 id="senderName"
                 placeholder="Enter sender name"
                 autoComplete="off"
-                {...register("senderName")}
+                {...register(
+                  "senderName",
+                  liveTextInputRegisterOptions(
+                    "senderName",
+                    setValue,
+                    isSubmitted,
+                  ),
+                )}
               />
               {errors.senderName && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">
@@ -120,7 +132,15 @@ export function AddInquiry() {
                 id="senderEmail"
                 placeholder="Enter sender email"
                 autoComplete="off"
-                {...register("senderEmail")}
+                {...register(
+                  "senderEmail",
+                  noWhitespaceInputRegisterOptions(
+                    "senderEmail",
+                    setValue,
+                    isSubmitted,
+                    true,
+                  ),
+                )}
               />
               {errors.senderEmail && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">
@@ -138,7 +158,10 @@ export function AddInquiry() {
                 placeholder="Enter inquiry"
                 rows={6}
                 autoComplete="off"
-                {...register("message")}
+                {...register(
+                  "message",
+                  liveTextInputRegisterOptions("message", setValue, isSubmitted),
+                )}
               />
               {errors.message && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">

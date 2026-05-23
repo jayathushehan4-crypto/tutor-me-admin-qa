@@ -1,6 +1,7 @@
 "use client";
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
+import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
@@ -146,7 +147,7 @@ export default function SubjectsTable() {
     >
       <motion.div
         variants={fadeUp}
-        className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm dark:bg-gray-900 sm:flex-row sm:justify-between"
+        className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:flex-row sm:justify-between"
       >
         <div>
           <h2 className="font-semibold">Subjects</h2>
@@ -157,14 +158,14 @@ export default function SubjectsTable() {
 
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
+          <Input
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
             placeholder="Search by title"
-            className="h-11 w-full rounded-xl border pl-10 pr-10 text-sm"
+            className="h-11 w-full pl-10 pr-10"
           />
           {searchTerm && (
             <button

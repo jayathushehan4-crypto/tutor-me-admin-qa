@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { tagSchema, TagSchema } from "@/schemas/tag.schema";
 import { useUpdateTagMutation } from "@/store/api/splits/tags";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,6 +43,7 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
     handleSubmit,
     register,
     reset,
+    setValue,
     getValues,
     formState: { errors, isDirty },
   } = updateTagForm;
@@ -101,7 +103,14 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
           <div className="grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="name">Title</Label>
-              <Input id="name" placeholder="Title" {...register("name")} />
+              <Input
+                id="name"
+                placeholder="Title"
+                {...register(
+                  "name",
+                  liveTextInputRegisterOptions("name", setValue),
+                )}
+              />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
               )}
@@ -111,7 +120,10 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
               <Textarea
                 id="description"
                 placeholder="Description"
-                {...register("description")}
+                {...register(
+                  "description",
+                  liveTextInputRegisterOptions("description", setValue),
+                )}
               />
               {errors.description && (
                 <p className="text-sm text-red-500">

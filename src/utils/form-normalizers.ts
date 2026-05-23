@@ -1,3 +1,12 @@
+import type { ChangeEvent, FocusEvent } from "react";
+import type {
+  FieldValues,
+  Path,
+  PathValue,
+  RegisterOptions,
+  UseFormSetValue,
+} from "react-hook-form";
+
 export const normalizeTextSpaces = (value: unknown) =>
   typeof value === "string" ? value.trim().replace(/\s+/g, " ") : value;
 
@@ -13,3 +22,97 @@ export const stripLeadingSpaces = (value: string) => value.replace(/^\s+/, "");
 
 export const collapseTextSpaces = (value: string) =>
   value.replace(/^\s+/, "").replace(/\s+/g, " ").trimEnd();
+
+export const normalizeDecimalInput = (value: string) => {
+  const digitsAndDots = value.replace(/[^0-9.]/g, "");
+  const [integerPart, ...decimalParts] = digitsAndDots.split(".");
+
+  if (decimalParts.length === 0) return integerPart;
+
+  return `${integerPart}.${decimalParts.join("")}`;
+};
+
+export const liveTextInputRegisterOptions = <T extends FieldValues>(
+  name: Path<T>,
+  setValue: UseFormSetValue<T>,
+  shouldValidateOnChange = false,
+): Pick<RegisterOptions<T, Path<T>>, "onChange" | "onBlur"> => ({
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const cleaned = stripLeadingSpaces(event.target.value);
+
+    if (cleaned !== event.target.value) {
+      event.target.value = cleaned;
+      setValue(name, cleaned as PathValue<T, Path<T>>, {
+        shouldValidate: shouldValidateOnChange,
+      });
+    }
+  },
+  onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setValue(name, collapseTextSpaces(event.target.value) as PathValue<T, Path<T>>, {
+      shouldValidate: true,
+    });
+  },
+});
+
+export const decimalInputRegisterOptions = <T extends FieldValues>(
+  name: Path<T>,
+  setValue: UseFormSetValue<T>,
+  shouldValidateOnChange = false,
+  afterChange?: () => void,
+): Pick<RegisterOptions<T, Path<T>>, "onChange" | "onBlur"> => ({
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const cleaned = normalizeDecimalInput(event.target.value);
+
+    if (cleaned !== event.target.value) {
+      event.target.value = cleaned;
+      setValue(name, cleaned as PathValue<T, Path<T>>, {
+        shouldValidate: shouldValidateOnChange,
+      });
+    }
+
+    afterChange?.();
+  },
+  onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setValue(
+      name,
+      normalizeDecimalInput(event.target.value) as PathValue<T, Path<T>>,
+      {
+        shouldValidate: true,
+      },
+    );
+  },
+});
+
+export const noWhitespaceInputRegisterOptions = <T extends FieldValues>(
+  name: Path<T>,
+  setValue: UseFormSetValue<T>,
+  shouldValidateOnChange = false,
+  lowercaseOnBlur = false,
+  afterChange?: () => void,
+): Pick<RegisterOptions<T, Path<T>>, "onChange" | "onBlur"> => ({
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const cleaned = removeWhitespace(event.target.value);
+
+    if (cleaned !== event.target.value) {
+      event.target.value = cleaned;
+      setValue(name, cleaned as PathValue<T, Path<T>>, {
+        shouldValidate: shouldValidateOnChange,
+      });
+    }
+
+    afterChange?.();
+  },
+  onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const cleaned = removeWhitespace(event.target.value);
+    setValue(
+      name,
+      (lowercaseOnBlur ? cleaned.toLowerCase() : cleaned) as PathValue<
+        T,
+        Path<T>
+      >,
+      {
+        shouldValidate: true,
+      },
+    );
+  },
+});

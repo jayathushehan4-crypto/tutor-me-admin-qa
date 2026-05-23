@@ -26,13 +26,18 @@ import {
 
 import { MEDIUM_OPTIONS } from "@/configs/app-constants";
 import { useDebounce } from "@/hooks/useDebounce";
-import { PaperSchema, paperSchema } from "@/schemas/paper.schema";
+import {
+  PaperFormValues,
+  PaperSchema,
+  paperSchema,
+} from "@/schemas/paper.schema";
 import {
   useFetchGradeByIdQuery,
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
 import { useUpdatePaperMutation } from "@/store/api/splits/papers";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -76,7 +81,7 @@ export function EditPaper({
   const debouncedGradeSearch = useDebounce(gradeSearch, 300);
   const [subjectSearch, setSubjectSearch] = useState("");
 
-  const updatePaperForm = useForm<PaperSchema>({
+  const updatePaperForm = useForm<PaperFormValues, unknown, PaperSchema>({
     resolver: zodResolver(paperSchema),
     mode: "onChange",
   });
@@ -94,7 +99,9 @@ export function EditPaper({
     updatePaperForm;
 
   const selectedGrade = watch("grade");
-  const [initialValues, setInitialValues] = useState<PaperSchema | null>(null);
+  const [initialValues, setInitialValues] = useState<PaperFormValues | null>(
+    null,
+  );
 
   const handleDialogClose = (isOpen: boolean) => {
     setOpen(isOpen);
@@ -130,7 +137,7 @@ export function EditPaper({
       (s: Subject) => s.id === subjectId,
     );
 
-    const defaults: PaperSchema = {
+    const defaults: PaperFormValues = {
       title,
       medium: medium as "Sinhala" | "English" | "Tamil",
       grade: gradeId,
@@ -214,7 +221,13 @@ export function EditPaper({
           <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-4 grid min-w-0 gap-4">
             <div className="grid min-w-0 gap-3">
               <Label>Title</Label>
-              <Input {...register("title")} className="w-full min-w-0" />
+              <Input
+                {...register(
+                  "title",
+                  liveTextInputRegisterOptions("title", setValue),
+                )}
+                className="w-full min-w-0"
+              />
               {formState.errors.title && (
                 <p className="text-sm text-red-500">
                   {formState.errors.title.message}
@@ -365,7 +378,10 @@ export function EditPaper({
               <Label>Year</Label>
               <Input
                 type="text"
-                {...register("year")}
+                {...register(
+                  "year",
+                  liveTextInputRegisterOptions("year", setValue),
+                )}
                 className="w-full min-w-0"
               />
               {formState.errors.year && (

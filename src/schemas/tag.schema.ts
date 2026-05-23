@@ -1,14 +1,10 @@
+import { normalizeTextSpaces } from "@/utils/form-normalizers";
 import { z } from "zod";
 
 const strictString = z
   .string()
-  .min(1, "This field is required")
-  .refine((val) => val === val.trim(), {
-    message: "Leading or trailing spaces are not allowed",
-  })
-  .refine((val) => !/\s{2,}/.test(val), {
-    message: "Multiple consecutive spaces are not allowed",
-  });
+  .transform((value) => normalizeTextSpaces(value) as string)
+  .pipe(z.string().min(1, "This field is required"));
 
 const tagTitle = strictString.refine(
   (val) => /^[A-Za-z0-9 &\-/()]+$/.test(val),

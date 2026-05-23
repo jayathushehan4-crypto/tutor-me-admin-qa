@@ -135,11 +135,11 @@ export default function DataTable<T extends { id: string | number }>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3 dark:text-white/90 max-w-[73.5vw]",
+        "overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-gray-900 dark:text-white/90 max-w-[73.5vw]",
         className,
       )}
     >
-      <div className="max-w-full overflow-x-auto">
+      <div className="custom-scrollbar max-w-full overflow-x-auto">
         <div className="min-w-[600px]">
           <Table>
             {/* Table Header */}

@@ -287,6 +287,7 @@ export type FetchTutorsRequest = {
   gender?: string;
   nationality?: string;
   tutorType?: string;
+  classType?: string;
   preferredLocations?: string;
   yearsExperience?: number;
   highestEducation?: string;

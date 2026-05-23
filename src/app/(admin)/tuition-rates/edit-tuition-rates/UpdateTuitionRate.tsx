@@ -15,10 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
+import {
+  useFetchGradeByIdQuery,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { useUpdateTuitionRateMutation } from "@/store/api/splits/tuition-rates";
 import { getErrorInApiResult } from "@/utils/api";
+import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
@@ -53,6 +56,8 @@ export function UpdateTuitionRate({
     control,
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isDirty },
   } = useForm<UpdateTuitionSchema>({
     resolver: zodResolver(updateTuitionSchema),
@@ -68,20 +73,24 @@ export function UpdateTuitionRate({
   });
 
   const [updateTuition, { isLoading }] = useUpdateTuitionRateMutation();
+  const selectedGrade = watch("grade");
 
-  const { data: subjectsData, isLoading: isSubjectsLoading } =
-    useFetchSubjectsQuery({ page: 1, limit: 50 });
   const { data: gradesData, isLoading: isGradesLoading } = useFetchGradesQuery({
     page: 1,
     limit: 50,
   });
+  const { data: gradeDetails, isLoading: isGradeDetailsLoading } =
+    useFetchGradeByIdQuery(selectedGrade || "", {
+      skip: !selectedGrade,
+    });
 
   const subjectOptions =
-    subjectsData?.results?.map((s) => ({ value: s.id, label: s.title })) || [];
+    gradeDetails?.subjects?.map((s) => ({ value: s.id, label: s.title })) ||
+    [];
   const gradeOptions =
     gradesData?.results?.map((g) => ({ value: g.id, label: g.title })) || [];
 
-  const displayLoading = isSubjectsLoading || isGradesLoading;
+  const displayLoading = isGradeDetailsLoading || isGradesLoading;
 
   useEffect(() => {
     if (open) {
@@ -104,6 +113,15 @@ export function UpdateTuitionRate({
     moeTeacherRate,
     reset,
   ]);
+
+  useEffect(() => {
+    if (!open || !selectedGrade || selectedGrade === grade) return;
+
+    setValue("subject", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [grade, open, selectedGrade, setValue]);
 
   const onSubmit = async (data: UpdateTuitionSchema) => {
     const payload = {
@@ -173,7 +191,11 @@ export function UpdateTuitionRate({
                   options={subjectOptions}
                   value={field.value || ""}
                   onChange={field.onChange}
-                  placeholder="Select subject"
+                  placeholder={
+                    isGradeDetailsLoading
+                      ? "Loading subjects..."
+                      : "Select subject"
+                  }
                   className="w-full"
                 />
               )}
@@ -205,7 +227,14 @@ export function UpdateTuitionRate({
 
               <Input
                 placeholder="Minimum Rate"
-                {...register(`${key}.minimumRate` as const)}
+                inputMode="decimal"
+                {...register(
+                  `${key}.minimumRate` as const,
+                  decimalInputRegisterOptions(
+                    `${key}.minimumRate` as const,
+                    setValue,
+                  ),
+                )}
               />
               {errors[key]?.minimumRate && (
                 <p className="text-red-500 text-sm">
@@ -215,7 +244,14 @@ export function UpdateTuitionRate({
 
               <Input
                 placeholder="Maximum Rate"
-                {...register(`${key}.maximumRate` as const)}
+                inputMode="decimal"
+                {...register(
+                  `${key}.maximumRate` as const,
+                  decimalInputRegisterOptions(
+                    `${key}.maximumRate` as const,
+                    setValue,
+                  ),
+                )}
               />
               {errors[key]?.maximumRate && (
                 <p className="text-red-500 text-sm">

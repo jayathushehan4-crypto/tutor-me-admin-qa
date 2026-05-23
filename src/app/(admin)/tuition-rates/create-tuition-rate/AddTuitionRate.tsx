@@ -1,5 +1,6 @@
 "use client";
 
+import FormSelect from "@/components/form/Select";
 import { Button } from "@/components/ui/button/Button";
 import {
   Dialog,
@@ -34,6 +35,7 @@ import {
 } from "@/store/api/splits/tuition-rates";
 
 import { getErrorInApiResult } from "@/utils/api";
+import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -58,7 +60,10 @@ export function AddTuitionRate() {
   const [createRate, { isLoading }] = useCreateTuitionRateMutation();
 
   const { data: gradeData, isLoading: isGradesLoading } = useFetchGradesQuery(
-    {},
+    {
+      page: 1,
+      limit: 50,
+    },
   );
 
   const [selectedGradeId, setSelectedGradeId] = useState<string | null>(null);
@@ -103,6 +108,12 @@ export function AddTuitionRate() {
     setSelectedGradeId(selectedGrade || null);
   }, [selectedGrade, setValue]);
 
+  const gradeOptions =
+    gradeData?.results?.map((grade) => ({
+      value: grade.id,
+      label: grade.title,
+    })) || [];
+
   return (
     <Dialog
       open={open}
@@ -134,30 +145,19 @@ export function AddTuitionRate() {
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-6 grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="grade">Grade</Label>
-              <Select
-                onValueChange={(value) =>
-                  createTuitionRateForm.setValue("grade", value, {
+              <FormSelect
+                options={gradeOptions}
+                value={watch("grade") || undefined}
+                onChange={(value) =>
+                  setValue("grade", value, {
                     shouldValidate: true,
                     shouldDirty: true,
                   })
                 }
-                value={createTuitionRateForm.watch("grade")}
-                disabled={isGradesLoading}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a grade" />
-                </SelectTrigger>
-                <SelectContent className="w-full">
-                  <SelectGroup>
-                    <SelectLabel>Grades</SelectLabel>
-                    {gradeData?.results?.map((grade) => (
-                      <SelectItem key={grade.id} value={grade.id}>
-                        {grade.title}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                placeholder={
+                  isGradesLoading ? "Loading grades..." : "Select grade"
+                }
+              />
 
               {formState.errors.grade && (
                 <p className="text-sm text-red-500">
@@ -221,13 +221,19 @@ export function AddTuitionRate() {
 
                 <Input
                   placeholder="Minimum Rate"
+                  inputMode="decimal"
                   {...createTuitionRateForm.register(`${key}.minimumRate`, {
-                    onChange: () => {
-                      createTuitionRateForm.trigger([
-                        `${key}.minimumRate`,
-                        `${key}.maximumRate`,
-                      ]);
-                    },
+                    ...decimalInputRegisterOptions(
+                      `${key}.minimumRate`,
+                      setValue,
+                      formState.isSubmitted,
+                      () => {
+                        createTuitionRateForm.trigger([
+                          `${key}.minimumRate`,
+                          `${key}.maximumRate`,
+                        ]);
+                      },
+                    ),
                   })}
                 />
                 {formState.errors[key]?.minimumRate && (
@@ -238,13 +244,19 @@ export function AddTuitionRate() {
 
                 <Input
                   placeholder="Maximum Rate"
+                  inputMode="decimal"
                   {...createTuitionRateForm.register(`${key}.maximumRate`, {
-                    onChange: () => {
-                      createTuitionRateForm.trigger([
-                        `${key}.minimumRate`,
-                        `${key}.maximumRate`,
-                      ]);
-                    },
+                    ...decimalInputRegisterOptions(
+                      `${key}.maximumRate`,
+                      setValue,
+                      formState.isSubmitted,
+                      () => {
+                        createTuitionRateForm.trigger([
+                          `${key}.minimumRate`,
+                          `${key}.maximumRate`,
+                        ]);
+                      },
+                    ),
                   })}
                 />
                 {formState.errors[key]?.maximumRate && (

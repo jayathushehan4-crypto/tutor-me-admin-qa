@@ -80,6 +80,11 @@ const REQUEST_TUTOR_STATUS_CLASSES: Record<string, string> = {
     "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200",
 };
 
+const getRequestReference = (id?: string | null) => {
+  const safeId = String(id || "").trim();
+  return safeId ? safeId.slice(-6).toUpperCase() : "";
+};
+
 function RequestTutorStatusBadge({ status }: { status: string }) {
   const normalizedStatus =
     status === "Rejected"
@@ -113,8 +118,10 @@ export default function RequestForTutorsList() {
   const debouncedDuration = useDebounce(filters.duration, 400);
   const debouncedFrequency = useDebounce(filters.frequency, 400);
   const hasStatusFilter = filters.status !== "all";
-  const requestPage = hasStatusFilter ? TABLE_CONFIG.DEFAULT_PAGE : page;
-  const requestLimit = hasStatusFilter ? 10000 : limit;
+  const hasSearchFilter = Boolean(debouncedSearchTerm.trim());
+  const needsClientSideFiltering = hasStatusFilter || hasSearchFilter;
+  const requestPage = needsClientSideFiltering ? TABLE_CONFIG.DEFAULT_PAGE : page;
+  const requestLimit = needsClientSideFiltering ? 10000 : limit;
 
   const { data, isLoading, refetch } = useFetchRequestForTutorsQuery(
     useMemo<FetchRequestForTutor>(
@@ -122,9 +129,6 @@ export default function RequestForTutorsList() {
         page: requestPage,
         limit: requestLimit,
         sortBy: "updatedAt:desc",
-        ...(debouncedSearchTerm.trim()
-          ? { search: debouncedSearchTerm.trim() }
-          : {}),
         ...(filters.grade !== "all" ? { grade: filters.grade } : {}),
         ...(filters.medium !== "all" ? { medium: filters.medium } : {}),
         ...(filters.subject !== "all" ? { subject: filters.subject } : {}),
@@ -177,6 +181,27 @@ export default function RequestForTutorsList() {
     () => data?.results || [],
     [data?.results],
   );
+
+  const searchFilteredTutors = useMemo(() => {
+    const searchValue = debouncedSearchTerm.trim().toLowerCase();
+    if (!searchValue) return rawTutors;
+
+    return rawTutors.filter((row) => {
+      const requestReference = getRequestReference(row.id).toLowerCase();
+      const searchableValues = [
+        row.name,
+        row.email,
+        row.phoneNumber,
+        requestReference,
+      ];
+
+      return searchableValues.some((value) =>
+        String(value || "")
+          .toLowerCase()
+          .includes(searchValue),
+      );
+    });
+  }, [debouncedSearchTerm, rawTutors]);
 
   const gradeOptions = useMemo(
     () =>
@@ -300,34 +325,69 @@ export default function RequestForTutorsList() {
     () =>
       sortByLatestTimestampDesc(
         filters.status === "all"
-          ? rawTutors
-          : rawTutors.filter(
+          ? searchFilteredTutors
+          : searchFilteredTutors.filter(
               (row) => getEffectiveStatus(row) === filters.status,
             ),
       ),
-    [filters.status, getEffectiveStatus, rawTutors],
+    [filters.status, getEffectiveStatus, searchFilteredTutors],
   );
-  const tutors = hasStatusFilter
+  const tutors = needsClientSideFiltering
     ? statusFilteredTutors.slice((page - 1) * limit, page * limit)
     : statusFilteredTutors;
-  const totalResults = hasStatusFilter
+  const totalResults = needsClientSideFiltering
     ? statusFilteredTutors.length
     : data?.totalResults || tutors.length;
-  const totalPages = hasStatusFilter
+  const totalPages = needsClientSideFiltering
     ? Math.max(1, Math.ceil(totalResults / limit))
     : data?.totalPages || 1;
 
-  const getGradeId = (grade: unknown): string => {
+  const getGradeId = useCallback((grade: unknown): string => {
+    const gradeTitle =
+      typeof grade === "string"
+        ? grade
+        : grade && typeof grade === "object"
+          ? ((grade as { title?: string; name?: string }).title ??
+            (grade as { title?: string; name?: string }).name ??
+            "")
+          : "";
+
     if (grade && typeof grade === "object") {
       const gradeRecord = grade as { id?: string };
       const id = gradeRecord.id ?? "";
-      return /^[a-f\d]{24}$/i.test(id) ? id : "";
+      if (/^[a-f\d]{24}$/i.test(id)) {
+        return id;
+      }
     }
     if (typeof grade === "string" && /^[a-f\d]{24}$/i.test(grade)) {
       return grade;
     }
+
+    const normalizedGradeTitle = gradeTitle.trim().toLowerCase();
+    const matchedGrade = (gradesData?.results || []).find(
+      (gradeOption) =>
+        gradeOption.title.trim().toLowerCase() === normalizedGradeTitle,
+    );
+
+    if (matchedGrade?.id && /^[a-f\d]{24}$/i.test(matchedGrade.id)) {
+      return matchedGrade.id;
+    }
+
     return "";
-  };
+  }, [gradesData?.results]);
+
+  const getGradeTitle = useCallback((grade: unknown): string => {
+    if (grade && typeof grade === "object") {
+      const gradeRecord = grade as {
+        title?: string;
+        name?: string;
+        id?: string;
+      };
+      return gradeRecord.title || gradeRecord.name || gradeRecord.id || "";
+    }
+
+    return typeof grade === "string" ? grade : "";
+  }, []);
 
   const columns = useMemo<Column<RequestTutors>[]>(
     () => [
@@ -409,7 +469,7 @@ export default function RequestForTutorsList() {
         header: "View",
         align: "center",
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[390px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[440px] z-20 bg-white dark:bg-gray-900",
         render: (row: RequestTutors) => <ViewTutorRequests tutorId={row.id} />,
       },
       {
@@ -479,6 +539,7 @@ export default function RequestForTutorsList() {
                   ? "Rejected"
                   : row.status,
               grade: getGradeId(row.grade),
+              gradeTitle: getGradeTitle(row.grade),
               district: getSafeValue(row.city, ""),
               medium: getSafeValue(row.medium, ""),
               tutors: getSafeTutorBlocks(row.tutors).map((t) => ({
@@ -505,7 +566,7 @@ export default function RequestForTutorsList() {
         render: (row: RequestTutors) => <DeleteTutorRequest tutorId={row.id} />,
       },
     ],
-    [getEffectiveStatus, refetch],
+    [getEffectiveStatus, getGradeId, getGradeTitle, refetch],
   );
 
   return (
@@ -518,7 +579,8 @@ export default function RequestForTutorsList() {
             </h2>
             <p className="text-sm text-gray-500 dark:text-white/60">
               Search by name, email, or contact number, then narrow results by
-              status, grade, medium, subject, tutor type, and class type.
+              request ref, status, grade, medium, subject, tutor type, and class
+              type.
             </p>
           </div>
 
@@ -544,7 +606,7 @@ export default function RequestForTutorsList() {
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by name, email, or contact number"
+                placeholder="Search by request ref, name, email, or contact number"
                 className="h-11 w-full pl-10 pr-4"
               />
             </div>

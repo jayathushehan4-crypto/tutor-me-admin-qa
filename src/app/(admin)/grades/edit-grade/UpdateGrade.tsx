@@ -18,6 +18,7 @@ import MultiSelect from "@/components/form/MultiSelect";
 import { useUpdateGradeMutation } from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -54,6 +55,7 @@ export function UpdateGrade({
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
     watch,
   } = updateGradeForm;
@@ -133,7 +135,14 @@ export function UpdateGrade({
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Title" {...register("title")} />
+              <Input
+                id="title"
+                placeholder="Title"
+                {...register(
+                  "title",
+                  liveTextInputRegisterOptions("title", setValue),
+                )}
+              />
               {errors.title && (
                 <p className="text-sm text-red-500">{errors.title.message}</p>
               )}
@@ -144,7 +153,10 @@ export function UpdateGrade({
               <Input
                 id="description"
                 placeholder="Description"
-                {...register("description")}
+                {...register(
+                  "description",
+                  liveTextInputRegisterOptions("description", setValue),
+                )}
               />
               {errors.description && (
                 <p className="text-sm text-red-500">
