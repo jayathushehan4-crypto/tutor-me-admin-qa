@@ -295,7 +295,7 @@ export default function UsersTable() {
       key: "role",
       header: "Role",
       className:
-        "min-w-[70px] max-w-[70px] truncate overflow-hidden cursor-default",
+        "min-w-[96px] max-w-[96px] truncate overflow-hidden cursor-default",
       render: (row: User) => {
         const role = row.role
           ? row.role.charAt(0).toUpperCase() + row.role.slice(1)
@@ -304,7 +304,7 @@ export default function UsersTable() {
         return (
           <span
             title={role || "No role provided"}
-            className={`truncate block ${!role ? "text-gray-400 italic" : ""}`}
+            className={`block w-full truncate whitespace-nowrap ${!role ? "text-gray-400 italic" : ""}`}
           >
             {getSafeValue(role, "No role provided")}
           </span>
@@ -314,7 +314,7 @@ export default function UsersTable() {
     {
       key: "status",
       header: "Status / Actions",
-      className: "min-w-[260px] overflow-visible",
+      className: "w-[190px] min-w-[190px] max-w-[190px] overflow-visible",
       render: (row: User) => <UserStatusActions user={row} />,
     },
     {
