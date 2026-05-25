@@ -199,6 +199,7 @@ export default function UpdateUser() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-2xl"
+        overlayClassName="bg-black/50 backdrop-blur-none"
       >
         <form
           onSubmit={handleSubmit(onSubmit)}

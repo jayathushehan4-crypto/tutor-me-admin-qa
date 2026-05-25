@@ -8,6 +8,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   className?: string;
+  overlayClassName?: string;
   children: React.ReactNode;
   showCloseButton?: boolean;
   isFullscreen?: boolean;
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   children,
   className,
+  overlayClassName,
   showCloseButton = true,
   isFullscreen = false,
   ariaLabel = "Modal dialog",
@@ -59,7 +61,10 @@ export const Modal: React.FC<ModalProps> = ({
     >
       {!isFullscreen && (
         <div
-          className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
+          className={cn(
+            "fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]",
+            overlayClassName,
+          )}
           onClick={onClose}
         />
       )}
