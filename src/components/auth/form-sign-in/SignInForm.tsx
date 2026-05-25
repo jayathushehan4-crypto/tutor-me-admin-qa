@@ -27,8 +27,6 @@ export default function SignInForm() {
 
   const { isOpen, openModal, closeModal } = useModal();
 
-  const [sentEmail, setSentEmail] = useState("");
-
   const [forgotPassword, { isLoading: isForgotPasswordLoading }] =
     useForgotPasswordMutation();
 
@@ -80,13 +78,11 @@ export default function SignInForm() {
   };
 
   const openForgotPasswordModal = () => {
-    setSentEmail("");
     forgotPasswordForm.reset({ email: "" });
     openModal();
   };
 
   const closeForgotPasswordModal = () => {
-    setSentEmail("");
     forgotPasswordForm.reset({ email: "" });
     closeModal();
   };
@@ -105,13 +101,11 @@ export default function SignInForm() {
       return;
     }
 
-    setSentEmail(data.email);
-
     toast.success(
       result.data?.message ?? "Reset link request sent successfully.",
     );
 
-    forgotPasswordForm.reset({ email: "" });
+    closeForgotPasswordModal();
   };
 
   return (
@@ -253,14 +247,6 @@ export default function SignInForm() {
                     );
                   }}
                 />
-
-                {sentEmail && (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-100">
-                    If an account exists for{" "}
-                    <span className="font-medium">{sentEmail}</span>, a reset
-                    link will be sent to that inbox.
-                  </div>
-                )}
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                   <button

@@ -18,6 +18,7 @@ import {
 } from "@/store/api/splits/grades";
 import { useFetchPapersQuery } from "@/store/api/splits/papers";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
+import { escapeRegex } from "@/utils/form";
 import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
@@ -89,7 +90,7 @@ export default function PapersTable() {
       limit,
       sortBy: "createdAt:desc",
       ...(debouncedTitleFilter.trim()
-        ? { title: debouncedTitleFilter.trim() }
+        ? { title: escapeRegex(debouncedTitleFilter.trim()) }
         : {}),
       ...(gradeFilter ? { grade: gradeFilter } : {}),
       ...(subjectFilter ? { subject: subjectFilter } : {}),
@@ -445,7 +446,7 @@ export default function PapersTable() {
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="h-11 min-h-11 w-full">
+            <SelectTrigger className="!h-11 min-h-11 w-full">
               <SelectValue placeholder="All grades" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
@@ -468,7 +469,7 @@ export default function PapersTable() {
           >
             <SelectTrigger
               isLoading={Boolean(gradeFilter && isGradeSubjectsLoading)}
-              className="h-11 min-h-11 w-full"
+              className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400"
             >
               <SelectValue placeholder="All subjects" />
             </SelectTrigger>

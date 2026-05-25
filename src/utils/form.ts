@@ -1,5 +1,8 @@
 import { FieldError, FieldErrors } from "react-hook-form";
 
+export const escapeRegex = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const getNestedError = (errors: FieldErrors, path: string): string => {
   const result = path
     .split(".")
