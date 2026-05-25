@@ -1,25 +1,22 @@
-import { MEDIUM_VALUES } from "@/configs/app-constants";
+import { MEDIUM_VALUES, type MediumValue } from "@/configs/app-constants";
+import { normalizeTextSpaces } from "@/utils/form-normalizers";
 import { z } from "zod";
 
 const noExtraSpaces = (field: string) =>
   z
     .string()
-    .min(1, `${field} is required`)
-    .refine((val) => val.trim().length > 0, {
-      message: `${field} cannot be empty`,
-    })
-    .refine((val) => !/^\s|\s$/.test(val), {
-      message: "No leading or trailing spaces allowed",
-    })
-    .refine((val) => !/\s{2,}/.test(val), {
-      message: "Only one space is allowed between words",
-    });
+    .transform((value) => normalizeTextSpaces(value) as string)
+    .pipe(
+      z.string().min(1, `${field} is required`).refine((val) => val.length > 0, {
+        message: `${field} cannot be empty`,
+      }),
+    );
 
 const paperTitle = () =>
   noExtraSpaces("Title")
-    .refine((val) => /^[\p{L}\p{N} ()&-]+$/u.test(val), {
+    .refine((val) => /^[\p{L}\p{N} ().&-]+$/u.test(val), {
       message:
-        "Title can only include letters, numbers, spaces, parentheses, hyphens, and ampersands",
+        "Title can only include letters, numbers, spaces, dots, parentheses, hyphens, and ampersands",
     })
     .refine((val) => /\p{L}/u.test(val), {
       message: "Title must include at least one letter",
@@ -28,9 +25,12 @@ const paperTitle = () =>
 export const paperSchema = z.object({
   title: paperTitle(),
 
-  medium: z.enum(MEDIUM_VALUES, {
-    message: "Medium is required",
-  }),
+  medium: z
+    .union([z.literal(""), z.enum(MEDIUM_VALUES)])
+    .refine((value) => value !== "", {
+      message: "Medium is required",
+    })
+    .transform((value) => value as MediumValue),
 
   subject: z.string().min(1, "Subject is required"),
   grade: z.string().min(1, "Grade is required"),
@@ -39,10 +39,11 @@ export const paperSchema = z.object({
 });
 
 export type PaperSchema = z.infer<typeof paperSchema>;
+export type PaperFormValues = z.input<typeof paperSchema>;
 
-export const initialFormValues: PaperSchema = {
+export const initialFormValues: PaperFormValues = {
   title: "",
-  medium: "Sinhala",
+  medium: "",
   subject: "",
   grade: "",
   year: "",

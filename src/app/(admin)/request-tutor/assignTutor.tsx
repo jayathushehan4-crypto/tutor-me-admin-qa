@@ -44,6 +44,7 @@ export interface AssignTutorRow {
   id: string;
   status?: string;
   grade?: string;
+  gradeTitle?: string;
   district?: string;
   medium?: string;
   tutors?: TutorRequestBlock[];
@@ -92,9 +93,55 @@ const getClassTypeDisplayValue = (value: unknown) => {
   return classType ? [classType] : [];
 };
 
+const normalizeMatchValue = (value: unknown) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const tutorMatchesGrade = (
+  tutorGrades: unknown,
+  gradeId?: string,
+  gradeTitle?: string,
+) => {
+  const normalizedGradeId = normalizeMatchValue(gradeId);
+  const normalizedGradeTitle = normalizeMatchValue(gradeTitle);
+
+  if (!normalizedGradeId && !normalizedGradeTitle) return false;
+  if (!Array.isArray(tutorGrades)) return false;
+
+  return tutorGrades.some((grade) => {
+    if (typeof grade === "string") {
+      const normalizedGrade = normalizeMatchValue(grade);
+      return (
+        normalizedGrade === normalizedGradeId ||
+        normalizedGrade === normalizedGradeTitle
+      );
+    }
+
+    if (grade && typeof grade === "object") {
+      const gradeRecord = grade as {
+        id?: unknown;
+        _id?: unknown;
+        title?: unknown;
+        name?: unknown;
+      };
+
+      return (
+        normalizeMatchValue(gradeRecord.id || gradeRecord._id) ===
+          normalizedGradeId ||
+        normalizeMatchValue(gradeRecord.title || gradeRecord.name) ===
+          normalizedGradeTitle
+      );
+    }
+
+    return false;
+  });
+};
+
 function TutorBlockItem({
   tutorBlock,
   gradeId,
+  gradeTitle,
   district,
   medium,
   index,
@@ -103,6 +150,7 @@ function TutorBlockItem({
 }: {
   tutorBlock: TutorRequestBlock;
   gradeId?: string;
+  gradeTitle?: string;
   district?: string;
   medium?: string;
   index: number;
@@ -122,11 +170,15 @@ function TutorBlockItem({
   const { data, isLoading } = useFetchTutorsQuery({
     page: 1,
     limit: LARGE_LIMIT,
+    status: "approved",
     gradeId: gradeId || undefined,
     subjectId: isObjectId ? tutorBlock.subject : undefined,
   });
 
   const tutors = (data?.results ?? []).filter((tutor) => {
+    const statusMatch = tutor.status?.toLowerCase() === "approved";
+    const gradeMatch = tutorMatchesGrade(tutor.grades, gradeId, gradeTitle);
+
     const mediumMatch =
       !medium ||
       tutor.tutorMediums.some((m) => m.toLowerCase() === medium.toLowerCase());
@@ -162,7 +214,14 @@ function TutorBlockItem({
         tutor.classType.some((ct) => ct.toLowerCase() === requested),
       );
 
-    return mediumMatch && tutorTypeMatch && locationPass && classTypeMatch;
+    return (
+      statusMatch &&
+      gradeMatch &&
+      mediumMatch &&
+      tutorTypeMatch &&
+      locationPass &&
+      classTypeMatch
+    );
   });
 
   const noResults = !isLoading && tutors.length === 0;
@@ -249,7 +308,7 @@ function TutorBlockItem({
 
             {tutors.map((tutor) => (
               <SelectItem key={tutor.id} value={tutor.id}>
-                {tutor.fullName}
+                {tutor.fullName || tutor.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -429,6 +488,7 @@ export function AssignTutorDialog({ row, onUpdated }: Props) {
                 key={tutorBlock._id}
                 tutorBlock={tutorBlock}
                 gradeId={row.grade}
+                gradeTitle={row.gradeTitle}
                 district={row.district}
                 medium={row.medium}
                 index={index}

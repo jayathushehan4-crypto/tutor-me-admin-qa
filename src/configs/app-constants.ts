@@ -76,10 +76,12 @@ export type RaceValue = (typeof RACE_VALUES)[number];
 
 // ─── Preferred Locations ──────────────────────────────────────────────────────
 
+export const NOT_PREFERRED_LOCATION_VALUE = "No Preference";
 export const PREFERRED_LOCATION_OPTIONS = _PREFERRED_LOCATION_OPTIONS;
-export const PREFERRED_LOCATION_VALUES = _PREFERRED_LOCATION_OPTIONS.map(
-  (o) => o.value,
-) as [string, ...string[]];
+export const PREFERRED_LOCATION_VALUES = [
+  ..._PREFERRED_LOCATION_OPTIONS.map((o) => o.value),
+  NOT_PREFERRED_LOCATION_VALUE,
+] as unknown as [string, ...string[]];
 export type PreferredLocationValue = string;
 
 // ─── Tutoring Levels ──────────────────────────────────────────────────────────

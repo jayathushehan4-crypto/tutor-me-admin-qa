@@ -28,6 +28,7 @@ import {
   CLASS_TYPE_OPTIONS,
   EDUCATION_OPTIONS_ADD,
   NATIONALITY_VALUES,
+  NOT_PREFERRED_LOCATION_VALUE,
   PREFERRED_LOCATION_OPTIONS,
   RACE_VALUES,
   TUTOR_GENDER_VALUES,
@@ -76,6 +77,10 @@ const getMinimumAdultBirthDate = () => {
 const EMAIL_CHECK_DELAY_MS = 500;
 const DUPLICATE_EMAIL_MESSAGE = "Email already exists";
 const EMAIL_FORMAT_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const isOnlineOnlyClassTypes = (classTypes: string[] = []) =>
+  classTypes.length > 0 &&
+  classTypes.every((classType) => classType.toLowerCase().startsWith("online"));
 
 const getUploadErrorMessage = (error: unknown): string | undefined => {
   if (!error || typeof error !== "object") return undefined;
@@ -157,6 +162,12 @@ export function AddTutor() {
     defaultValue: [],
   }) as string[];
 
+  const selectedClassTypes = useWatch({
+    control,
+    name: "classType",
+    defaultValue: [],
+  }) as string[];
+
   const dob = useWatch({
     control,
     name: "dateOfBirth",
@@ -197,6 +208,45 @@ export function AddTutor() {
   const prevUniqueSubjectsRef = useRef<string | null>(null);
   const latestEmailRef = useRef("");
   const selectedGradesJson = JSON.stringify(selectedGrades || []);
+  const hasSelectedClassTypes = selectedClassTypes.length > 0;
+  const isOnlineOnlyClassType = isOnlineOnlyClassTypes(selectedClassTypes);
+  const isPreferredLocationsDisabled =
+    !hasSelectedClassTypes || isOnlineOnlyClassType;
+  const preferredLocationOptions = isOnlineOnlyClassType
+    ? [
+        {
+          value: NOT_PREFERRED_LOCATION_VALUE,
+          text: NOT_PREFERRED_LOCATION_VALUE,
+        },
+      ]
+    : PREFERRED_LOCATION_OPTIONS;
+
+  useEffect(() => {
+    if (!hasSelectedClassTypes) {
+      setValue("preferredLocations", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    if (isOnlineOnlyClassType) {
+      setValue("preferredLocations", [NOT_PREFERRED_LOCATION_VALUE], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    if (
+      getValues("preferredLocations").includes(NOT_PREFERRED_LOCATION_VALUE)
+    ) {
+      setValue("preferredLocations", [], {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [getValues, hasSelectedClassTypes, isOnlineOnlyClassType, setValue]);
 
   useEffect(() => {
     const grades = JSON.parse(selectedGradesJson || "[]") as string[];
@@ -421,6 +471,9 @@ export function AddTutor() {
       teachingSummary: normalizeTextSpaces(data.teachingSummary) as string,
       studentResults: normalizeTextSpaces(data.studentResults) as string,
       sellingPoints: normalizeTextSpaces(data.sellingPoints) as string,
+      preferredLocations: isOnlineOnlyClassTypes(data.classType)
+        ? [NOT_PREFERRED_LOCATION_VALUE]
+        : data.preferredLocations,
     };
 
     const result = await createTutor(cleanedData);
@@ -958,7 +1011,7 @@ export function AddTutor() {
               <div className="space-y-2">
                 <MultiSelect
                   label="Preferred Locations *"
-                  options={PREFERRED_LOCATION_OPTIONS}
+                  options={preferredLocationOptions}
                   defaultSelected={watch("preferredLocations")}
                   onChange={(selected) =>
                     setValue(
@@ -967,6 +1020,7 @@ export function AddTutor() {
                       { shouldValidate: true },
                     )
                   }
+                  disabled={isPreferredLocationsDisabled}
                   searchable
                 />
                 {formState.errors.preferredLocations && (

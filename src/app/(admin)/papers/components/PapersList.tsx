@@ -2,6 +2,7 @@
 
 import DataTable from "@/components/tables/DataTable";
 import TablePagination from "@/components/tables/Pagination";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -11,10 +12,13 @@ import {
 } from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import { escapeRegex } from "@/utils/form";
+import {
+  useFetchGradeByIdQuery,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { useFetchPapersQuery } from "@/store/api/splits/papers";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
+import { escapeRegex } from "@/utils/form";
 import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
@@ -26,6 +30,7 @@ import { PaperDetails } from "./ViewDetails";
 interface Grade {
   id: string;
   title: string;
+  subjects?: Subject[];
 }
 
 interface Subject {
@@ -99,11 +104,23 @@ export default function PapersTable() {
     limit: 1000,
     sortBy: "title:asc",
   });
+  const { data: selectedGradeData, isLoading: isGradeSubjectsLoading } =
+    useFetchGradeByIdQuery(gradeFilter, {
+      skip: !gradeFilter,
+    });
   const { data: subjectsData } = useFetchSubjectsQuery({
     page: 1,
     limit: 1000,
     sortBy: "title:asc",
   });
+
+  const subjectOptions = useMemo(
+    () =>
+      gradeFilter
+        ? selectedGradeData?.subjects || []
+        : subjectsData?.results || [],
+    [gradeFilter, selectedGradeData?.subjects, subjectsData?.results],
+  );
 
   const papers = data?.results || [];
   const totalResults = data?.totalResults || 0;
@@ -378,7 +395,7 @@ export default function PapersTable() {
     >
       <motion.div
         variants={fadeUp}
-        className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -396,7 +413,7 @@ export default function PapersTable() {
         >
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
+            <Input
               type="text"
               value={titleFilter}
               onChange={(e) => {
@@ -404,7 +421,7 @@ export default function PapersTable() {
                 setPage(TABLE_CONFIG.DEFAULT_PAGE);
               }}
               placeholder="Filter by title"
-              className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-10 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
+              className="h-11 w-full pl-10 pr-10"
             />
             {titleFilter && (
               <button
@@ -425,10 +442,11 @@ export default function PapersTable() {
             value={gradeFilter || "all"}
             onValueChange={(value) => {
               setGradeFilter(value === "all" ? "" : value);
+              setSubjectFilter("");
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="!h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+            <SelectTrigger className="!h-11 min-h-11 w-full">
               <SelectValue placeholder="All grades" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
@@ -443,17 +461,21 @@ export default function PapersTable() {
 
           <Select
             value={subjectFilter || "all"}
+            disabled={Boolean(gradeFilter && isGradeSubjectsLoading)}
             onValueChange={(value) => {
               setSubjectFilter(value === "all" ? "" : value);
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="!h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400">
+            <SelectTrigger
+              isLoading={Boolean(gradeFilter && isGradeSubjectsLoading)}
+              className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400"
+            >
               <SelectValue placeholder="All subjects" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">All subjects</SelectItem>
-              {(subjectsData?.results || []).map((subject) => (
+              {subjectOptions.map((subject) => (
                 <SelectItem key={subject.id} value={subject.id}>
                   {subject.title}
                 </SelectItem>

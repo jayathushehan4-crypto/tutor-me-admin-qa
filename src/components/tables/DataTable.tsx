@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ReactNode, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
+import { ReactNode, useMemo } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -135,11 +135,11 @@ export default function DataTable<T extends { id: string | number }>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3 dark:text-white/90 w-full",
+        "overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-gray-900 dark:text-white/90 w-full",
         className,
       )}
     >
-      <div className="max-w-full overflow-x-auto">
+      <div className="custom-scrollbar max-w-full overflow-x-auto">
         <div className="min-w-[600px]">
           <Table>
             {/* Table Header */}

@@ -1,18 +1,15 @@
 import { z } from "zod";
+import { normalizeTextSpaces } from "@/utils/form-normalizers";
 
 const noExtraSpaces = (field: string) =>
   z
     .string()
-    .min(1, `${field} is required`)
-    .refine((val) => val.trim().length > 0, {
-      message: `${field} cannot be empty`,
-    })
-    .refine((val) => !/^\s|\s$/.test(val), {
-      message: `No leading or trailing spaces allowed`,
-    })
-    .refine((val) => !/\s{2,}/.test(val), {
-      message: `Only one space is allowed between words`,
-    });
+    .transform((value) => normalizeTextSpaces(value) as string)
+    .pipe(
+      z.string().min(1, `${field} is required`).refine((val) => val.length > 0, {
+        message: `${field} cannot be empty`,
+      }),
+    );
 
 const gradeTitle = () =>
   noExtraSpaces("Title")

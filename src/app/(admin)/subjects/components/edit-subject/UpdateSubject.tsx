@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateSubjectMutation } from "@/store/api/splits/subjects";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,6 +43,7 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
     handleSubmit,
     register,
     reset,
+    setValue,
     getValues,
     formState: { errors, isDirty },
   } = updateSubjectForm;
@@ -101,7 +103,14 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
           <div className="grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Title" {...register("title")} />
+              <Input
+                id="title"
+                placeholder="Title"
+                {...register(
+                  "title",
+                  liveTextInputRegisterOptions("title", setValue),
+                )}
+              />
               {errors.title && (
                 <p className="text-sm text-red-500">{errors.title.message}</p>
               )}
@@ -111,7 +120,10 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
               <Textarea
                 id="description"
                 placeholder="Description"
-                {...register("description")}
+                {...register(
+                  "description",
+                  liveTextInputRegisterOptions("description", setValue),
+                )}
               />
               {errors.description && (
                 <p className="text-sm text-red-500">

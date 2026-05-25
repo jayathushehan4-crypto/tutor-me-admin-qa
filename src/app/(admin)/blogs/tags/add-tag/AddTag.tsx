@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { initialFormValues, tagSchema, TagSchema } from "@/schemas/tag.schema";
 import { useCreateTagMutation } from "@/store/api/splits/tags";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -89,7 +90,14 @@ export function AddTag() {
               <Input
                 id="name"
                 placeholder="Title"
-                {...createTagForm.register("name")}
+                {...createTagForm.register(
+                  "name",
+                  liveTextInputRegisterOptions(
+                    "name",
+                    createTagForm.setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.name && (
                 <p className="text-sm text-red-500">
@@ -103,7 +111,14 @@ export function AddTag() {
               <TextArea
                 id="description"
                 placeholder="Description"
-                {...createTagForm.register("description")}
+                {...createTagForm.register(
+                  "description",
+                  liveTextInputRegisterOptions(
+                    "description",
+                    createTagForm.setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.description && (
                 <p className="text-sm text-red-500">

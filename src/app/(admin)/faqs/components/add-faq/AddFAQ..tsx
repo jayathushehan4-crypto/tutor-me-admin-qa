@@ -24,6 +24,7 @@ import {
 import { FAQ_CATEGORY_OPTIONS } from "@/lib/faq-categories";
 import { useCreateFaqMutation } from "@/store/api/splits/faqs";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -42,7 +43,8 @@ export function AddFAQ() {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    setValue,
+    formState: { errors, isSubmitted },
   } = useForm<CreateFaqSchema>({
     resolver: zodResolver(createFaqSchema),
     defaultValues: initialFaqFormValues,
@@ -132,7 +134,14 @@ export function AddFAQ() {
                 id="question"
                 placeholder="Enter FAQ question"
                 autoComplete="off"
-                {...register("question")}
+                {...register(
+                  "question",
+                  liveTextInputRegisterOptions(
+                    "question",
+                    setValue,
+                    isSubmitted,
+                  ),
+                )}
               />
               {errors.question && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">
@@ -147,7 +156,10 @@ export function AddFAQ() {
                 placeholder="Enter FAQ answer"
                 rows={6}
                 autoComplete="off"
-                {...register("answer")}
+                {...register(
+                  "answer",
+                  liveTextInputRegisterOptions("answer", setValue, isSubmitted),
+                )}
               />
               {errors.answer && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">

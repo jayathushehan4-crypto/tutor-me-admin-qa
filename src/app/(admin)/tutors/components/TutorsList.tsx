@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  CLASS_TYPE_OPTIONS,
   PREFERRED_LOCATION_OPTIONS,
   TUTOR_STATUS_BADGE_CLASSES,
   TUTOR_STATUS_FILTER_OPTIONS,
@@ -17,7 +18,10 @@ import {
 } from "@/configs/app-constants";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import {
+  useFetchGradeByIdQuery,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import {
   useFetchTutorsQuery,
@@ -28,7 +32,6 @@ import { getAdminId } from "@/utils/auth";
 import {
   CheckCircle,
   Loader2,
-  RotateCcw,
   Search,
   ShieldOff,
   X,
@@ -574,6 +577,7 @@ export default function TutorsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<TutorStatusFilter>("all");
   const [tutorTypeFilter, setTutorTypeFilter] = useState("all");
+  const [classTypeFilter, setClassTypeFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
@@ -584,6 +588,7 @@ export default function TutorsList() {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, [
     debouncedSearchTerm,
+    classTypeFilter,
     gradeFilter,
     locationFilter,
     statusFilter,
@@ -601,6 +606,7 @@ export default function TutorsList() {
         : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       ...(tutorTypeFilter !== "all" ? { tutorType: tutorTypeFilter } : {}),
+      ...(classTypeFilter !== "all" ? { classType: classTypeFilter } : {}),
       ...(locationFilter !== "all"
         ? { preferredLocations: locationFilter }
         : {}),
@@ -608,6 +614,7 @@ export default function TutorsList() {
       ...(subjectFilter !== "all" ? { subjectId: subjectFilter } : {}),
     }),
     [
+      classTypeFilter,
       debouncedSearchTerm,
       gradeFilter,
       limit,
@@ -624,6 +631,9 @@ export default function TutorsList() {
     page: 1,
     limit: 1000,
     sortBy: "title:asc",
+  });
+  const { data: selectedGradeData } = useFetchGradeByIdQuery(gradeFilter, {
+    skip: gradeFilter === "all",
   });
   const { data: subjectsData } = useFetchSubjectsQuery({
     page: 1,
@@ -657,17 +667,22 @@ export default function TutorsList() {
   const subjectOptions = useMemo(
     () => [
       { value: "all", label: "All subjects" },
-      ...(subjectsData?.results || []).map((subject) => ({
+      ...(
+        gradeFilter !== "all"
+          ? selectedGradeData?.subjects || []
+          : subjectsData?.results || []
+      ).map((subject) => ({
         value: subject.id,
         label: subject.title,
       })),
     ],
-    [subjectsData],
+    [gradeFilter, selectedGradeData?.subjects, subjectsData?.results],
   );
   const hasFilters = Boolean(
     searchTerm ||
       statusFilter !== "all" ||
       tutorTypeFilter !== "all" ||
+      classTypeFilter !== "all" ||
       locationFilter !== "all" ||
       gradeFilter !== "all" ||
       subjectFilter !== "all",
@@ -679,6 +694,7 @@ export default function TutorsList() {
     setSearchTerm("");
     setStatusFilter("all");
     setTutorTypeFilter("all");
+    setClassTypeFilter("all");
     setLocationFilter("all");
     setGradeFilter("all");
     setSubjectFilter("all");
@@ -835,17 +851,32 @@ export default function TutorsList() {
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+          <div className="space-y-1">
             <h2 className="text-base font-semibold text-gray-900 dark:text-white/90">
               Tutor filters
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-white/60">
+            <p className="text-sm text-gray-500 dark:text-white/60">
               Search by name, email, or contact number, then narrow results by
-              status.
+              status, tutor type, class type, location, grade, and subject.
             </p>
           </div>
 
-          <div className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_44px]">
+          <button
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasFilters}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 lg:w-auto"
+          >
+            <X className="h-4 w-4" />
+            Clear filters
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <div className="space-y-1.5 lg:col-span-3">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Search
+            </label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
@@ -867,30 +898,38 @@ export default function TutorsList() {
                 </button>
               )}
             </div>
+          </div>
 
-            <div className="w-full">
-              <Select
-                value={statusFilter}
-                onValueChange={(value) =>
-                  setStatusFilter(value as TutorStatusFilter)
-                }
-              >
-                <SelectTrigger className="h-11 min-h-11 w-full">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TUTOR_STATUS_FILTER_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Status
+            </label>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as TutorStatusFilter)
+              }
+            >
+              <SelectTrigger className="h-11 min-h-11 w-full">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                {TUTOR_STATUS_FILTER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Tutor type
+            </label>
             <Select value={tutorTypeFilter} onValueChange={setTutorTypeFilter}>
               <SelectTrigger className="h-11 min-h-11 w-full">
-                <SelectValue placeholder="Tutor type" />
+                <SelectValue placeholder="Filter by tutor type" />
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 <SelectItem value="all">All tutor types</SelectItem>
@@ -901,41 +940,67 @@ export default function TutorsList() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
 
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Class type
+            </label>
+            <Select value={classTypeFilter} onValueChange={setClassTypeFilter}>
+              <SelectTrigger className="h-11 min-h-11 w-full">
+                <SelectValue placeholder="Filter by class type" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="all">All class types</SelectItem>
+                {CLASS_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.text}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Preferred location
+            </label>
             <SearchableFilterSelect
               value={locationFilter}
               options={locationOptions}
-              placeholder="Location"
+              placeholder="Filter by location"
               searchPlaceholder="Search locations..."
               onChange={setLocationFilter}
             />
+          </div>
 
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Grade
+            </label>
             <SearchableFilterSelect
               value={gradeFilter}
               options={gradeOptions}
-              placeholder="Grade"
+              placeholder="Filter by grade"
               searchPlaceholder="Search grades..."
-              onChange={setGradeFilter}
+              onChange={(value) => {
+                setGradeFilter(value);
+                setSubjectFilter("all");
+              }}
             />
+          </div>
 
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Subject
+            </label>
             <SearchableFilterSelect
               value={subjectFilter}
               options={subjectOptions}
-              placeholder="Subject"
+              placeholder="Filter by subject"
               searchPlaceholder="Search subjects..."
               onChange={setSubjectFilter}
             />
-
-            <button
-              type="button"
-              onClick={resetFilters}
-              disabled={!hasFilters}
-              aria-label="Reset filters"
-              title="Reset filters"
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-0 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </div>

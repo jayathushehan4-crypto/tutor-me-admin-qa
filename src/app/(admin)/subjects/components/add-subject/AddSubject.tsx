@@ -19,6 +19,7 @@ import {
   useFetchSubjectsQuery,
 } from "@/store/api/splits/subjects";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -39,9 +40,9 @@ export function AddSubject() {
   const existingTitles =
     subjectsData?.results.map((s) => s.title.toLowerCase()) || [];
 
-  const createSubjectForm = useForm({
+  const createSubjectForm = useForm<CreateSubjectSchema>({
     resolver: zodResolver(createSubjectSchema),
-    defaultValues: initialFormValues as CreateSubjectSchema,
+    defaultValues: initialFormValues,
     mode: "onChange",
   });
 
@@ -102,6 +103,11 @@ export function AddSubject() {
                 id="title"
                 placeholder="Title"
                 {...createSubjectForm.register("title", {
+                  ...liveTextInputRegisterOptions(
+                    "title",
+                    createSubjectForm.setValue,
+                    formState.isSubmitted,
+                  ),
                   validate: (value) => {
                     if (existingTitles.includes(value.toLowerCase())) {
                       return "This subject title already exists.";
@@ -121,7 +127,14 @@ export function AddSubject() {
               <TextArea
                 id="description"
                 placeholder="Description"
-                {...createSubjectForm.register("description")}
+                {...createSubjectForm.register(
+                  "description",
+                  liveTextInputRegisterOptions(
+                    "description",
+                    createSubjectForm.setValue,
+                    formState.isSubmitted,
+                  ),
+                )}
               />
               {formState.errors.description && (
                 <p className="text-sm text-red-500">

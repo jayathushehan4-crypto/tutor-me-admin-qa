@@ -28,6 +28,7 @@ import {
 } from "@/lib/faq-categories";
 import { useUpdateFaqMutation } from "@/store/api/splits/faqs";
 import { getErrorInApiResult } from "@/utils/api";
+import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useState } from "react";
@@ -55,6 +56,7 @@ export function UpdateFAQ({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<UpdateFaqSchema>({
     resolver: zodResolver(updateFaqSchema),
@@ -139,7 +141,10 @@ export function UpdateFAQ({
                 id="question"
                 placeholder="Enter question"
                 autoComplete="off"
-                {...register("question")}
+                {...register(
+                  "question",
+                  liveTextInputRegisterOptions("question", setValue),
+                )}
               />
               {errors.question && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">
@@ -154,7 +159,10 @@ export function UpdateFAQ({
                 placeholder="Enter answer"
                 rows={6}
                 autoComplete="off"
-                {...register("answer")}
+                {...register(
+                  "answer",
+                  liveTextInputRegisterOptions("answer", setValue),
+                )}
               />
               {errors.answer && (
                 <p className="text-sm text-red-500 dark:text-red-500/90">
