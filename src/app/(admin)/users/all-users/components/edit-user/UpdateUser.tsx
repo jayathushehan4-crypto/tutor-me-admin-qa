@@ -194,7 +194,7 @@ export function UpdateUser(props: UpdateUserProps) {
             </DialogClose>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin px-6 py-6">
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-6">
             <div className="grid gap-4">
               <div className="grid gap-3">
                 <Label htmlFor="name">Name *</Label>
@@ -321,20 +321,22 @@ export function UpdateUser(props: UpdateUserProps) {
                 )}
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid min-w-0 gap-3">
                 <Label htmlFor="avatar">Profile Picture *</Label>
 
-                <FileUploadDropzone
-                  imageOnly
-                  onUploaded={(url) => {
-                    setValue("avatar", url, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
+                <div className="min-w-0 max-w-full overflow-hidden">
+                  <FileUploadDropzone
+                    imageOnly
+                    onUploaded={(url) => {
+                      setValue("avatar", url, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      });
 
-                    setPreviewUrl(url);
-                  }}
-                />
+                      setPreviewUrl(url);
+                    }}
+                  />
+                </div>
 
                 {formState.errors.avatar && (
                   <p className="text-sm text-red-500">
