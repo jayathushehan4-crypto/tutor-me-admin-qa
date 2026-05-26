@@ -25,6 +25,7 @@ import { getErrorInApiResult } from "@/utils/api";
 import {
   alphabeticTextInputRegisterOptions,
   liveTextInputRegisterOptions,
+  roleTextInputRegisterOptions,
 } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -173,7 +174,7 @@ export function AddTestimonial() {
                 placeholder="Owner role"
                 {...register(
                   "owner.role",
-                  liveTextInputRegisterOptions(
+                  roleTextInputRegisterOptions(
                     "owner.role",
                     setValue,
                     formState.isSubmitted,

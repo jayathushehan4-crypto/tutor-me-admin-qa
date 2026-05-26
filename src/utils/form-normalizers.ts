@@ -29,6 +29,12 @@ export const normalizeLettersAndSpacesInput = (value: string) =>
     .replace(/\s{2,}/g, " ")
     .trimStart();
 
+export const normalizeRoleInput = (value: string) =>
+  value
+    .replace(/[^A-Za-z ().&-]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trimStart();
+
 export const normalizeDecimalInput = (value: string) => {
   const digitsAndDots = value.replace(/[^0-9.]/g, "");
   const [integerPart, ...decimalParts] = digitsAndDots.split(".");
@@ -67,6 +73,32 @@ export const alphabeticTextInputRegisterOptions = <T extends FieldValues>(
 ): Pick<RegisterOptions<T, Path<T>>, "onChange" | "onBlur"> => ({
   onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const cleaned = normalizeLettersAndSpacesInput(event.target.value);
+
+    if (cleaned !== event.target.value) {
+      event.target.value = cleaned;
+      setValue(name, cleaned as PathValue<T, Path<T>>, {
+        shouldValidate: shouldValidateOnChange,
+      });
+    }
+  },
+  onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setValue(
+      name,
+      collapseTextSpaces(event.target.value) as PathValue<T, Path<T>>,
+      {
+        shouldValidate: true,
+      },
+    );
+  },
+});
+
+export const roleTextInputRegisterOptions = <T extends FieldValues>(
+  name: Path<T>,
+  setValue: UseFormSetValue<T>,
+  shouldValidateOnChange = false,
+): Pick<RegisterOptions<T, Path<T>>, "onChange" | "onBlur"> => ({
+  onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const cleaned = normalizeRoleInput(event.target.value);
 
     if (cleaned !== event.target.value) {
       event.target.value = cleaned;

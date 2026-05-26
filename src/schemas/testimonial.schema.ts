@@ -18,6 +18,19 @@ const alphabeticText = (requiredMessage: string, invalidMessage: string) =>
         .regex(/^[A-Za-z]+(?: [A-Za-z]+)*$/, invalidMessage),
     );
 
+const ownerRoleText = z
+  .string()
+  .transform((value) => normalizeTextSpaces(value) as string)
+  .pipe(
+    z
+      .string()
+      .min(1, "Owner role is required")
+      .refine(
+        (value) => /^[A-Za-z ().&-]+$/.test(value) && /[A-Za-z]/.test(value),
+        "Owner role can only include letters, spaces, dots, parentheses, hyphens, and ampersands",
+      ),
+  );
+
 export const testimonialSchema = z.object({
   content: requiredText("Content is required"),
   rating: z.number().min(1, "Rating is required"), // number instead of string
@@ -26,7 +39,7 @@ export const testimonialSchema = z.object({
       "Owner name is required",
       "Owner name can contain letters and spaces only",
     ),
-    role: requiredText("Owner role is required"),
+    role: ownerRoleText,
     avatar: z
       .string()
       .transform((value) => trimText(value) as string)

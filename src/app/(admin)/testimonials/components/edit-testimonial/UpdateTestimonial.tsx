@@ -24,6 +24,7 @@ import { getErrorInApiResult } from "@/utils/api";
 import {
   alphabeticTextInputRegisterOptions,
   liveTextInputRegisterOptions,
+  roleTextInputRegisterOptions,
 } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
@@ -185,7 +186,7 @@ export function UpdateTestimonial({
                 placeholder="Owner role"
                 {...register(
                   "owner.role",
-                  liveTextInputRegisterOptions("owner.role", setValue),
+                  roleTextInputRegisterOptions("owner.role", setValue),
                 )}
               />
               {formState.errors.owner?.role && (
