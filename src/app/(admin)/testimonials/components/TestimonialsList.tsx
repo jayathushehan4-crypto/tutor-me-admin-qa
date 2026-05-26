@@ -4,6 +4,7 @@
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
 import TablePagination from "@/components/tables/Pagination";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,9 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchTestimonialsQuery } from "@/store/api/splits/testimonials";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
-import { RotateCcw, Star, User } from "lucide-react";
+import { RotateCcw, Search, Star, User, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { DeleteTestimonial } from "./DeleteTestimonial";
@@ -35,25 +37,69 @@ interface Testimonial {
 
 export default function TestimonialsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [nameSearch, setNameSearch] = useState("");
+  const [roleSearch, setRoleSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const debouncedNameSearch = useDebounce(nameSearch, 400);
+  const debouncedRoleSearch = useDebounce(roleSearch, 400);
+  const normalizedNameSearch = debouncedNameSearch.trim().toLowerCase();
+  const normalizedRoleSearch = debouncedRoleSearch.trim().toLowerCase();
+  const hasTextFilters = Boolean(normalizedNameSearch || normalizedRoleSearch);
 
   const testimonialsQuery = useMemo(
     () => ({
-      page,
-      limit,
+      page: hasTextFilters ? TABLE_CONFIG.DEFAULT_PAGE : page,
+      limit: hasTextFilters ? 1000 : limit,
       sortBy: "createdAt:desc",
+      ...(normalizedNameSearch ? { name: debouncedNameSearch.trim() } : {}),
+      ...(normalizedRoleSearch ? { role: debouncedRoleSearch.trim() } : {}),
       ...(ratingFilter !== "all" ? { rating: Number(ratingFilter) } : {}),
     }),
-    [limit, page, ratingFilter],
+    [
+      debouncedNameSearch,
+      debouncedRoleSearch,
+      hasTextFilters,
+      limit,
+      normalizedNameSearch,
+      normalizedRoleSearch,
+      page,
+      ratingFilter,
+    ],
   );
 
   const { data, isFetching } = useFetchTestimonialsQuery(testimonialsQuery);
 
-  const testimonials = data?.results || [];
-  const totalResults = data?.totalResults || 0;
-  const totalPages = data?.totalPages || 1;
-  const hasFilters = ratingFilter !== "all";
+  const fetchedTestimonials = data?.results || [];
+  const filteredTestimonials = useMemo(() => {
+    if (!hasTextFilters) return fetchedTestimonials;
+
+    return fetchedTestimonials.filter((testimonial) => {
+      const ownerName = testimonial.owner?.name?.toLowerCase() || "";
+      const ownerRole = testimonial.owner?.role?.toLowerCase() || "";
+      const matchesName =
+        !normalizedNameSearch || ownerName.includes(normalizedNameSearch);
+      const matchesRole =
+        !normalizedRoleSearch || ownerRole.includes(normalizedRoleSearch);
+
+      return matchesName && matchesRole;
+    });
+  }, [
+    fetchedTestimonials,
+    hasTextFilters,
+    normalizedNameSearch,
+    normalizedRoleSearch,
+  ]);
+  const testimonials = hasTextFilters
+    ? filteredTestimonials.slice((page - 1) * limit, page * limit)
+    : fetchedTestimonials;
+  const totalResults = hasTextFilters
+    ? filteredTestimonials.length
+    : data?.totalResults || 0;
+  const totalPages = hasTextFilters
+    ? Math.max(1, Math.ceil(filteredTestimonials.length / limit))
+    : data?.totalPages || 1;
+  const hasFilters = Boolean(nameSearch || roleSearch || ratingFilter !== "all");
 
   const getSafeValue = (value: unknown, fallback = "N/A"): string => {
     if (value === undefined || value === null) return fallback;
@@ -66,6 +112,8 @@ export default function TestimonialsTable() {
   };
 
   const resetFilters = () => {
+    setNameSearch("");
+    setRoleSearch("");
     setRatingFilter("all");
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
@@ -197,16 +245,68 @@ export default function TestimonialsTable() {
     >
       <motion.div
         variants={fadeUp}
-        className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900 sm:flex-row sm:justify-between"
+        className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900 lg:flex-row lg:items-center lg:justify-between"
       >
         <div>
           <h2 className="font-semibold">Testimonials</h2>
           <p className="text-sm text-gray-500">
-            Filter testimonials by rating. Results load page by page.
+            Search testimonials by owner name or role, then narrow by rating.
           </p>
         </div>
 
-        <div className="grid w-full gap-3 sm:max-w-[220px] sm:grid-cols-[minmax(0,1fr)_44px]">
+        <div className="grid w-full gap-3 sm:max-w-3xl sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(160px,0.65fr)_44px]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              value={nameSearch}
+              onChange={(event) => {
+                setNameSearch(event.target.value);
+                setPage(TABLE_CONFIG.DEFAULT_PAGE);
+              }}
+              placeholder="Search name"
+              className="h-11 w-full pl-10 pr-10"
+            />
+            {nameSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNameSearch("");
+                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
+                }}
+                aria-label="Clear name search"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              value={roleSearch}
+              onChange={(event) => {
+                setRoleSearch(event.target.value);
+                setPage(TABLE_CONFIG.DEFAULT_PAGE);
+              }}
+              placeholder="Search role"
+              className="h-11 w-full pl-10 pr-10"
+            />
+            {roleSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRoleSearch("");
+                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
+                }}
+                aria-label="Clear role search"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
           <Select
             value={ratingFilter}
             onValueChange={(value) => {
