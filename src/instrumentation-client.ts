@@ -7,6 +7,7 @@ if (isSentryEnabled) {
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1,
     integrations: [
+      ...sentryBaseConfig.integrations,
       Sentry.replayIntegration({
         blockAllMedia: true,
         maskAllText: true,
