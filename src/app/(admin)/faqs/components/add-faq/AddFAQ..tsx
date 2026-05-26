@@ -30,6 +30,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import {
+  CreateFaqFormValues,
   CreateFaqSchema,
   createFaqSchema,
   initialFaqFormValues,
@@ -45,7 +46,7 @@ export function AddFAQ() {
     reset,
     setValue,
     formState: { errors, isSubmitted },
-  } = useForm<CreateFaqSchema>({
+  } = useForm<CreateFaqFormValues, unknown, CreateFaqSchema>({
     resolver: zodResolver(createFaqSchema),
     defaultValues: initialFaqFormValues,
     mode: "onChange",
