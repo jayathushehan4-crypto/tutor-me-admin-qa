@@ -147,7 +147,13 @@ export function UpdateTestimonial({
               <div className="flex items-center space-x-2">
                 <StarRating
                   value={watch("rating")}
-                  onChange={(val) => setValue("rating", val)}
+                  onChange={(val) =>
+                    setValue("rating", val, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
                 <span className="font-medium text-gray-700 dark:text-gray-200">
                   {watch("rating")}/5
