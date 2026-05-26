@@ -25,6 +25,7 @@ import { useFetchGradesQuery } from "@/store/api/splits/grades";
 import { useCreateAssignmentMutation } from "@/store/api/splits/tuition-assignments";
 import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import { getErrorInApiResult } from "@/utils/api";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -196,11 +197,13 @@ export function AddAssignment() {
                 <SelectContent className="w-full">
                   <SelectGroup>
                     <SelectLabel>Grades</SelectLabel>
-                    {gradesData?.results?.map((grade) => (
-                      <SelectItem key={grade.id} value={grade.id}>
-                        {grade.title}
-                      </SelectItem>
-                    ))}
+                    {sortBySchoolGradeOrder(gradesData?.results || []).map(
+                      (grade) => (
+                        <SelectItem key={grade.id} value={grade.id}>
+                          {grade.title}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>

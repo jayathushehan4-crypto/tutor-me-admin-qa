@@ -55,6 +55,7 @@ import {
   normalizeTextSpaces,
   stripLeadingSpaces,
 } from "@/utils/form-normalizers";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -125,7 +126,10 @@ export function EditTutor({ id }: EditTutorProps) {
   const [fetchGradeById] = useLazyFetchGradeByIdQuery();
 
   const gradeOptions =
-    gradesData?.results?.map((g) => ({ value: g.id, text: g.title })) || [];
+    sortBySchoolGradeOrder(gradesData?.results || []).map((g) => ({
+      value: g.id,
+      text: g.title,
+    }));
 
   const [subjectOptions, setSubjectOptions] = useState<
     { value: string; text: string }[]

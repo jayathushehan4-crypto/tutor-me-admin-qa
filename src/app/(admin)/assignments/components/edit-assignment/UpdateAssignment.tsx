@@ -29,6 +29,7 @@ import {
 } from "@/store/api/splits/tuition-assignments";
 import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import { Grade } from "@/types/response-types";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isRejectedWithValue } from "@reduxjs/toolkit";
 import { SquarePen } from "lucide-react";
@@ -291,7 +292,9 @@ export function UpdateAssignment({ id }: UpdateAssignmentProps) {
                 <SelectContent className="w-full">
                   <SelectGroup>
                     <SelectLabel>Grades</SelectLabel>
-                    {gradesData?.results?.map((grade: Grade) => (
+                    {sortBySchoolGradeOrder(
+                      (gradesData?.results || []) as Grade[],
+                    ).map((grade) => (
                       <SelectItem key={grade.id} value={grade.id}>
                         {grade.title}
                       </SelectItem>

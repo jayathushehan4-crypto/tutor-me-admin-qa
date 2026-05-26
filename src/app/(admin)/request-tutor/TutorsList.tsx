@@ -22,6 +22,7 @@ import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor"
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { FetchRequestForTutor } from "@/types/request-types";
 import { RequestTutors } from "@/types/response-types";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
 import { Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -205,7 +206,7 @@ export default function RequestForTutorsList() {
 
   const gradeOptions = useMemo(
     () =>
-      (gradesData?.results || []).map((grade) => ({
+      sortBySchoolGradeOrder(gradesData?.results || []).map((grade) => ({
         value: grade.id,
         label: grade.title,
       })),
