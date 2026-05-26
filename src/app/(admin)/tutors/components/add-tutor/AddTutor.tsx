@@ -240,6 +240,7 @@ export function AddTutor() {
         shouldDirty: true,
         shouldValidate: true,
       });
+      clearErrors("preferredLocations");
       return;
     }
 
@@ -1034,8 +1035,9 @@ export function AddTutor() {
                   disabled={isPreferredLocationsDisabled}
                   searchable
                 />
-                {(formState.isSubmitted ||
-                  formState.touchedFields.preferredLocations) &&
+                {!isPreferredLocationsDisabled &&
+                  (formState.isSubmitted ||
+                    formState.touchedFields.preferredLocations) &&
                   formState.errors.preferredLocations && (
                     <p className="text-sm text-red-500">
                       {formState.errors.preferredLocations.message}

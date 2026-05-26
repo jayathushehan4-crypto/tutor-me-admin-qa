@@ -166,8 +166,16 @@ export function EditTutor({ id }: EditTutorProps) {
     mode: "onChange",
   });
 
-  const { formState, getValues, reset, setValue, watch, control, handleSubmit } =
-    form;
+  const {
+    clearErrors,
+    formState,
+    getValues,
+    reset,
+    setValue,
+    watch,
+    control,
+    handleSubmit,
+  } = form;
 
   const selectedGrades = useWatch({
     control,
@@ -253,8 +261,9 @@ export function EditTutor({ id }: EditTutorProps) {
     if (!hasSelectedClassTypes) {
       setValue("preferredLocations", [], {
         shouldDirty: true,
-        shouldValidate: true,
+        shouldValidate: false,
       });
+      clearErrors("preferredLocations");
       return;
     }
 
@@ -263,6 +272,7 @@ export function EditTutor({ id }: EditTutorProps) {
         shouldDirty: true,
         shouldValidate: true,
       });
+      clearErrors("preferredLocations");
       return;
     }
 
@@ -276,7 +286,13 @@ export function EditTutor({ id }: EditTutorProps) {
         shouldValidate: true,
       });
     }
-  }, [getValues, hasSelectedClassTypes, isOnlineOnlyClassType, setValue]);
+  }, [
+    clearErrors,
+    getValues,
+    hasSelectedClassTypes,
+    isOnlineOnlyClassType,
+    setValue,
+  ]);
 
   useEffect(() => {
     const grades = JSON.parse(selectedGradesJson || "[]") as string[];
@@ -921,11 +937,12 @@ export function EditTutor({ id }: EditTutorProps) {
                   disabled={isPreferredLocationsDisabled}
                   searchable
                 />
-                {formState.errors.preferredLocations && (
-                  <p className="text-sm text-red-500">
-                    {formState.errors.preferredLocations.message}
-                  </p>
-                )}
+                {!isPreferredLocationsDisabled &&
+                  formState.errors.preferredLocations && (
+                    <p className="text-sm text-red-500">
+                      {formState.errors.preferredLocations.message}
+                    </p>
+                  )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
