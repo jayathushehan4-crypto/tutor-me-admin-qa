@@ -1,11 +1,22 @@
 "use client";
 
 import DataTable from "@/components/tables/DataTable";
-import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
-import { useDebounce } from "@/hooks/useDebounce";
+import {
+  useFetchGradeByIdQuery,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
+import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { useFetchTuitionRatesQuery } from "@/store/api/splits/tuition-rates";
-import { Search, X } from "lucide-react";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
+import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DeleteTuitionRate } from "./DeleteTuitionRate";
 import { TuitionRateDetails } from "./ViewDetails";
@@ -34,30 +45,62 @@ interface TuitionRateData {
 
 export default function TuitionRatesTable() {
   const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [gradeFilter, setGradeFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
-  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const tuitionRatesQuery = useMemo(
     () => ({
       page,
       limit,
       sortBy: "createdAt:desc",
-      ...(debouncedSearchTerm.trim()
-        ? { search: debouncedSearchTerm.trim() }
-        : {}),
+      ...(gradeFilter ? { grade: gradeFilter } : {}),
+      ...(subjectFilter ? { subject: subjectFilter } : {}),
     }),
-    [debouncedSearchTerm, limit, page],
+    [gradeFilter, limit, page, subjectFilter],
   );
 
   const { data, isFetching } = useFetchTuitionRatesQuery(tuitionRatesQuery);
+  const { data: gradesData, isFetching: isFetchingGrades } =
+    useFetchGradesQuery({
+      page: 1,
+      limit: 1000,
+      sortBy: "title:asc",
+    });
+  const { data: selectedGradeData, isFetching: isFetchingGradeSubjects } =
+    useFetchGradeByIdQuery(gradeFilter, {
+      skip: !gradeFilter,
+    });
+  const { data: subjectsData, isFetching: isFetchingSubjects } =
+    useFetchSubjectsQuery({
+      page: 1,
+      limit: 1000,
+      sortBy: "title:asc",
+    });
 
   const tuitionRates = data?.results || [];
   const totalPages = data?.totalPages || 1;
   const totalResults = data?.totalResults || 0;
+  const gradeOptions = useMemo(
+    () => sortBySchoolGradeOrder(gradesData?.results || []),
+    [gradesData?.results],
+  );
+  const subjectOptions = gradeFilter
+    ? selectedGradeData?.subjects || []
+    : subjectsData?.results || [];
+  const isSubjectLoading = gradeFilter
+    ? isFetchingGradeSubjects
+    : isFetchingSubjects;
+  const hasFilters = Boolean(gradeFilter || subjectFilter);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const resetFilters = () => {
+    setGradeFilter("");
+    setSubjectFilter("");
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
   const columns = [
@@ -141,32 +184,67 @@ export default function TuitionRatesTable() {
             Tuition Rates
           </h2>
           <p className="text-sm text-gray-500 dark:text-white/60">
-            Search rates by grade or subject. Results load page by page.
+            Filter rates by grade and subject. Results load page by page.
           </p>
         </div>
 
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setPage(1);
+        <div className="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-center">
+          <Select
+            value={gradeFilter || "all"}
+            onValueChange={(value) => {
+              setGradeFilter(value === "all" ? "" : value);
+              setSubjectFilter("");
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
-            placeholder="Search grade or subject"
-            className="h-11 w-full pl-10 pr-10"
-          />
-          {searchTerm && (
+          >
+            <SelectTrigger
+              className="h-11 min-h-11 w-full sm:flex-1"
+              isLoading={isFetchingGrades}
+            >
+              <SelectValue placeholder="All grades" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All grades</SelectItem>
+              {gradeOptions.map((grade) => (
+                <SelectItem key={grade.id} value={grade.id}>
+                  {grade.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={subjectFilter || "all"}
+            onValueChange={(value) => {
+              setSubjectFilter(value === "all" ? "" : value);
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
+            }}
+          >
+            <SelectTrigger
+              className="h-11 min-h-11 w-full sm:flex-1"
+              isLoading={isSubjectLoading}
+            >
+              <SelectValue placeholder="All subjects" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All subjects</SelectItem>
+              {subjectOptions.map((subject) => (
+                <SelectItem key={subject.id} value={subject.id}>
+                  {subject.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {hasFilters && (
             <button
               type="button"
-              onClick={() => {
-                setSearchTerm("");
-                setPage(1);
-              }}
-              aria-label="Clear search"
-              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              onClick={resetFilters}
+              aria-label="Reset filters"
+              title="Reset filters"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
             >
-              <X className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -181,7 +259,7 @@ export default function TuitionRatesTable() {
         totalResults={totalResults}
         limit={limit}
         isLoading={isFetching}
-        emptyMessage="No tuition rates found for the current search."
+        emptyMessage="No tuition rates found for the current filters."
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MEDIUM_OPTIONS } from "@/configs/app-constants";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
@@ -19,6 +20,7 @@ import {
 import { useFetchPapersQuery } from "@/store/api/splits/papers";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { escapeRegex } from "@/utils/form";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
@@ -76,56 +78,12 @@ const staggerContainer: Variants = {
   },
 };
 
-const normalizeGradeTitle = (title: string) =>
-  title
-    .toLowerCase()
-    .replace(/[–—]/g, "-")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-
-const GRADE_FILTER_ORDER_MATCHERS: Array<(title: string) => boolean> = [
-  (title) => title.includes("primary") || /grades? 1 4/.test(title),
-  (title) => title.includes("scholarship") || /grade 5/.test(title),
-  (title) => title.includes("junior secondary") || /grades? 6 9/.test(title),
-  (title) =>
-    title.includes("ordinary level") &&
-    !title.includes("cambridge") &&
-    !title.includes("edexcel"),
-  (title) =>
-    title.includes("advanced level") && title.includes("physical science"),
-  (title) =>
-    title.includes("advanced level") && title.includes("biological science"),
-  (title) => title.includes("advanced level") && title.includes("commerce"),
-  (title) => title.includes("advanced level") && /\barts?\b/.test(title),
-  (title) => title.includes("advanced level") && title.includes("technology"),
-  (title) => title.includes("sports") && title.includes("fitness"),
-  (title) => title.includes("communication") && title.includes("speaking"),
-  (title) => title.includes("computing"),
-  (title) => title.includes("multimedia") && title.includes("design"),
-  (title) => title.includes("languages"),
-  (title) => title.includes("diploma"),
-  (title) => title.includes("cambridge") && title.includes("ordinary level"),
-  (title) => title.includes("cambridge") && title.includes("advanced level"),
-  (title) => title.includes("edexcel") && title.includes("ordinary level"),
-  (title) => title.includes("edexcel") && title.includes("advanced level"),
-];
-
-const getGradeFilterRank = (title: string) => {
-  const normalizedTitle = normalizeGradeTitle(title);
-  const matchedIndex = GRADE_FILTER_ORDER_MATCHERS.findIndex((matcher) =>
-    matcher(normalizedTitle),
-  );
-
-  return matchedIndex === -1
-    ? GRADE_FILTER_ORDER_MATCHERS.length
-    : matchedIndex;
-};
-
 export default function PapersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [titleFilter, setTitleFilter] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
+  const [mediumFilter, setMediumFilter] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedTitleFilter = useDebounce(titleFilter, 400);
 
@@ -139,8 +97,9 @@ export default function PapersTable() {
         : {}),
       ...(gradeFilter ? { grade: gradeFilter } : {}),
       ...(subjectFilter ? { subject: subjectFilter } : {}),
+      ...(mediumFilter ? { medium: mediumFilter } : {}),
     }),
-    [debouncedTitleFilter, gradeFilter, limit, page, subjectFilter],
+    [debouncedTitleFilter, gradeFilter, limit, mediumFilter, page, subjectFilter],
   );
 
   const { data, isFetching } = useFetchPapersQuery(papersQuery);
@@ -167,22 +126,16 @@ export default function PapersTable() {
     [gradeFilter, selectedGradeData?.subjects, subjectsData?.results],
   );
   const gradeOptions = useMemo(
-    () =>
-      [...(gradesData?.results || [])].sort((gradeA, gradeB) => {
-        const rankDifference =
-          getGradeFilterRank(gradeA.title) - getGradeFilterRank(gradeB.title);
-
-        return (
-          rankDifference || gradeA.title.localeCompare(gradeB.title, "en")
-        );
-      }),
+    () => sortBySchoolGradeOrder(gradesData?.results || []),
     [gradesData?.results],
   );
 
   const papers = data?.results || [];
   const totalResults = data?.totalResults || 0;
   const totalPages = data?.totalPages || 1;
-  const hasFilters = Boolean(titleFilter || gradeFilter || subjectFilter);
+  const hasFilters = Boolean(
+    titleFilter || gradeFilter || subjectFilter || mediumFilter,
+  );
 
   const getSafeValue = (value: unknown, fallback = "N/A"): string => {
     if (value === undefined || value === null) {
@@ -277,6 +230,7 @@ export default function PapersTable() {
     setTitleFilter("");
     setGradeFilter("");
     setSubjectFilter("");
+    setMediumFilter("");
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
@@ -466,7 +420,7 @@ export default function PapersTable() {
 
         <motion.div
           layout
-          className="grid w-full gap-3 sm:max-w-3xl sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+          className="grid w-full gap-3 sm:max-w-5xl sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]"
         >
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -511,6 +465,26 @@ export default function PapersTable() {
               {gradeOptions.map((grade) => (
                 <SelectItem key={grade.id} value={grade.id}>
                   {grade.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={mediumFilter || "all"}
+            onValueChange={(value) => {
+              setMediumFilter(value === "all" ? "" : value);
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
+            }}
+          >
+            <SelectTrigger className="h-11 min-h-11 w-full">
+              <SelectValue placeholder="All mediums" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All mediums</SelectItem>
+              {MEDIUM_OPTIONS.map((medium) => (
+                <SelectItem key={medium.value} value={medium.value}>
+                  {medium.label}
                 </SelectItem>
               ))}
             </SelectContent>
