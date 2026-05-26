@@ -21,7 +21,10 @@ import {
 } from "@/schemas/testimonial.schema";
 import { useUpdateTestimonialMutation } from "@/store/api/splits/testimonials";
 import { getErrorInApiResult } from "@/utils/api";
-import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
+import {
+  alphabeticTextInputRegisterOptions,
+  liveTextInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useState } from "react";
@@ -164,7 +167,7 @@ export function UpdateTestimonial({
                 placeholder="Owner name"
                 {...register(
                   "owner.name",
-                  liveTextInputRegisterOptions("owner.name", setValue),
+                  alphabeticTextInputRegisterOptions("owner.name", setValue),
                 )}
               />
               {formState.errors.owner?.name && (

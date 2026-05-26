@@ -22,7 +22,10 @@ import {
 } from "@/schemas/testimonial.schema";
 import { useCreateTestimonialMutation } from "@/store/api/splits/testimonials";
 import { getErrorInApiResult } from "@/utils/api";
-import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
+import {
+  alphabeticTextInputRegisterOptions,
+  liveTextInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -149,7 +152,7 @@ export function AddTestimonial() {
                 placeholder="Owner name"
                 {...register(
                   "owner.name",
-                  liveTextInputRegisterOptions(
+                  alphabeticTextInputRegisterOptions(
                     "owner.name",
                     setValue,
                     formState.isSubmitted,
