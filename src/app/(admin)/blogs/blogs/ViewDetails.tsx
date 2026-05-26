@@ -124,7 +124,7 @@ export function BlogDetails({ blog }: BlogDetailsProps) {
         return (
           <p
             key={block._id}
-            className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-3"
+            className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-3 [&_a]:text-brand-500! [&_a]:dark:text-brand-400! [&_a]:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:hover:text-brand-600! [&_a]:dark:hover:text-brand-300!"
             dangerouslySetInnerHTML={{ __html: decodeHtml(block.text || "") }}
           />
         );
@@ -135,7 +135,7 @@ export function BlogDetails({ blog }: BlogDetailsProps) {
               {(block.items || []).map((item, i) => (
                 <li
                   key={i}
-                  className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed"
+                  className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed [&_a]:text-brand-500! [&_a]:dark:text-brand-400! [&_a]:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:hover:text-brand-600! [&_a]:dark:hover:text-brand-300!"
                   dangerouslySetInnerHTML={{ __html: decodeHtml(item) }}
                 />
               ))}
@@ -147,7 +147,7 @@ export function BlogDetails({ blog }: BlogDetailsProps) {
             {(block.items || []).map((item, i) => (
               <li
                 key={i}
-                className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed"
+                className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed [&_a]:text-brand-500! [&_a]:dark:text-brand-400! [&_a]:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a]:hover:text-brand-600! [&_a]:dark:hover:text-brand-300!"
                 dangerouslySetInnerHTML={{ __html: decodeHtml(item) }}
               />
             ))}
@@ -255,7 +255,7 @@ export function BlogDetails({ blog }: BlogDetailsProps) {
                             .getElementById(entry.id)
                             ?.scrollIntoView({ behavior: "smooth", block: "start" })
                         }
-                        className="text-left text-sm text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                        className="text-left text-sm text-brand-500 dark:text-brand-400 transition-colors hover:text-brand-600 dark:hover:text-brand-300"
                       >
                         <span className="mr-1.5 text-gray-500 dark:text-gray-400 text-xs font-medium">
                           {entry.number}
