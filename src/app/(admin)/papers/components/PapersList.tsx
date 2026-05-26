@@ -446,7 +446,7 @@ export default function PapersTable() {
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="!h-11 min-h-11 w-full">
+            <SelectTrigger className="h-11 min-h-11 w-full">
               <SelectValue placeholder="All grades" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
@@ -469,7 +469,7 @@ export default function PapersTable() {
           >
             <SelectTrigger
               isLoading={Boolean(gradeFilter && isGradeSubjectsLoading)}
-              className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400"
+              className="h-11 min-h-11 w-full"
             >
               <SelectValue placeholder="All subjects" />
             </SelectTrigger>
