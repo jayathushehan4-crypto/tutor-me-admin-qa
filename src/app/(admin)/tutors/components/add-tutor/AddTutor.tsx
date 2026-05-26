@@ -228,9 +228,10 @@ export function AddTutor() {
   useEffect(() => {
     if (!hasSelectedClassTypes) {
       setValue("preferredLocations", [], {
-        shouldDirty: true,
-        shouldValidate: true,
+        shouldDirty: false,
+        shouldValidate: false,
       });
+      clearErrors("preferredLocations");
       return;
     }
 
@@ -250,7 +251,13 @@ export function AddTutor() {
         shouldValidate: true,
       });
     }
-  }, [getValues, hasSelectedClassTypes, isOnlineOnlyClassType, setValue]);
+  }, [
+    clearErrors,
+    getValues,
+    hasSelectedClassTypes,
+    isOnlineOnlyClassType,
+    setValue,
+  ]);
 
   useEffect(() => {
     const grades = JSON.parse(selectedGradesJson || "[]") as string[];
@@ -1027,11 +1034,13 @@ export function AddTutor() {
                   disabled={isPreferredLocationsDisabled}
                   searchable
                 />
-                {formState.errors.preferredLocations && (
-                  <p className="text-sm text-red-500">
-                    {formState.errors.preferredLocations.message}
-                  </p>
-                )}
+                {(formState.isSubmitted ||
+                  formState.touchedFields.preferredLocations) &&
+                  formState.errors.preferredLocations && (
+                    <p className="text-sm text-red-500">
+                      {formState.errors.preferredLocations.message}
+                    </p>
+                  )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
