@@ -7,8 +7,22 @@ const requiredText = (message: string) =>
     .transform((value) => normalizeTextSpaces(value) as string)
     .pipe(z.string().min(1, message));
 
+const alphabeticText = (requiredMessage: string, invalidMessage: string) =>
+  z
+    .string()
+    .transform((value) => normalizeTextSpaces(value) as string)
+    .pipe(
+      z
+        .string()
+        .min(1, requiredMessage)
+        .regex(/^[A-Za-z]+(?: [A-Za-z]+)*$/, invalidMessage),
+    );
+
 export const createInquirySchema = z.object({
-  senderName: requiredText("Sender name is required"),
+  senderName: alphabeticText(
+    "Sender name is required",
+    "Sender name can contain letters and spaces only",
+  ),
   senderEmail: requiredText("Sender email is required"),
   message: requiredText("Message is required"),
 });
