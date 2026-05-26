@@ -8,6 +8,7 @@ export async function GET() {
   }
 
   Sentry.metrics.count("test_metric", 1);
+  await Sentry.flush(2000);
 
   return NextResponse.json({
     ok: true,
