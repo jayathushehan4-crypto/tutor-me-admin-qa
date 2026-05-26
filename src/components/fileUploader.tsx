@@ -115,7 +115,7 @@ export default function FileUploadDropzone({
   return (
     <div
       {...getRootProps()}
-      className={`rounded-md border-2 border-dashed p-5 sm:p-6 text-center transition-colors cursor-pointer
+      className={`w-full max-w-full overflow-hidden rounded-md border-2 border-dashed p-5 sm:p-6 text-center transition-colors cursor-pointer
         ${
           isDragActive
             ? "border-brand-300 bg-brand-50/40 dark:border-brand-500 dark:bg-gray-800/80"
@@ -151,8 +151,8 @@ export default function FileUploadDropzone({
           )}
 
           {fileName && (
-            <div className="mt-3 flex items-center justify-center gap-2 w-full px-2">
-              <p className="w-auto min-w-[120px] max-w-full truncate break-all text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-3 flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden px-2">
+              <p className="min-w-0 flex-1 truncate text-sm text-gray-500 dark:text-gray-400">
                 {fileName}
               </p>
 
@@ -160,6 +160,7 @@ export default function FileUploadDropzone({
                 type="button"
                 onClick={removeFile}
                 className="shrink-0 text-gray-400 hover:text-red-500"
+                aria-label="Remove uploaded file"
               >
                 <X size={16} />
               </button>
@@ -167,13 +168,13 @@ export default function FileUploadDropzone({
           )}
 
           {previewUrl && (
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex w-full min-w-0 justify-center overflow-hidden">
               <NextImage
                 src={previewUrl}
                 alt="Preview"
                 width={112}
                 height={112}
-                className="h-24 w-24 rounded-lg border border-gray-200 object-cover shadow-sm dark:border-gray-700 sm:h-28 sm:w-28"
+                className="h-24 w-24 shrink-0 rounded-lg border border-gray-200 object-cover shadow-sm dark:border-gray-700 sm:h-28 sm:w-28"
               />
             </div>
           )}

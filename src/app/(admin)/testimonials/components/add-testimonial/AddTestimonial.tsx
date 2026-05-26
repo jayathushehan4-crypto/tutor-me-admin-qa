@@ -105,7 +105,7 @@ export function AddTestimonial() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
+          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="content">Content</Label>
               <Input
@@ -187,21 +187,23 @@ export function AddTestimonial() {
               )}
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid min-w-0 gap-3">
               <Label>Owner Avatar</Label>
 
-              <FileUploadDropzone
-                onUploaded={(url) => {
-                  setValue("owner.avatar", url, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
-                }}
-              />
+              <div className="min-w-0 max-w-full overflow-hidden">
+                <FileUploadDropzone
+                  onUploaded={(url) => {
+                    setValue("owner.avatar", url, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+              </div>
 
               {avatarUrl ? (
-                <p className="break-all text-xs text-gray-500 dark:text-gray-400">
+                <p className="min-w-0 max-w-full break-all text-xs text-gray-500 dark:text-gray-400">
                   Uploaded URL: {avatarUrl}
                 </p>
               ) : null}

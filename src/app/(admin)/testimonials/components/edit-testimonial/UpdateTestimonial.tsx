@@ -121,7 +121,7 @@ export function UpdateTestimonial({
             <DialogDescription>Edit the testimonial details.</DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
+          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             {/* Content */}
             <div className="grid gap-3">
               <Label htmlFor="content">Content</Label>
@@ -196,28 +196,32 @@ export function UpdateTestimonial({
             </div>
 
             {/* Owner Avatar */}
-            <div className="grid gap-3">
+            <div className="grid min-w-0 gap-3">
               <Label>Owner Avatar</Label>
 
-              <FileUploadDropzone
-                onUploaded={(url) => {
-                  setValue("owner.avatar", url, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
-                }}
-              />
+              <div className="min-w-0 max-w-full overflow-hidden">
+                <FileUploadDropzone
+                  onUploaded={(url) => {
+                    setValue("owner.avatar", url, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+              </div>
 
               {avatarUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt="Avatar preview"
-                  width={64}
-                  height={64}
-                  className="rounded-full object-cover border"
-                />
+                <div className="flex justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={avatarUrl}
+                    alt="Avatar preview"
+                    width={64}
+                    height={64}
+                    className="rounded-full border object-cover"
+                  />
+                </div>
               )}
 
               {formState.errors.owner?.avatar && (
