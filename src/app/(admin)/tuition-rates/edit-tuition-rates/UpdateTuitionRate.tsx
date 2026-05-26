@@ -74,6 +74,7 @@ export function UpdateTuitionRate({
     register,
     handleSubmit,
     setValue,
+    trigger,
     watch,
     formState: { errors, isDirty },
   } = useForm<UpdateTuitionFormValues, unknown, UpdateTuitionSchema>({
@@ -253,6 +254,13 @@ export function UpdateTuitionRate({
                   decimalInputRegisterOptions(
                     `${key}.minimumRate` as const,
                     setValue,
+                    true,
+                    () => {
+                      trigger([
+                        `${key}.minimumRate` as const,
+                        `${key}.maximumRate` as const,
+                      ]);
+                    },
                   ),
                 )}
               />
@@ -270,6 +278,13 @@ export function UpdateTuitionRate({
                   decimalInputRegisterOptions(
                     `${key}.maximumRate` as const,
                     setValue,
+                    true,
+                    () => {
+                      trigger([
+                        `${key}.minimumRate` as const,
+                        `${key}.maximumRate` as const,
+                      ]);
+                    },
                   ),
                 )}
               />
