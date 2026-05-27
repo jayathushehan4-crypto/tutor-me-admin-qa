@@ -26,6 +26,12 @@ const normalizeTextField = (value: string) =>
     .replace(/\s+/g, " ") // collapse multiple spaces into one
     .trim(); // remove leading/trailing spaces
 
+const normalizeTextFieldInput = (value: string) =>
+  value
+    .replace(/[^A-Za-z ]/g, "") // allow only letters and spaces
+    .replace(/\s{2,}/g, " ") // collapse repeated spaces while typing
+    .trimStart(); // keep a single trailing space so users can type the next word
+
 const normalizePhoneNumber = (value: string) =>
   value.replace(/\D/g, "").slice(0, 10);
 
@@ -199,6 +205,7 @@ export default function UpdateUser() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-2xl"
+        overlayClassName="bg-black/50 backdrop-blur-none"
       >
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -220,7 +227,7 @@ export default function UpdateUser() {
                 id="name"
                 {...register("name", {
                   onChange: (e) => {
-                    e.target.value = normalizeTextField(e.target.value);
+                    e.target.value = normalizeTextFieldInput(e.target.value);
                   },
                 })}
               />
@@ -384,7 +391,7 @@ export default function UpdateUser() {
                   id="city"
                   {...register("city", {
                     onChange: (e) => {
-                      e.target.value = normalizeTextField(e.target.value);
+                      e.target.value = normalizeTextFieldInput(e.target.value);
                     },
                   })}
                 />
@@ -405,7 +412,7 @@ export default function UpdateUser() {
                   id="country"
                   {...register("country", {
                     onChange: (e) => {
-                      e.target.value = normalizeTextField(e.target.value);
+                      e.target.value = normalizeTextFieldInput(e.target.value);
                     },
                   })}
                 />
@@ -447,7 +454,7 @@ export default function UpdateUser() {
                   id="state"
                   {...register("state", {
                     onChange: (e) => {
-                      e.target.value = normalizeTextField(e.target.value);
+                      e.target.value = normalizeTextFieldInput(e.target.value);
                     },
                   })}
                 />
@@ -468,7 +475,7 @@ export default function UpdateUser() {
                   id="region"
                   {...register("region", {
                     onChange: (e) => {
-                      e.target.value = normalizeTextField(e.target.value);
+                      e.target.value = normalizeTextFieldInput(e.target.value);
                     },
                   })}
                 />

@@ -2,8 +2,8 @@ import { trimText } from "@/utils/form-normalizers";
 import { z } from "zod";
 
 const numericString = z
-  .string()
-  .transform((value) => trimText(value) as string)
+  .union([z.string(), z.number()])
+  .transform((value) => trimText(String(value)) as string)
   .pipe(
     z
       .string()
@@ -51,9 +51,10 @@ export const updateTuitionSchema = z.object({
   moeTeacherRate: rateObject,
 });
 
-export type UpdateTuitionSchema = z.infer<typeof updateTuitionSchema>;
+export type UpdateTuitionFormValues = z.input<typeof updateTuitionSchema>;
+export type UpdateTuitionSchema = z.output<typeof updateTuitionSchema>;
 
-export const initialFormValues: UpdateTuitionSchema = {
+export const initialFormValues: UpdateTuitionFormValues = {
   subject: "",
   grade: "",
   universityStudentsRate: { minimumRate: "", maximumRate: "" },

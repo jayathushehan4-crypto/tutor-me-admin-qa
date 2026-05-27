@@ -22,7 +22,11 @@ import {
 } from "@/schemas/testimonial.schema";
 import { useCreateTestimonialMutation } from "@/store/api/splits/testimonials";
 import { getErrorInApiResult } from "@/utils/api";
-import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
+import {
+  alphabeticTextInputRegisterOptions,
+  liveTextInputRegisterOptions,
+  roleTextInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -102,7 +106,7 @@ export function AddTestimonial() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
+          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="content">Content</Label>
               <Input
@@ -129,7 +133,13 @@ export function AddTestimonial() {
               <div className="flex items-center space-x-2">
                 <StarRating
                   value={watch("rating")}
-                  onChange={(val) => setValue("rating", val)}
+                  onChange={(val) =>
+                    setValue("rating", val, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
                 <span className="font-medium text-gray-700 dark:text-gray-200">
                   {watch("rating")}/5
@@ -149,7 +159,7 @@ export function AddTestimonial() {
                 placeholder="Owner name"
                 {...register(
                   "owner.name",
-                  liveTextInputRegisterOptions(
+                  alphabeticTextInputRegisterOptions(
                     "owner.name",
                     setValue,
                     formState.isSubmitted,
@@ -170,7 +180,7 @@ export function AddTestimonial() {
                 placeholder="Owner role"
                 {...register(
                   "owner.role",
-                  liveTextInputRegisterOptions(
+                  roleTextInputRegisterOptions(
                     "owner.role",
                     setValue,
                     formState.isSubmitted,
@@ -184,21 +194,23 @@ export function AddTestimonial() {
               )}
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid min-w-0 gap-3">
               <Label>Owner Avatar</Label>
 
-              <FileUploadDropzone
-                onUploaded={(url) => {
-                  setValue("owner.avatar", url, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
-                }}
-              />
+              <div className="min-w-0 max-w-full overflow-hidden">
+                <FileUploadDropzone
+                  onUploaded={(url) => {
+                    setValue("owner.avatar", url, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+              </div>
 
               {avatarUrl ? (
-                <p className="break-all text-xs text-gray-500 dark:text-gray-400">
+                <p className="min-w-0 max-w-full break-all text-xs text-gray-500 dark:text-gray-400">
                   Uploaded URL: {avatarUrl}
                 </p>
               ) : null}

@@ -381,6 +381,8 @@ export type UpdateTutorRequest = {
 export type FetchTestimonialsRequest = {
   page: number;
   limit: number;
+  name?: string;
+  role?: string;
   rating?: number;
   sortBy?: string;
 };

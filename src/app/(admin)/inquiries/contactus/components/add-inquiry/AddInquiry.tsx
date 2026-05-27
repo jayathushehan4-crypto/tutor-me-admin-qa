@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useCreateInquiryMutation } from "@/store/api/splits/inquiries";
 import { getErrorInApiResult } from "@/utils/api";
 import {
+  alphabeticTextInputRegisterOptions,
   liveTextInputRegisterOptions,
   noWhitespaceInputRegisterOptions,
 } from "@/utils/form-normalizers";
@@ -110,7 +111,7 @@ export function AddInquiry() {
                 autoComplete="off"
                 {...register(
                   "senderName",
-                  liveTextInputRegisterOptions(
+                  alphabeticTextInputRegisterOptions(
                     "senderName",
                     setValue,
                     isSubmitted,

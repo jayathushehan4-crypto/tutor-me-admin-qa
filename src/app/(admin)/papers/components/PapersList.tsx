@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MEDIUM_OPTIONS } from "@/configs/app-constants";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
@@ -19,6 +20,7 @@ import {
 import { useFetchPapersQuery } from "@/store/api/splits/papers";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { escapeRegex } from "@/utils/form";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
@@ -81,6 +83,7 @@ export default function PapersTable() {
   const [titleFilter, setTitleFilter] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
+  const [mediumFilter, setMediumFilter] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedTitleFilter = useDebounce(titleFilter, 400);
 
@@ -94,8 +97,9 @@ export default function PapersTable() {
         : {}),
       ...(gradeFilter ? { grade: gradeFilter } : {}),
       ...(subjectFilter ? { subject: subjectFilter } : {}),
+      ...(mediumFilter ? { medium: mediumFilter } : {}),
     }),
-    [debouncedTitleFilter, gradeFilter, limit, page, subjectFilter],
+    [debouncedTitleFilter, gradeFilter, limit, mediumFilter, page, subjectFilter],
   );
 
   const { data, isFetching } = useFetchPapersQuery(papersQuery);
@@ -121,11 +125,17 @@ export default function PapersTable() {
         : subjectsData?.results || [],
     [gradeFilter, selectedGradeData?.subjects, subjectsData?.results],
   );
+  const gradeOptions = useMemo(
+    () => sortBySchoolGradeOrder(gradesData?.results || []),
+    [gradesData?.results],
+  );
 
   const papers = data?.results || [];
   const totalResults = data?.totalResults || 0;
   const totalPages = data?.totalPages || 1;
-  const hasFilters = Boolean(titleFilter || gradeFilter || subjectFilter);
+  const hasFilters = Boolean(
+    titleFilter || gradeFilter || subjectFilter || mediumFilter,
+  );
 
   const getSafeValue = (value: unknown, fallback = "N/A"): string => {
     if (value === undefined || value === null) {
@@ -220,6 +230,7 @@ export default function PapersTable() {
     setTitleFilter("");
     setGradeFilter("");
     setSubjectFilter("");
+    setMediumFilter("");
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
@@ -409,7 +420,7 @@ export default function PapersTable() {
 
         <motion.div
           layout
-          className="grid w-full gap-3 sm:max-w-3xl sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+          className="grid w-full gap-3 sm:max-w-5xl sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_auto]"
         >
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -446,14 +457,34 @@ export default function PapersTable() {
               setPage(TABLE_CONFIG.DEFAULT_PAGE);
             }}
           >
-            <SelectTrigger className="!h-11 min-h-11 w-full">
+            <SelectTrigger className="h-11 min-h-11 w-full">
               <SelectValue placeholder="All grades" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">All grades</SelectItem>
-              {(gradesData?.results || []).map((grade) => (
+              {gradeOptions.map((grade) => (
                 <SelectItem key={grade.id} value={grade.id}>
                   {grade.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={mediumFilter || "all"}
+            onValueChange={(value) => {
+              setMediumFilter(value === "all" ? "" : value);
+              setPage(TABLE_CONFIG.DEFAULT_PAGE);
+            }}
+          >
+            <SelectTrigger className="h-11 min-h-11 w-full">
+              <SelectValue placeholder="All mediums" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All mediums</SelectItem>
+              {MEDIUM_OPTIONS.map((medium) => (
+                <SelectItem key={medium.value} value={medium.value}>
+                  {medium.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -469,7 +500,7 @@ export default function PapersTable() {
           >
             <SelectTrigger
               isLoading={Boolean(gradeFilter && isGradeSubjectsLoading)}
-              className="h-11 rounded-xl border-gray-200 bg-gray-50 px-3 text-gray-900 focus-visible:border-blue-500 focus-visible:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus-visible:border-blue-400"
+              className="h-11 min-h-11 w-full"
             >
               <SelectValue placeholder="All subjects" />
             </SelectTrigger>

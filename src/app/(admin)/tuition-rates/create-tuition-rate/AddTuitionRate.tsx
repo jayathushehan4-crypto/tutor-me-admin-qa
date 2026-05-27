@@ -36,6 +36,7 @@ import {
 
 import { getErrorInApiResult } from "@/utils/api";
 import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -109,10 +110,10 @@ export function AddTuitionRate() {
   }, [selectedGrade, setValue]);
 
   const gradeOptions =
-    gradeData?.results?.map((grade) => ({
+    sortBySchoolGradeOrder(gradeData?.results || []).map((grade) => ({
       value: grade.id,
       label: grade.title,
-    })) || [];
+    }));
 
   return (
     <Dialog

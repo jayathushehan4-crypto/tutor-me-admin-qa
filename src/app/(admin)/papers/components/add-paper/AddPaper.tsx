@@ -38,6 +38,7 @@ import {
 import { useCreatePaperMutation } from "@/store/api/splits/papers";
 import { getErrorInApiResult } from "@/utils/api";
 import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -243,11 +244,13 @@ export function AddPaper() {
                       </div>
                     )}
 
-                    {gradeData?.results?.map((grade) => (
-                      <SelectItem key={grade.id} value={grade.id}>
-                        {grade.title}
-                      </SelectItem>
-                    ))}
+                    {sortBySchoolGradeOrder(gradeData?.results || []).map(
+                      (grade) => (
+                        <SelectItem key={grade.id} value={grade.id}>
+                          {grade.title}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>

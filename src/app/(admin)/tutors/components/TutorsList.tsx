@@ -29,6 +29,7 @@ import {
 } from "@/store/api/splits/tutors";
 import { getErrorInApiResult } from "@/utils/api";
 import { getAdminId } from "@/utils/auth";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import {
   CheckCircle,
   Loader2,
@@ -657,7 +658,7 @@ export default function TutorsList() {
   const gradeOptions = useMemo(
     () => [
       { value: "all", label: "All grades" },
-      ...(gradesData?.results || []).map((grade) => ({
+      ...sortBySchoolGradeOrder(gradesData?.results || []).map((grade) => ({
         value: grade.id,
         label: grade.title,
       })),

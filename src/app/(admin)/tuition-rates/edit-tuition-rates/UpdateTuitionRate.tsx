@@ -22,22 +22,39 @@ import {
 import { useUpdateTuitionRateMutation } from "@/store/api/splits/tuition-rates";
 import { getErrorInApiResult } from "@/utils/api";
 import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { UpdateTuitionSchema, updateTuitionSchema } from "./schema";
+import {
+  UpdateTuitionFormValues,
+  UpdateTuitionSchema,
+  updateTuitionSchema,
+} from "./schema";
 
 interface UpdateTuitionRateProps {
   id: string;
   subject: string;
   grade: string;
-  universityStudentsRate: { minimumRate: string; maximumRate: string };
-  partTimeTutorRate: { minimumRate: string; maximumRate: string };
-  fullTimeTutorRate: { minimumRate: string; maximumRate: string };
-  moeTeacherRate: { minimumRate: string; maximumRate: string };
+  universityStudentsRate: {
+    minimumRate: string | number;
+    maximumRate: string | number;
+  };
+  partTimeTutorRate: {
+    minimumRate: string | number;
+    maximumRate: string | number;
+  };
+  fullTimeTutorRate: {
+    minimumRate: string | number;
+    maximumRate: string | number;
+  };
+  moeTeacherRate: {
+    minimumRate: string | number;
+    maximumRate: string | number;
+  };
 }
 
 export function UpdateTuitionRate({
@@ -57,9 +74,10 @@ export function UpdateTuitionRate({
     register,
     handleSubmit,
     setValue,
+    trigger,
     watch,
     formState: { errors, isDirty },
-  } = useForm<UpdateTuitionSchema>({
+  } = useForm<UpdateTuitionFormValues, unknown, UpdateTuitionSchema>({
     resolver: zodResolver(updateTuitionSchema),
     defaultValues: {
       subject: "",
@@ -88,7 +106,10 @@ export function UpdateTuitionRate({
     gradeDetails?.subjects?.map((s) => ({ value: s.id, label: s.title })) ||
     [];
   const gradeOptions =
-    gradesData?.results?.map((g) => ({ value: g.id, label: g.title })) || [];
+    sortBySchoolGradeOrder(gradesData?.results || []).map((g) => ({
+      value: g.id,
+      label: g.title,
+    }));
 
   const displayLoading = isGradeDetailsLoading || isGradesLoading;
 
@@ -233,6 +254,13 @@ export function UpdateTuitionRate({
                   decimalInputRegisterOptions(
                     `${key}.minimumRate` as const,
                     setValue,
+                    true,
+                    () => {
+                      trigger([
+                        `${key}.minimumRate` as const,
+                        `${key}.maximumRate` as const,
+                      ]);
+                    },
                   ),
                 )}
               />
@@ -250,6 +278,13 @@ export function UpdateTuitionRate({
                   decimalInputRegisterOptions(
                     `${key}.maximumRate` as const,
                     setValue,
+                    true,
+                    () => {
+                      trigger([
+                        `${key}.minimumRate` as const,
+                        `${key}.maximumRate` as const,
+                      ]);
+                    },
                   ),
                 )}
               />

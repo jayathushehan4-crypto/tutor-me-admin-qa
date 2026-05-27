@@ -51,6 +51,7 @@ import {
   removeWhitespace,
   stripLeadingSpaces,
 } from "@/utils/form-normalizers";
+import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -199,7 +200,10 @@ export function AddTutor() {
   const [fetchGradeById] = useLazyFetchGradeByIdQuery();
 
   const gradeOptions =
-    gradesData?.results?.map((g) => ({ value: g.id, text: g.title })) || [];
+    sortBySchoolGradeOrder(gradesData?.results || []).map((g) => ({
+      value: g.id,
+      text: g.title,
+    }));
 
   const [subjectOptions, setSubjectOptions] = useState<
     { value: string; text: string }[]
@@ -224,9 +228,10 @@ export function AddTutor() {
   useEffect(() => {
     if (!hasSelectedClassTypes) {
       setValue("preferredLocations", [], {
-        shouldDirty: true,
-        shouldValidate: true,
+        shouldDirty: false,
+        shouldValidate: false,
       });
+      clearErrors("preferredLocations");
       return;
     }
 
@@ -235,6 +240,7 @@ export function AddTutor() {
         shouldDirty: true,
         shouldValidate: true,
       });
+      clearErrors("preferredLocations");
       return;
     }
 
@@ -246,7 +252,13 @@ export function AddTutor() {
         shouldValidate: true,
       });
     }
-  }, [getValues, hasSelectedClassTypes, isOnlineOnlyClassType, setValue]);
+  }, [
+    clearErrors,
+    getValues,
+    hasSelectedClassTypes,
+    isOnlineOnlyClassType,
+    setValue,
+  ]);
 
   useEffect(() => {
     const grades = JSON.parse(selectedGradesJson || "[]") as string[];
@@ -1023,11 +1035,14 @@ export function AddTutor() {
                   disabled={isPreferredLocationsDisabled}
                   searchable
                 />
-                {formState.errors.preferredLocations && (
-                  <p className="text-sm text-red-500">
-                    {formState.errors.preferredLocations.message}
-                  </p>
-                )}
+                {!isPreferredLocationsDisabled &&
+                  (formState.isSubmitted ||
+                    formState.touchedFields.preferredLocations) &&
+                  formState.errors.preferredLocations && (
+                    <p className="text-sm text-red-500">
+                      {formState.errors.preferredLocations.message}
+                    </p>
+                  )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

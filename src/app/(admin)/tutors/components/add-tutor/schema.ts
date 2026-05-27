@@ -9,6 +9,11 @@ import {
 } from "@/configs/app-constants";
 import { z } from "zod";
 
+const hasPhysicalClassType = (classTypes: string[] = []) =>
+  classTypes.some((classType) =>
+    classType.toLowerCase().startsWith("physical"),
+  );
+
 export const addTutorSchema = z
   .object({
     fullName: z
@@ -61,9 +66,7 @@ export const addTutorSchema = z
       .array(z.enum(CLASS_TYPE_VALUES))
       .min(1, "Select at least one class type"),
 
-    preferredLocations: z
-      .array(z.enum(PREFERRED_LOCATION_VALUES))
-      .min(1, "Select at least one preferred location"),
+    preferredLocations: z.array(z.enum(PREFERRED_LOCATION_VALUES)),
 
     tutorType: z
       .array(z.enum(TUTOR_TYPE_VALUES))
@@ -121,6 +124,17 @@ export const addTutorSchema = z
       .refine((val) => val === true, "You must agree to Assignment Info"),
   })
   .superRefine((data, ctx) => {
+    if (
+      hasPhysicalClassType(data.classType) &&
+      data.preferredLocations.length === 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Select at least one preferred location",
+        path: ["preferredLocations"],
+      });
+    }
+
     if (data.confirmPassword !== data.password) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

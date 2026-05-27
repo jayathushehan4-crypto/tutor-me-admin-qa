@@ -19,12 +19,13 @@ import {
 import { useFetchFaqsQuery } from "@/store/api/splits/faqs";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Layers3, Search } from "lucide-react";
+import { Layers3, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { DeleteFAQ } from "./DeleteFAQ";
 import { UpdateFAQ } from "./edit-faq/UpdateFAQ";
 import { FAQDetails } from "./FAQDetails";
+import { cn } from "@/lib/utils";
 
 interface FAQ {
   id: string;
@@ -54,6 +55,15 @@ export default function FAQTable() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const hasFilters =
+    Boolean(searchTerm.trim()) || categoryFilter !== ALL_CATEGORIES;
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setCategoryFilter(ALL_CATEGORIES);
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
   const getSafeValue = (
@@ -225,9 +235,14 @@ export default function FAQTable() {
 
         <motion.div
           layout
-          className="flex w-full flex-col gap-2 sm:max-w-xl sm:flex-row sm:items-center"
+          className={cn(
+            "grid w-full gap-3 sm:max-w-xl",
+            hasFilters
+              ? "sm:grid-cols-[minmax(0,1fr)_minmax(160px,0.65fr)_44px]"
+              : "sm:grid-cols-[minmax(0,1fr)_minmax(160px,0.65fr)]",
+          )}
         >
-          <div className="relative h-11 w-full sm:flex-1">
+          <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               type="text"
@@ -237,8 +252,21 @@ export default function FAQTable() {
                 setPage(TABLE_CONFIG.DEFAULT_PAGE);
               }}
               placeholder="Filter by question, answer, or category..."
-              className="h-11 w-full pl-10 pr-4"
+              className="h-11 w-full pl-10 pr-10"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
+                }}
+                aria-label="Clear FAQ search"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <Select
@@ -260,6 +288,18 @@ export default function FAQTable() {
               ))}
             </SelectContent>
           </Select>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              aria-label="Reset filters"
+              title="Reset filters"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
         </motion.div>
       </motion.div>
 
