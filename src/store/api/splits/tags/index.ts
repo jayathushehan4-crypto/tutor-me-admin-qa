@@ -61,6 +61,7 @@ export const TagsApi = baseApi.injectEndpoints({
 
 export const {
   useFetchTagsQuery,
+  useLazyFetchTagsQuery,
   useFetchTagByIdQuery,
   useLazyFetchTagByIdQuery,
   useCreateTagMutation,

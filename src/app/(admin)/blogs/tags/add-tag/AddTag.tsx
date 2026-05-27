@@ -15,17 +15,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { initialFormValues, tagSchema, TagSchema } from "@/schemas/tag.schema";
-import { useCreateTagMutation } from "@/store/api/splits/tags";
+import {
+  useCreateTagMutation,
+  useLazyFetchTagsQuery,
+} from "@/store/api/splits/tags";
 import { getErrorInApiResult } from "@/utils/api";
 import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import {
+  DUPLICATE_TAG_TITLE_MESSAGE,
+  getTagTitleErrorMessage,
+  hasDuplicateTagTitle,
+} from "../tag-title-validation";
 
 export function AddTag() {
   const [open, setOpen] = useState(false);
+  const [isCheckingTitle, setIsCheckingTitle] = useState(false);
   const [createTag, { isLoading }] = useCreateTagMutation();
+  const [fetchTags] = useLazyFetchTagsQuery();
 
   const createTagForm = useForm<TagSchema>({
     resolver: zodResolver(tagSchema),
@@ -37,10 +47,21 @@ export function AddTag() {
 
   const onSubmit = async (data: TagSchema) => {
     try {
+      setIsCheckingTitle(true);
+      const tagsData = await fetchTags({
+        page: 1,
+        limit: 1000,
+      }).unwrap();
+      setIsCheckingTitle(false);
+
+      if (hasDuplicateTagTitle(tagsData.results, data.name)) {
+        return toast.error(DUPLICATE_TAG_TITLE_MESSAGE);
+      }
+
       const result = await createTag(data);
       const error = getErrorInApiResult(result);
       if (error) {
-        return toast.error(error);
+        return toast.error(getTagTitleErrorMessage(error));
       }
       if ("data" in result) {
         onRegisterSuccess();
@@ -48,6 +69,8 @@ export function AddTag() {
     } catch (error) {
       console.error("Unexpected error during tag creation:", error);
       toast.error("An unexpected error occurred while creating the tag");
+    } finally {
+      setIsCheckingTitle(false);
     }
   };
 
@@ -140,7 +163,7 @@ export function AddTag() {
             <Button
               type="submit"
               className="bg-blue-700 text-white hover:bg-blue-500"
-              isLoading={isLoading}
+              isLoading={isLoading || isCheckingTitle}
               onClick={createTagForm.handleSubmit(onSubmit)}
             >
               Create

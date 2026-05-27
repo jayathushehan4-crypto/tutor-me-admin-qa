@@ -15,7 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { tagSchema, TagSchema } from "@/schemas/tag.schema";
-import { useUpdateTagMutation } from "@/store/api/splits/tags";
+import {
+  useLazyFetchTagsQuery,
+  useUpdateTagMutation,
+} from "@/store/api/splits/tags";
 import { getErrorInApiResult } from "@/utils/api";
 import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +26,11 @@ import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import {
+  DUPLICATE_TAG_TITLE_MESSAGE,
+  getTagTitleErrorMessage,
+  hasDuplicateTagTitle,
+} from "../tag-title-validation";
 
 interface UpdateTagProps {
   id: string;
@@ -32,6 +40,7 @@ interface UpdateTagProps {
 
 export function UpdateTag({ id, name, description }: UpdateTagProps) {
   const [open, setOpen] = useState(false);
+  const [isCheckingTitle, setIsCheckingTitle] = useState(false);
 
   const updateTagForm = useForm<TagSchema>({
     resolver: zodResolver(tagSchema),
@@ -52,6 +61,7 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
     reset({ name, description });
   }, [name, description, reset]);
 
+  const [fetchTags] = useLazyFetchTagsQuery();
   const [updateTag, { isLoading }] = useUpdateTagMutation();
 
   const handleDialogClose = (isOpen: boolean) => {
@@ -68,10 +78,21 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
 
   const onSubmit = async (data: TagSchema) => {
     try {
+      setIsCheckingTitle(true);
+      const tagsData = await fetchTags({
+        page: 1,
+        limit: 1000,
+      }).unwrap();
+      setIsCheckingTitle(false);
+
+      if (hasDuplicateTagTitle(tagsData.results, data.name, id)) {
+        return toast.error(DUPLICATE_TAG_TITLE_MESSAGE);
+      }
+
       const result = await updateTag({ id, ...data });
       const error = getErrorInApiResult(result);
       if (error) {
-        return toast.error(error);
+        return toast.error(getTagTitleErrorMessage(error));
       }
       if ("data" in result) {
         onUpdateSuccess();
@@ -79,6 +100,8 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
     } catch (error) {
       console.error("Unexpected error during tag update:", error);
       toast.error("An unexpected error occurred while updating the tag");
+    } finally {
+      setIsCheckingTitle(false);
     }
   };
 
@@ -141,8 +164,8 @@ export function UpdateTag({ id, name, description }: UpdateTagProps) {
             <Button
               type="submit"
               className="bg-blue-700 text-white hover:bg-blue-500"
-              isLoading={isLoading}
-              disabled={!isDirty}
+              isLoading={isLoading || isCheckingTitle}
+              disabled={!isDirty || isCheckingTitle}
               onClick={updateTagForm.handleSubmit(onSubmit)}
             >
               Save
