@@ -439,7 +439,8 @@ export function DeleteTutor({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will permanently delete this tutor.
+              This action cannot be undone. This will permanently delete this
+              tutor.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -447,7 +448,7 @@ export function DeleteTutor({
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-500 text-white"
+              className="bg-red-500 text-white hover:bg-red-600"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

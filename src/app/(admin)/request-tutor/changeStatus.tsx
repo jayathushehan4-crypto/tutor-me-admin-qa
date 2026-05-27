@@ -116,8 +116,8 @@ export function ChangeStatusDialog({
         </button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden [&>div:last-child]:flex [&>div:last-child]:min-h-0 [&>div:last-child]:flex-col [&>div:last-child]:overflow-hidden [&>div:last-child]:p-0">
-        <DialogHeader className="shrink-0 px-6 py-4 border-b">
+      <DialogContent className="bg-white p-0 dark:bg-gray-800 dark:text-white/90 sm:max-w-[425px] overflow-hidden [&>div:last-child]:flex [&>div:last-child]:min-h-0 [&>div:last-child]:flex-col [&>div:last-child]:overflow-hidden [&>div:last-child]:p-0">
+        <DialogHeader className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
           <DialogTitle>Change Request Status</DialogTitle>
           <DialogDescription>
             Leave the request pending or reject it with a reason that will be
@@ -125,31 +125,40 @@ export function ChangeStatusDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 py-6 flex flex-col gap-4">
-          <label>Status</label>
-          <Select
-            value={status}
-            onValueChange={(val) => {
-              const nextStatus = val as "Pending" | "Rejected";
-              setStatus(nextStatus);
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 scrollbar-thin">
+          <div className="grid gap-3">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Status
+            </label>
+            <Select
+              value={status}
+              onValueChange={(val) => {
+                const nextStatus = val as "Pending" | "Rejected";
+                setStatus(nextStatus);
 
-              if (nextStatus === "Pending") {
-                setRejectionReason("");
-              }
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
+                if (nextStatus === "Pending") {
+                  setRejectionReason("");
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {isRejected && (
-            <div className="flex flex-col gap-2">
-              <label htmlFor="rejectionReason">Rejection reason</label>
+            <div className="mt-4 grid gap-3">
+              <label
+                htmlFor="rejectionReason"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Rejection reason
+              </label>
               <textarea
                 id="rejectionReason"
                 ref={rejectionReasonRef}
@@ -169,7 +178,7 @@ export function ChangeStatusDialog({
                     : "false"
                 }
                 disabled={isExistingRejectedStatus}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:disabled:border-gray-800 dark:disabled:bg-gray-800/60 dark:disabled:text-gray-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 dark:disabled:border-gray-800 dark:disabled:bg-gray-800/60 dark:disabled:text-gray-500"
               />
               <p className="text-xs text-gray-500">
                 {isExistingRejectedStatus
@@ -182,27 +191,27 @@ export function ChangeStatusDialog({
           )}
 
           {validationError && (
-            <p className="text-sm text-red-600 dark:text-red-400">
+            <p className="mt-4 text-sm text-red-600 dark:text-red-400">
               {validationError}
             </p>
           )}
+        </div>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaveDisabled || isLoading}
-            >
-              {isLoading ? "Saving..." : "Save"}
-            </Button>
-          </div>
+        <div className="shrink-0 flex justify-end gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaveDisabled || isLoading}
+          >
+            {isLoading ? "Saving..." : "Save"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
