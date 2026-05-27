@@ -67,6 +67,7 @@ export const SubjectsApi = baseApi.injectEndpoints({
 
 export const {
   useFetchSubjectsQuery,
+  useLazyFetchSubjectsQuery,
   useFetchSubjectByIdQuery,
   useLazyFetchSubjectByIdQuery,
   useCreateSubjectMutation,
