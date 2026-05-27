@@ -14,7 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateSubjectMutation } from "@/store/api/splits/subjects";
+import {
+  useLazyFetchSubjectsQuery,
+  useUpdateSubjectMutation,
+} from "@/store/api/splits/subjects";
 import { getErrorInApiResult } from "@/utils/api";
 import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +25,11 @@ import { SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import {
+  DUPLICATE_SUBJECT_TITLE_MESSAGE,
+  getSubjectTitleErrorMessage,
+  hasDuplicateSubjectTitle,
+} from "../subject-title-validation";
 import { UpdateSubjectSchema, updateSubjectSchema } from "./schema";
 
 interface UpdateSubjectProps {
@@ -32,6 +40,7 @@ interface UpdateSubjectProps {
 
 export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
   const [open, setOpen] = useState(false);
+  const [isCheckingTitle, setIsCheckingTitle] = useState(false);
 
   const updateSubjectForm = useForm<UpdateSubjectSchema>({
     resolver: zodResolver(updateSubjectSchema),
@@ -52,6 +61,7 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
     reset({ title, description });
   }, [title, description, reset]);
 
+  const [fetchSubjects] = useLazyFetchSubjectsQuery();
   const [updateSubject, { isLoading }] = useUpdateSubjectMutation();
 
   const handleDialogClose = (isOpen: boolean) => {
@@ -68,10 +78,21 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
 
   const onSubmit = async (data: UpdateSubjectSchema) => {
     try {
+      setIsCheckingTitle(true);
+      const subjectsData = await fetchSubjects({
+        page: 1,
+        limit: 1000,
+      }).unwrap();
+      setIsCheckingTitle(false);
+
+      if (hasDuplicateSubjectTitle(subjectsData.results, data.title, id)) {
+        return toast.error(DUPLICATE_SUBJECT_TITLE_MESSAGE);
+      }
+
       const result = await updateSubject({ id, ...data });
       const error = getErrorInApiResult(result);
       if (error) {
-        return toast.error(error);
+        return toast.error(getSubjectTitleErrorMessage(error));
       }
       if ("data" in result) {
         onUpdateSuccess();
@@ -79,6 +100,8 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
     } catch (error) {
       console.error("Unexpected error during subject update:", error);
       toast.error("An unexpected error occurred while updating the subject");
+    } finally {
+      setIsCheckingTitle(false);
     }
   };
 
@@ -141,8 +164,8 @@ export function UpdateSubject({ id, title, description }: UpdateSubjectProps) {
             <Button
               type="submit"
               className="bg-blue-700 text-white hover:bg-blue-500"
-              isLoading={isLoading}
-              disabled={!isDirty}
+              isLoading={isLoading || isCheckingTitle}
+              disabled={!isDirty || isCheckingTitle}
               onClick={updateSubjectForm.handleSubmit(onSubmit)}
             >
               Save

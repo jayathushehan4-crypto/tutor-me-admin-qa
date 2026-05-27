@@ -55,7 +55,8 @@ export function DeleteTutorRequest({ tutorId }: DeleteTutorRequestProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action will permanently delete this tutor request.
+            This action cannot be undone. This will permanently delete this
+            tutor request.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -63,7 +64,7 @@ export function DeleteTutorRequest({ tutorId }: DeleteTutorRequestProps) {
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isLoading}
-            className="bg-red-500 text-white"
+            className="bg-red-500 text-white hover:bg-red-600"
           >
             {isLoading ? "Deleting..." : "Delete"}
           </AlertDialogAction>

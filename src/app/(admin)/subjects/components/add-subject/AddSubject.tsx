@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   useCreateSubjectMutation,
-  useFetchSubjectsQuery,
+  useLazyFetchSubjectsQuery,
 } from "@/store/api/splits/subjects";
 import { getErrorInApiResult } from "@/utils/api";
 import { liveTextInputRegisterOptions } from "@/utils/form-normalizers";
@@ -29,16 +29,17 @@ import {
   createSubjectSchema,
   initialFormValues,
 } from "./schema";
+import {
+  DUPLICATE_SUBJECT_TITLE_MESSAGE,
+  getSubjectTitleErrorMessage,
+  hasDuplicateSubjectTitle,
+} from "../subject-title-validation";
 
 export function AddSubject() {
   const [open, setOpen] = useState(false);
+  const [isCheckingTitle, setIsCheckingTitle] = useState(false);
   const [createSubject, { isLoading }] = useCreateSubjectMutation();
-  const { data: subjectsData } = useFetchSubjectsQuery({
-    page: 1,
-    limit: 100,
-  });
-  const existingTitles =
-    subjectsData?.results.map((s) => s.title.toLowerCase()) || [];
+  const [fetchSubjects] = useLazyFetchSubjectsQuery();
 
   const createSubjectForm = useForm<CreateSubjectSchema>({
     resolver: zodResolver(createSubjectSchema),
@@ -50,10 +51,21 @@ export function AddSubject() {
 
   const onSubmit = async (data: CreateSubjectSchema) => {
     try {
+      setIsCheckingTitle(true);
+      const subjectsData = await fetchSubjects({
+        page: 1,
+        limit: 1000,
+      }).unwrap();
+      setIsCheckingTitle(false);
+
+      if (hasDuplicateSubjectTitle(subjectsData.results, data.title)) {
+        return toast.error(DUPLICATE_SUBJECT_TITLE_MESSAGE);
+      }
+
       const result = await createSubject(data);
       const error = getErrorInApiResult(result);
       if (error) {
-        return toast.error(error);
+        return toast.error(getSubjectTitleErrorMessage(error));
       }
       if ("data" in result) {
         onRegisterSuccess();
@@ -61,6 +73,8 @@ export function AddSubject() {
     } catch (error) {
       console.error("Unexpected error during subject creation:", error);
       toast.error("An unexpected error occurred while creating the subject");
+    } finally {
+      setIsCheckingTitle(false);
     }
   };
 
@@ -108,12 +122,6 @@ export function AddSubject() {
                     createSubjectForm.setValue,
                     formState.isSubmitted,
                   ),
-                  validate: (value) => {
-                    if (existingTitles.includes(value.toLowerCase())) {
-                      return "This subject title already exists.";
-                    }
-                    return true;
-                  },
                 })}
               />
               {formState.errors.title && (
@@ -150,7 +158,7 @@ export function AddSubject() {
             <Button
               type="submit"
               className="bg-blue-700 text-white hover:bg-blue-500"
-              isLoading={isLoading}
+              isLoading={isLoading || isCheckingTitle}
               onClick={createSubjectForm.handleSubmit(onSubmit)}
             >
               Create
