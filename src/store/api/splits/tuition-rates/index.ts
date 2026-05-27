@@ -62,6 +62,7 @@ export const TuitionRatesApi = baseApi.injectEndpoints({
 
 export const {
   useFetchTuitionRatesQuery,
+  useLazyFetchTuitionRatesQuery,
   useFetchTuitionRateByIdQuery,
   useLazyFetchTuitionRateByIdQuery,
   useCreateTuitionRateMutation,

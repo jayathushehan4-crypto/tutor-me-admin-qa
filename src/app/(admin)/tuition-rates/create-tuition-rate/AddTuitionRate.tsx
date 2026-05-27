@@ -31,7 +31,7 @@ import {
 
 import {
   useCreateTuitionRateMutation,
-  useFetchTuitionRatesQuery,
+  useLazyFetchTuitionRatesQuery,
 } from "@/store/api/splits/tuition-rates";
 
 import { getErrorInApiResult } from "@/utils/api";
@@ -46,9 +46,15 @@ import {
   createTuitionSchema,
   initialFormValues,
 } from "./schema";
+import {
+  DUPLICATE_TUITION_RATE_MESSAGE,
+  getTuitionRateErrorMessage,
+  hasDuplicateTuitionRateCombination,
+} from "../tuition-rate-validation";
 
 export function AddTuitionRate() {
   const [open, setOpen] = useState(false);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   const createTuitionRateForm = useForm<CreateTuitionSchema>({
     resolver: zodResolver(createTuitionSchema),
@@ -56,9 +62,8 @@ export function AddTuitionRate() {
     mode: "onChange",
   });
 
-  const { data: tuitionRates } = useFetchTuitionRatesQuery({});
-
   const [createRate, { isLoading }] = useCreateTuitionRateMutation();
+  const [fetchTuitionRates] = useLazyFetchTuitionRatesQuery();
 
   const { data: gradeData, isLoading: isGradesLoading } = useFetchGradesQuery(
     {
@@ -76,28 +81,38 @@ export function AddTuitionRate() {
     const gradeId = String(data.grade);
     const subjectId = String(data.subject);
 
-    const existingRates = tuitionRates?.results ?? [];
-    const isDuplicate = existingRates.some(
-      (rate) =>
-        String(rate.grade?.id) === gradeId &&
-        String(rate.subject?.id) === subjectId,
-    );
+    try {
+      setIsCheckingDuplicate(true);
+      const tuitionRates = await fetchTuitionRates({
+        page: 1,
+        limit: 1000,
+        grade: gradeId,
+        subject: subjectId,
+      }).unwrap();
+      setIsCheckingDuplicate(false);
 
-    if (isDuplicate) {
-      return toast.error(
-        "A tuition rate for this grade and subject already exists.",
-      );
-    }
+      if (
+        hasDuplicateTuitionRateCombination(
+          tuitionRates.results,
+          gradeId,
+          subjectId,
+        )
+      ) {
+        return toast.error(DUPLICATE_TUITION_RATE_MESSAGE);
+      }
 
-    const result = await createRate(data);
-    const error = getErrorInApiResult(result);
+      const result = await createRate(data);
+      const error = getErrorInApiResult(result);
 
-    if (error) return toast.error(error);
+      if (error) return toast.error(getTuitionRateErrorMessage(error));
 
-    if ("data" in result) {
-      createTuitionRateForm.reset();
-      toast.success("Tuition Rate created successfully");
-      setOpen(false);
+      if ("data" in result) {
+        createTuitionRateForm.reset();
+        toast.success("Tuition Rate created successfully");
+        setOpen(false);
+      }
+    } finally {
+      setIsCheckingDuplicate(false);
     }
   };
 
@@ -277,7 +292,7 @@ export function AddTuitionRate() {
             <Button
               type="submit"
               className="bg-blue-700 text-white hover:bg-blue-500"
-              isLoading={isLoading}
+              isLoading={isLoading || isCheckingDuplicate}
               onClick={createTuitionRateForm.handleSubmit(onSubmit)}
             >
               Create

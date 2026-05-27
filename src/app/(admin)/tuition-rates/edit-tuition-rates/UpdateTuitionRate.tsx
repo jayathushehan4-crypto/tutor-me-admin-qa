@@ -19,7 +19,10 @@ import {
   useFetchGradeByIdQuery,
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
-import { useUpdateTuitionRateMutation } from "@/store/api/splits/tuition-rates";
+import {
+  useLazyFetchTuitionRatesQuery,
+  useUpdateTuitionRateMutation,
+} from "@/store/api/splits/tuition-rates";
 import { getErrorInApiResult } from "@/utils/api";
 import { decimalInputRegisterOptions } from "@/utils/form-normalizers";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
@@ -34,6 +37,11 @@ import {
   UpdateTuitionSchema,
   updateTuitionSchema,
 } from "./schema";
+import {
+  DUPLICATE_TUITION_RATE_MESSAGE,
+  getTuitionRateErrorMessage,
+  hasDuplicateTuitionRateCombination,
+} from "../tuition-rate-validation";
 
 interface UpdateTuitionRateProps {
   id: string;
@@ -67,6 +75,7 @@ export function UpdateTuitionRate({
   moeTeacherRate,
 }: UpdateTuitionRateProps) {
   const [open, setOpen] = useState(false);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   const {
     reset,
@@ -90,6 +99,7 @@ export function UpdateTuitionRate({
     mode: "onChange",
   });
 
+  const [fetchTuitionRates] = useLazyFetchTuitionRatesQuery();
   const [updateTuition, { isLoading }] = useUpdateTuitionRateMutation();
   const selectedGrade = watch("grade");
 
@@ -145,23 +155,50 @@ export function UpdateTuitionRate({
   }, [grade, open, selectedGrade, setValue]);
 
   const onSubmit = async (data: UpdateTuitionSchema) => {
-    const payload = {
-      id,
-      subject: data.subject,
-      grade: data.grade,
-      universityStudentsRate: data.universityStudentsRate,
-      partTimeTutorRate: data.partTimeTutorRate,
-      fullTimeTutorRate: data.fullTimeTutorRate,
-      moeTeacherRate: data.moeTeacherRate,
-    };
+    const gradeId = String(data.grade);
+    const subjectId = String(data.subject);
 
-    const result = await updateTuition(payload);
-    const error = getErrorInApiResult(result);
-    if (error) return toast.error(error);
+    try {
+      setIsCheckingDuplicate(true);
+      const tuitionRates = await fetchTuitionRates({
+        page: 1,
+        limit: 1000,
+        grade: gradeId,
+        subject: subjectId,
+      }).unwrap();
+      setIsCheckingDuplicate(false);
 
-    if ("data" in result) {
-      toast.success("Tuition rate updated successfully");
-      setOpen(false);
+      if (
+        hasDuplicateTuitionRateCombination(
+          tuitionRates.results,
+          gradeId,
+          subjectId,
+          id,
+        )
+      ) {
+        return toast.error(DUPLICATE_TUITION_RATE_MESSAGE);
+      }
+
+      const payload = {
+        id,
+        subject: subjectId,
+        grade: gradeId,
+        universityStudentsRate: data.universityStudentsRate,
+        partTimeTutorRate: data.partTimeTutorRate,
+        fullTimeTutorRate: data.fullTimeTutorRate,
+        moeTeacherRate: data.moeTeacherRate,
+      };
+
+      const result = await updateTuition(payload);
+      const error = getErrorInApiResult(result);
+      if (error) return toast.error(getTuitionRateErrorMessage(error));
+
+      if ("data" in result) {
+        toast.success("Tuition rate updated successfully");
+        setOpen(false);
+      }
+    } finally {
+      setIsCheckingDuplicate(false);
     }
   };
 
@@ -303,8 +340,8 @@ export function UpdateTuitionRate({
             <Button
               type="submit"
               className="bg-blue-700 text-white hover:bg-blue-500"
-              isLoading={isLoading}
-              disabled={displayLoading || !isDirty}
+              isLoading={isLoading || isCheckingDuplicate}
+              disabled={displayLoading || !isDirty || isCheckingDuplicate}
             >
               Save
             </Button>
