@@ -352,7 +352,7 @@ export default function UsersTable() {
       key: "view",
       header: <div className="flex justify-center w-full">View</div>,
       className:
-        "min-w-[80px] max-w-[80px] sticky right-[260px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => (
         <div className="w-full flex justify-center ">
           <UserDetails
@@ -380,7 +380,7 @@ export default function UsersTable() {
       key: "edit",
       header: <div className="flex justify-center w-full">Edit</div>,
       className:
-        "min-w-[80px] max-w-[80px] sticky right-[180px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => {
         const isTutor = row.role === "tutor";
 
@@ -419,14 +419,14 @@ export default function UsersTable() {
       key: "resetPassword",
       header: (
         <span
-          className="truncate w-full text-center block max-w-[100px]"
+          className="block w-full text-center leading-tight"
           title="Reset Password"
         >
           Reset Password
         </span>
       ),
       className:
-        "min-w-[80px] max-w-[100px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => (
         <div className="w-full flex justify-center">
           <ResetPassword userId={row.id} />

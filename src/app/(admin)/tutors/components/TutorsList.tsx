@@ -774,7 +774,7 @@ export default function TutorsList() {
         key: "view",
         header: <div className="text-center w-full">View</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[240px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <ViewTutor tutor={row} />
@@ -787,7 +787,7 @@ export default function TutorsList() {
         key: "edit",
         header: <div className="text-center w-full">Edit</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[160px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <EditTutor id={row.id} />
@@ -800,14 +800,14 @@ export default function TutorsList() {
         key: "resetPassword",
         header: (
           <span
-            className="truncate w-full text-center block max-w-[100px]"
+            className="block w-full text-center leading-tight"
             title="Reset Password"
           >
             Reset Password
           </span>
         ),
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => {
           const isApproved = row.status?.toLowerCase() === "approved";
 
