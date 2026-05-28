@@ -53,6 +53,9 @@ export default function DashboardOverview() {
 
   const showProfileSkeleton = !isUserLoaded || isUserLoading;
   const showSummarySkeleton = isSummaryLoading;
+  const isPositiveStatus = ["active", "approved"].includes(
+    displayStatus.toLowerCase(),
+  );
 
   return (
     <motion.div
@@ -135,7 +138,7 @@ export default function DashboardOverview() {
                 </span>
                 <span
                   className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium ${
-                    displayStatus === "active"
+                    isPositiveStatus
                       ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400"
                       : "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
                   }`}
@@ -165,8 +168,8 @@ export default function DashboardOverview() {
 
       {/* Stats grid */}
       {showSummarySkeleton ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
               className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
@@ -179,7 +182,7 @@ export default function DashboardOverview() {
         </div>
       ) : (
         <motion.div
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
           animate="show"

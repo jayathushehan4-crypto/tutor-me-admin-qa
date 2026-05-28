@@ -3,12 +3,10 @@ import {
   GraduationCap,
   LucideIcon,
   UserPlus,
-  Users,
 } from "lucide-react";
 
 type SummaryKey =
   | "registeredTutors"
-  | "registeredStudents"
   | "requestTutorRequests"
   | "registerAsTutorRequests";
 
@@ -29,14 +27,6 @@ export const statCards: Array<{
     accent: "bg-blue-600",
   },
   {
-    label: "Registered Students",
-    key: "registeredStudents",
-    icon: Users,
-    iconBg: "bg-teal-50 dark:bg-teal-500/10",
-    iconColor: "text-teal-600 dark:text-teal-400",
-    accent: "bg-teal-500",
-  },
-  {
     label: "Tutor Requests",
     key: "requestTutorRequests",
     icon: ClipboardList,
@@ -45,7 +35,7 @@ export const statCards: Array<{
     accent: "bg-violet-600",
   },
   {
-    label: "Register as Tutor",
+    label: "Register as Tutor Requests",
     key: "registerAsTutorRequests",
     icon: UserPlus,
     iconBg: "bg-orange-50 dark:bg-orange-500/10",

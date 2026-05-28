@@ -3,8 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
 import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
-import { useFetchUsersQuery } from "@/store/api/splits/users";
-import type { RequestTutors, Tutor, Users } from "@/types/response-types";
+import type { RequestTutors, Tutor } from "@/types/response-types";
 import { ApexOptions } from "apexcharts";
 import { TrendingUp } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -14,7 +13,7 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-type ChartMetric = "all" | "tutors" | "students" | "tutorRequests" | "tutorApplications";
+type ChartMetric = "all" | "tutors" | "tutorRequests" | "tutorApplications";
 
 type GrowthBucket = {
   key: string;
@@ -57,16 +56,6 @@ const metricConfigs: MetricConfig[] = [
       "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300",
   },
   {
-    key: "students",
-    label: "Registered Students",
-    shortLabel: "Students",
-    color: "#14B8A6",
-    activeClassName:
-      "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/40 dark:bg-teal-500/10 dark:text-teal-300",
-    mutedClassName:
-      "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  },
-  {
     key: "tutorRequests",
     label: "Tutor Requests",
     shortLabel: "Requests",
@@ -78,7 +67,7 @@ const metricConfigs: MetricConfig[] = [
   },
   {
     key: "tutorApplications",
-    label: "Register as Tutor",
+    label: "Register as Tutor Requests",
     shortLabel: "Applications",
     color: "#F97316",
     activeClassName:
@@ -163,13 +152,6 @@ export default function TutorGrowthChart() {
     sortBy: "createdAt:asc",
   });
 
-  const studentsQuery = useFetchUsersQuery({
-    page: 1,
-    limit: 1000,
-    role: "student",
-    sortBy: "createdAt:asc",
-  });
-
   const tutorRequestsQuery = useFetchRequestForTutorsQuery({
     page: 1,
     limit: 1000,
@@ -181,10 +163,6 @@ export default function TutorGrowthChart() {
       tutors: {
         records: (approvedTutorsQuery.data?.results || []) as Tutor[],
         total: approvedTutorsQuery.data?.totalResults || 0,
-      },
-      students: {
-        records: (studentsQuery.data?.results || []) as Users[],
-        total: studentsQuery.data?.totalResults || 0,
       },
       tutorRequests: {
         records: (tutorRequestsQuery.data?.results || []) as RequestTutors[],
@@ -198,8 +176,6 @@ export default function TutorGrowthChart() {
     [
       approvedTutorsQuery.data?.results,
       approvedTutorsQuery.data?.totalResults,
-      studentsQuery.data?.results,
-      studentsQuery.data?.totalResults,
       tutorApplicationsQuery.data?.results,
       tutorApplicationsQuery.data?.totalResults,
       tutorRequestsQuery.data?.results,
@@ -357,13 +333,11 @@ export default function TutorGrowthChart() {
   const isLoading =
     approvedTutorsQuery.isLoading ||
     tutorApplicationsQuery.isLoading ||
-    studentsQuery.isLoading ||
     tutorRequestsQuery.isLoading;
 
   const isError =
     approvedTutorsQuery.isError ||
     tutorApplicationsQuery.isError ||
-    studentsQuery.isError ||
     tutorRequestsQuery.isError;
 
   const hasChartData = metricConfigs.some(
