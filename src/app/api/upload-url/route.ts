@@ -21,6 +21,7 @@ export async function POST(req: Request) {
 
   const sharedKey = new StorageSharedKeyCredential(account, key);
 
+  const startsOn = new Date(Date.now() - 5 * 60 * 1000);
   const expiresOn = new Date(Date.now() + 15 * 60 * 1000);
 
   const sas = generateBlobSASQueryParameters(
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
       containerName: container,
       blobName: fileName,
       permissions: BlobSASPermissions.parse("cw"),
-      startsOn: new Date(),
+      startsOn,
       expiresOn,
       contentType: fileType,
     },
