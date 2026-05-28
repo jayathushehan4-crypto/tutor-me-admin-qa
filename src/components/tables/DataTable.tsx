@@ -41,6 +41,7 @@ interface DataTableProps<T> {
   isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
+  preserveDataOrder?: boolean;
 }
 
 function getPaginationRange({
@@ -103,6 +104,7 @@ export default function DataTable<T extends { id: string | number }>({
   isLoading = false,
   emptyMessage = "This is empty. Please create a new one.",
   className,
+  preserveDataOrder = false,
 }: DataTableProps<T>) {
   const showPagination = totalResults > limit;
   const isFirstPage = page === 1;
@@ -114,8 +116,8 @@ export default function DataTable<T extends { id: string | number }>({
     siblingCount: 1,
   });
   const latestSortedData = useMemo(
-    () => sortByLatestTimestampDesc(data),
-    [data],
+    () => (preserveDataOrder ? data : sortByLatestTimestampDesc(data)),
+    [data, preserveDataOrder],
   );
 
   const rowsToRender = isLoading
