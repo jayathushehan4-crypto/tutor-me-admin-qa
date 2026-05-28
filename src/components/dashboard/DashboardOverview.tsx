@@ -9,6 +9,7 @@ import { statCards } from "@/types/dashboard-types";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import TutorGrowthChart from "./TutorGrowthChart";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
@@ -226,6 +227,8 @@ export default function DashboardOverview() {
           )}
         </motion.div>
       )}
+
+      <TutorGrowthChart />
     </motion.div>
   );
 }
