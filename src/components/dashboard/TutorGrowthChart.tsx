@@ -42,7 +42,15 @@ type MetricData = Record<
   }
 >;
 
-const DAY_COUNT = 14;
+type DateRange = 7 | 14 | 30;
+
+const DEFAULT_DAY_COUNT: DateRange = 14;
+
+const dateRangeOptions: Array<{ value: DateRange; label: string }> = [
+  { value: 7, label: "7D" },
+  { value: 14, label: "14D" },
+  { value: 30, label: "30D" },
+];
 
 const metricConfigs: MetricConfig[] = [
   {
@@ -85,14 +93,14 @@ const getDayKey = (date: Date) =>
 const getDayLabel = (date: Date) =>
   date.toLocaleString("en-US", { day: "numeric", month: "short" });
 
-const createEmptyDays = () => {
+const createEmptyDays = (dayCount: DateRange) => {
   const today = new Date();
 
-  return Array.from({ length: DAY_COUNT }, (_, index) => {
+  return Array.from({ length: dayCount }, (_, index) => {
     const date = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() - (DAY_COUNT - 1 - index),
+      today.getDate() - (dayCount - 1 - index),
     );
 
     return {
@@ -105,8 +113,9 @@ const createEmptyDays = () => {
 
 const buildDailyGrowth = <T extends TimestampedRecord>(
   records: T[],
+  dayCount: DateRange,
 ): GrowthBucket[] => {
-  const days = createEmptyDays();
+  const days = createEmptyDays(dayCount);
   const firstDay = days[0]?.key;
   const dailyTotals = new Map(days.map((day) => [day.key, 0]));
 
@@ -138,6 +147,7 @@ const formatNumber = (value: number) => value.toLocaleString("en-US");
 
 export default function TutorGrowthChart() {
   const [activeMetric, setActiveMetric] = useState<ChartMetric>("all");
+  const [dayCount, setDayCount] = useState<DateRange>(DEFAULT_DAY_COUNT);
 
   const approvedTutorsQuery = useFetchTutorsQuery({
     page: 1,
@@ -188,11 +198,14 @@ export default function TutorGrowthChart() {
       metricConfigs.reduce(
         (acc, metric) => ({
           ...acc,
-          [metric.key]: buildDailyGrowth(metricData[metric.key].records),
+          [metric.key]: buildDailyGrowth(
+            metricData[metric.key].records,
+            dayCount,
+          ),
         }),
         {} as Record<Exclude<ChartMetric, "all">, GrowthBucket[]>,
       ),
-    [metricData],
+    [dayCount, metricData],
   );
 
   const visibleMetrics =
@@ -356,7 +369,11 @@ export default function TutorGrowthChart() {
                 <Skeleton className="mt-2 h-4 w-56" />
               </div>
             </div>
-            <Skeleton className="h-8 w-24 rounded-lg" />
+            <div className="flex gap-1 rounded-lg border border-gray-200 p-1 dark:border-gray-700">
+              <Skeleton className="h-7 w-10 rounded-md" />
+              <Skeleton className="h-7 w-10 rounded-md" />
+              <Skeleton className="h-7 w-10 rounded-md" />
+            </div>
           </div>
           <div className="mt-5 flex gap-2">
             <Skeleton className="h-8 w-16 rounded-lg" />
@@ -383,15 +400,32 @@ export default function TutorGrowthChart() {
                 Dashboard Activity
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Daily activity over the last {DAY_COUNT} days
+                Daily activity over the last {dayCount} days
               </p>
             </div>
           </div>
 
-          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Live
-          </span>
+          <div
+            className="inline-flex w-fit rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800"
+            role="group"
+            aria-label="Select chart date range"
+          >
+            {dateRangeOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setDayCount(option.value)}
+                aria-pressed={dayCount === option.value}
+                className={`h-8 rounded-md px-3 text-sm font-medium transition ${
+                  dayCount === option.value
+                    ? "bg-white text-blue-600 shadow-sm dark:bg-gray-900 dark:text-blue-400"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">

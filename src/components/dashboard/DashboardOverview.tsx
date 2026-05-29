@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import NeedsAttentionPanel from "./NeedsAttentionPanel";
+import RecentActivityFeed from "./RecentActivityFeed";
 import TutorGrowthChart from "./TutorGrowthChart";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
@@ -254,6 +255,8 @@ export default function DashboardOverview() {
       <NeedsAttentionPanel />
 
       <TutorGrowthChart />
+
+      <RecentActivityFeed />
     </motion.div>
   );
 }
