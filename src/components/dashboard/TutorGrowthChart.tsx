@@ -438,7 +438,7 @@ export default function TutorGrowthChart({
   if (isLoading) {
     return (
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
               <Skeleton className="h-10 w-10 rounded-lg" />
@@ -447,13 +447,13 @@ export default function TutorGrowthChart({
                 <Skeleton className="mt-2 h-4 w-56" />
               </div>
             </div>
-            <div className="flex gap-1 rounded-lg border border-gray-200 p-1 dark:border-gray-700">
-              <Skeleton className="h-7 w-10 rounded-md" />
-              <Skeleton className="h-7 w-10 rounded-md" />
-              <Skeleton className="h-7 w-10 rounded-md" />
+            <div className="grid w-full grid-cols-3 gap-1 rounded-lg border border-gray-200 p-1 dark:border-gray-700 sm:flex sm:w-fit">
+              <Skeleton className="h-7 rounded-md sm:w-10" />
+              <Skeleton className="h-7 rounded-md sm:w-10" />
+              <Skeleton className="h-7 rounded-md sm:w-10" />
             </div>
           </div>
-          <div className="mt-5 flex gap-2">
+          <div className="mt-5 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
             <Skeleton className="h-8 w-16 rounded-lg" />
             <Skeleton className="h-8 w-24 rounded-lg" />
             <Skeleton className="h-8 w-28 rounded-lg" />
@@ -468,7 +468,7 @@ export default function TutorGrowthChart({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="p-6">
+      <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
@@ -485,7 +485,7 @@ export default function TutorGrowthChart({
           </div>
 
           <div
-            className="inline-flex w-fit rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800"
+            className="grid w-full grid-cols-3 rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800 sm:inline-flex sm:w-fit"
             role="group"
             aria-label="Select chart date range"
           >
@@ -507,11 +507,11 @@ export default function TutorGrowthChart({
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <button
             type="button"
             onClick={() => setActiveMetric("all")}
-            className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+            className={`inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
               activeMetric === "all"
                 ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                 : "border-gray-200 bg-gray-50 text-gray-700 hover:border-blue-200 hover:text-blue-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
@@ -525,7 +525,7 @@ export default function TutorGrowthChart({
               key={metric.key}
               type="button"
               onClick={() => setActiveMetric(metric.key)}
-              className={`inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+              className={`inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                 activeMetric === metric.key
                   ? metric.activeClassName
                   : `${metric.mutedClassName} hover:border-gray-300 dark:hover:border-gray-600`
@@ -536,20 +536,20 @@ export default function TutorGrowthChart({
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+          <span className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-center text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 sm:justify-start sm:text-left">
             {selectedMetric ? selectedMetric.label : "Total"}:{" "}
             {formatNumber(totalResults)}
           </span>
-          <span className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+          <span className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-center text-sm font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400 sm:justify-start sm:text-left">
             Today: +{formatNumber(todayTotal)}
           </span>
           <span
-            className={`inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium dark:border-gray-700 dark:bg-gray-800 ${periodComparison.className}`}
+            className={`inline-flex items-center justify-center whitespace-normal rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-center text-sm font-medium dark:border-gray-700 dark:bg-gray-800 sm:justify-start sm:text-left ${periodComparison.className}`}
           >
             {periodComparison.label}
           </span>
-          <span className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <span className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-center text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 sm:justify-start sm:text-left">
             Peak Day: {formatNumber(peakDailyValue)}
           </span>
         </div>
@@ -591,7 +591,7 @@ export default function TutorGrowthChart({
             </p>
           </div>
         ) : (
-          <div className="mt-5 w-full">
+          <div className="mt-5 min-w-0 overflow-hidden">
             <ReactApexChart
               options={options}
               series={series}

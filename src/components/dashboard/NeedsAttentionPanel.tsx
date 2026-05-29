@@ -115,7 +115,7 @@ export default function NeedsAttentionPanel({
   if (isLoading) {
     return (
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <Skeleton className="h-10 w-10 rounded-lg" />
             <div className="space-y-2">
@@ -125,7 +125,7 @@ export default function NeedsAttentionPanel({
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-24 rounded-xl" />
+              <Skeleton key={index} className="h-32 rounded-xl lg:h-28" />
             ))}
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function NeedsAttentionPanel({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="p-6">
+      <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10">
@@ -157,7 +157,7 @@ export default function NeedsAttentionPanel({
               type="button"
               onClick={refetchAttentionItems}
               disabled={isRefetching}
-              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+              className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20 sm:w-fit"
             >
               <RefreshCw
                 className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
@@ -176,7 +176,7 @@ export default function NeedsAttentionPanel({
             </p>
           </div>
         ) : activeItems.length === 0 ? (
-          <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
             <div>
               <p className="font-medium text-gray-700 dark:text-gray-300">
@@ -195,7 +195,7 @@ export default function NeedsAttentionPanel({
                 <Link
                   key={title}
                   href={href}
-                  className="group border-b border-gray-200 p-4 outline-none transition last:border-b-0 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:border-gray-800 dark:hover:bg-gray-800/50 dark:focus-visible:ring-blue-400 lg:border-b-0"
+                  className="group min-h-[132px] border-b border-gray-200 p-4 outline-none transition last:border-b-0 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:border-gray-800 dark:hover:bg-gray-800/50 dark:focus-visible:ring-blue-400 lg:min-h-[150px] lg:border-b-0"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div
@@ -207,10 +207,10 @@ export default function NeedsAttentionPanel({
                       {formatNumber(count)}
                     </span>
                   </div>
-                  <h3 className="mt-4 text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                  <h3 className="mt-4 break-words text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
                     {title}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 break-words text-sm text-gray-500 dark:text-gray-400">
                     {description}
                   </p>
                 </Link>

@@ -146,7 +146,7 @@ export default function RecentActivityFeed({
   if (isLoading) {
     return (
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <Skeleton className="h-10 w-10 rounded-lg" />
             <div className="space-y-2">
@@ -162,7 +162,7 @@ export default function RecentActivityFeed({
                   <Skeleton className="h-4 w-48" />
                   <Skeleton className="h-3.5 w-64" />
                 </div>
-                <Skeleton className="h-6 w-20 rounded-lg" />
+                <Skeleton className="hidden h-6 w-20 rounded-lg sm:block" />
               </div>
             ))}
           </div>
@@ -174,7 +174,7 @@ export default function RecentActivityFeed({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="p-6">
+      <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
@@ -195,7 +195,7 @@ export default function RecentActivityFeed({
               type="button"
               onClick={refetchActivity}
               disabled={isRefetching}
-              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+              className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20 sm:w-fit"
             >
               <RefreshCw
                 className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
@@ -246,7 +246,7 @@ export default function RecentActivityFeed({
                 <Link
                   key={id}
                   href={href}
-                  className="group flex items-center gap-3 p-4 outline-none transition hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:hover:bg-gray-800/50 dark:focus-visible:ring-blue-400"
+                  className="group flex items-start gap-3 p-4 outline-none transition hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:hover:bg-gray-800/50 dark:focus-visible:ring-blue-400 sm:items-center"
                 >
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone}`}
@@ -256,7 +256,7 @@ export default function RecentActivityFeed({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                      <h3 className="truncate text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                      <h3 className="break-words text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400 sm:truncate">
                         {title}
                       </h3>
                       {status && (
@@ -265,8 +265,11 @@ export default function RecentActivityFeed({
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 break-words text-sm text-gray-500 dark:text-gray-400 sm:truncate">
                       {description}
+                    </p>
+                    <p className="mt-2 text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">
+                      {formatActivityTime(timestamp)}
                     </p>
                   </div>
 

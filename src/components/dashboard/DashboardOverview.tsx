@@ -185,7 +185,7 @@ export default function DashboardOverview() {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-5 sm:space-y-6"
       initial="hidden"
       animate="show"
       variants={containerVariants}
@@ -197,7 +197,7 @@ export default function DashboardOverview() {
       >
         <div className="h-[3px] bg-blue-600" />
 
-        <div className="p-6 md:p-8">
+        <div className="p-5 sm:p-6 md:p-8">
           {showProfileSkeleton ? (
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
@@ -215,8 +215,8 @@ export default function DashboardOverview() {
             </div>
           ) : (
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-16 sm:w-16">
                   {avatarSrc && !isImageError ? (
                     <Image
                       width={64}
@@ -227,18 +227,18 @@ export default function DashboardOverview() {
                       onError={() => setIsImageError(true)}
                     />
                   ) : (
-                    <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
+                    <span className="text-base font-semibold text-gray-600 dark:text-gray-300 sm:text-lg">
                       {getInitials(displayName)}
                     </span>
                   )}
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Welcome back
                   </p>
                   <motion.h1
-                    className="mt-0.5 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl"
+                    className="mt-0.5 break-words text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl"
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -246,7 +246,7 @@ export default function DashboardOverview() {
                     {displayName}
                   </motion.h1>
                   {displayEmail && (
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">
                       {displayEmail}
                     </p>
                   )}
@@ -254,16 +254,16 @@ export default function DashboardOverview() {
               </div>
 
               <motion.div
-                className="flex flex-wrap gap-2"
+                className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end"
                 initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 }}
               >
-                <span className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                <span className="inline-flex max-w-full items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                   Role: {capitalize(displayRole)}
                 </span>
                 <span
-                  className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  className={`inline-flex max-w-full items-center rounded-lg px-3 py-1.5 text-sm font-medium ${
                     isPositiveStatus
                       ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400"
                       : "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
@@ -295,7 +295,7 @@ export default function DashboardOverview() {
               type="button"
               onClick={refetchStats}
               disabled={isStatsRefetching}
-              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:bg-red-950/40"
+              className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:bg-red-950/40 sm:w-fit"
             >
               <RefreshCw
                 className={`h-4 w-4 ${isStatsRefetching ? "animate-spin" : ""}`}
@@ -308,11 +308,11 @@ export default function DashboardOverview() {
 
       {/* Stats grid */}
       {showSummarySkeleton ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              className="min-h-[210px] rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6"
             >
               <Skeleton className="h-10 w-10 rounded-lg" />
               <Skeleton className="mt-4 h-4 w-32" />
@@ -323,7 +323,7 @@ export default function DashboardOverview() {
         </div>
       ) : (
         <motion.div
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
           animate="show"
@@ -346,7 +346,7 @@ export default function DashboardOverview() {
                   <Link
                     href={href}
                     aria-label={`View ${label}`}
-                    className="group block h-full p-6 outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900"
+                    className="group block h-full min-h-[210px] p-5 outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900 sm:p-6"
                   >
                     <div className="flex items-start justify-between">
                       <div
@@ -361,8 +361,8 @@ export default function DashboardOverview() {
                     </div>
 
                     <div className="mt-4 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="min-w-0">
+                        <p className="break-words text-sm text-gray-500 dark:text-gray-400">
                           {label}
                         </p>
                         <motion.p
@@ -383,11 +383,11 @@ export default function DashboardOverview() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                      <span className="inline-flex max-w-full items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium leading-5 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                         Today: +{formatNumber(trend.today)}
                       </span>
                       <span
-                        className={`inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-800 ${trend.className}`}
+                        className={`inline-flex max-w-full items-center whitespace-normal rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium leading-5 dark:border-gray-700 dark:bg-gray-800 ${trend.className}`}
                       >
                         {trend.label}
                       </span>
