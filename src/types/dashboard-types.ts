@@ -5,7 +5,7 @@ import {
   UserPlus,
 } from "lucide-react";
 
-type SummaryKey =
+export type SummaryKey =
   | "registeredTutors"
   | "requestTutorRequests"
   | "registerAsTutorRequests";

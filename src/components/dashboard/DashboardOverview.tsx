@@ -3,19 +3,36 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "@/context";
 import { useFetchDashboardSummaryQuery } from "@/store/api/splits/dashboard";
+import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
+import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import { useFetchUserByIdQuery } from "@/store/api/splits/users";
 import { containerVariants } from "@/types/animation-types";
 import { statCards } from "@/types/dashboard-types";
+import type { SummaryKey } from "@/types/dashboard-types";
+import type { RequestTutors, Tutor } from "@/types/response-types";
 import { ArrowUpRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import NeedsAttentionPanel from "./NeedsAttentionPanel";
 import RecentActivityFeed from "./RecentActivityFeed";
 import TutorGrowthChart from "./TutorGrowthChart";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
+const STAT_COMPARISON_DAYS = 7;
+
+type TimestampedRecord = {
+  createdAt?: string | null;
+};
+
+type StatTrend = {
+  today: number;
+  currentPeriod: number;
+  previousPeriod: number;
+  label: string;
+  className: string;
+};
 
 const capitalize = (value: string) =>
   value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
@@ -28,6 +45,91 @@ const getInitials = (name: string) =>
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+const getStartOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const addDays = (date: Date, days: number) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+
+const getRecordTimestamp = (record: TimestampedRecord) => {
+  if (!record.createdAt) return 0;
+
+  const timestamp = new Date(record.createdAt).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+const countRecordsInRange = (
+  records: TimestampedRecord[],
+  start: Date,
+  end: Date,
+) => {
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+
+  return records.filter((record) => {
+    const timestamp = getRecordTimestamp(record);
+    return timestamp >= startTime && timestamp < endTime;
+  }).length;
+};
+
+const buildStatTrend = (records: TimestampedRecord[]): StatTrend => {
+  const todayStart = getStartOfDay(new Date());
+  const tomorrowStart = addDays(todayStart, 1);
+  const currentPeriodStart = addDays(todayStart, -(STAT_COMPARISON_DAYS - 1));
+  const previousPeriodStart = addDays(
+    currentPeriodStart,
+    -STAT_COMPARISON_DAYS,
+  );
+
+  const today = countRecordsInRange(records, todayStart, tomorrowStart);
+  const currentPeriod = countRecordsInRange(
+    records,
+    currentPeriodStart,
+    tomorrowStart,
+  );
+  const previousPeriod = countRecordsInRange(
+    records,
+    previousPeriodStart,
+    currentPeriodStart,
+  );
+  const change = currentPeriod - previousPeriod;
+
+  if (previousPeriod === 0) {
+    return {
+      today,
+      currentPeriod,
+      previousPeriod,
+      label:
+        currentPeriod === 0
+          ? "No change vs previous 7 days"
+          : `+${formatNumber(currentPeriod)} vs previous 7 days`,
+      className:
+        currentPeriod === 0
+          ? "text-gray-500 dark:text-gray-400"
+          : "text-emerald-600 dark:text-emerald-400",
+    };
+  }
+
+  const percentageChange = Math.round((change / previousPeriod) * 100);
+  const prefix = percentageChange > 0 ? "+" : "";
+
+  return {
+    today,
+    currentPeriod,
+    previousPeriod,
+    label:
+      percentageChange === 0
+        ? "No change vs previous 7 days"
+        : `${prefix}${percentageChange}% vs previous 7 days`,
+    className:
+      percentageChange > 0
+        ? "text-emerald-600 dark:text-emerald-400"
+        : percentageChange < 0
+          ? "text-rose-600 dark:text-rose-400"
+          : "text-gray-500 dark:text-gray-400",
+  };
+};
 
 export default function DashboardOverview() {
   const { user: authUser, isUserLoaded } = useAuthContext();
@@ -43,6 +145,25 @@ export default function DashboardOverview() {
     isError: isSummaryError,
   } = useFetchDashboardSummaryQuery();
 
+  const approvedTutorsQuery = useFetchTutorsQuery({
+    page: 1,
+    limit: 1000,
+    status: "approved",
+    sortBy: "createdAt:desc",
+  });
+
+  const tutorApplicationsQuery = useFetchTutorsQuery({
+    page: 1,
+    limit: 1000,
+    sortBy: "createdAt:desc",
+  });
+
+  const tutorRequestsQuery = useFetchRequestForTutorsQuery({
+    page: 1,
+    limit: 1000,
+    sortBy: "createdAt:desc",
+  });
+
   const [isImageError, setIsImageError] = useState(false);
 
   useEffect(() => {
@@ -56,9 +177,31 @@ export default function DashboardOverview() {
   const avatarSrc = user?.avatar || authUser?.avatar || "";
 
   const showProfileSkeleton = !isUserLoaded || isUserLoading;
-  const showSummarySkeleton = isSummaryLoading;
+  const isStatTrendLoading =
+    approvedTutorsQuery.isLoading ||
+    tutorApplicationsQuery.isLoading ||
+    tutorRequestsQuery.isLoading;
+  const showSummarySkeleton = isSummaryLoading || isStatTrendLoading;
   const isPositiveStatus = ["active", "approved"].includes(
     displayStatus.toLowerCase(),
+  );
+  const statTrends = useMemo<Record<SummaryKey, StatTrend>>(
+    () => ({
+      registeredTutors: buildStatTrend(
+        (approvedTutorsQuery.data?.results || []) as Tutor[],
+      ),
+      requestTutorRequests: buildStatTrend(
+        (tutorRequestsQuery.data?.results || []) as RequestTutors[],
+      ),
+      registerAsTutorRequests: buildStatTrend(
+        (tutorApplicationsQuery.data?.results || []) as Tutor[],
+      ),
+    }),
+    [
+      approvedTutorsQuery.data?.results,
+      tutorApplicationsQuery.data?.results,
+      tutorRequestsQuery.data?.results,
+    ],
   );
 
   return (
@@ -181,6 +324,7 @@ export default function DashboardOverview() {
               <Skeleton className="h-10 w-10 rounded-lg" />
               <Skeleton className="mt-4 h-4 w-32" />
               <Skeleton className="mt-2 h-8 w-16" />
+              <Skeleton className="mt-4 h-4 w-36" />
             </div>
           ))}
         </div>
@@ -195,59 +339,74 @@ export default function DashboardOverview() {
             (
               { label, key, icon: Icon, iconBg, iconColor, accent, href },
               index,
-            ) => (
-              <motion.div
-                key={key}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.99 }}
-                layout
-                className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
-              >
-                <Link
-                  href={href}
-                  aria-label={`View ${label}`}
-                  className="group block h-full p-6 outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900"
+            ) => {
+              const trend = statTrends[key];
+
+              return (
+                <motion.div
+                  key={key}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.99 }}
+                  layout
+                  className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
                 >
-                  <div className="flex items-start justify-between">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}
-                    >
-                      <Icon className={`h-5 w-5 ${iconColor}`} />
-                    </div>
-                    <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Live
-                    </span>
-                  </div>
-
-                  <div className="mt-4 flex items-end justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {label}
-                      </p>
-                      <motion.p
-                        className="mt-1 text-3xl font-bold tracking-tight text-gray-900 dark:text-white"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1 + index * 0.05 }}
+                  <Link
+                    href={href}
+                    aria-label={`View ${label}`}
+                    className="group block h-full p-6 outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}
                       >
-                        {formatNumber(summary?.[key] ?? 0)}
-                      </motion.p>
+                        <Icon className={`h-5 w-5 ${iconColor}`} />
+                      </div>
+                      <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        Live
+                      </span>
                     </div>
-                    <span
-                      aria-hidden="true"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition group-hover:border-blue-200 group-hover:text-blue-600 dark:border-gray-700 dark:text-gray-500 dark:group-hover:border-blue-800 dark:group-hover:text-blue-400"
-                    >
-                      <ArrowUpRight className="h-4 w-4" />
-                    </span>
-                  </div>
 
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 h-[3px] ${accent}`}
-                  />
-                </Link>
-              </motion.div>
-            ),
+                    <div className="mt-4 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {label}
+                        </p>
+                        <motion.p
+                          className="mt-1 text-3xl font-bold tracking-tight text-gray-900 dark:text-white"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.1 + index * 0.05 }}
+                        >
+                          {formatNumber(summary?.[key] ?? 0)}
+                        </motion.p>
+                      </div>
+                      <span
+                        aria-hidden="true"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition group-hover:border-blue-200 group-hover:text-blue-600 dark:border-gray-700 dark:text-gray-500 dark:group-hover:border-blue-800 dark:group-hover:text-blue-400"
+                      >
+                        <ArrowUpRight className="h-4 w-4" />
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                        Today: +{formatNumber(trend.today)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-800 ${trend.className}`}
+                      >
+                        {trend.label}
+                      </span>
+                    </div>
+
+                    <div
+                      className={`absolute bottom-0 left-0 right-0 h-[3px] ${accent}`}
+                    />
+                  </Link>
+                </motion.div>
+              );
+            },
           )}
         </motion.div>
       )}

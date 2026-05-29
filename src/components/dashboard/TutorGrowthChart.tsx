@@ -44,6 +44,13 @@ type MetricData = Record<
 
 type DateRange = 7 | 14 | 30;
 
+type PeriodComparison = {
+  currentPeriod: number;
+  previousPeriod: number;
+  label: string;
+  className: string;
+};
+
 const DEFAULT_DAY_COUNT: DateRange = 14;
 
 const dateRangeOptions: Array<{ value: DateRange; label: string }> = [
@@ -145,6 +152,71 @@ const buildDailyGrowth = <T extends TimestampedRecord>(
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
+const getStartOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const addDays = (date: Date, days: number) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+
+const getRecordTimestamp = (record: TimestampedRecord) => {
+  const timestamp = new Date(record.createdAt).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+const countRecordsInRange = (
+  records: TimestampedRecord[],
+  start: Date,
+  end: Date,
+) => {
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+
+  return records.filter((record) => {
+    const timestamp = getRecordTimestamp(record);
+    return timestamp >= startTime && timestamp < endTime;
+  }).length;
+};
+
+const buildPeriodComparison = (
+  currentPeriod: number,
+  previousPeriod: number,
+  dayCount: DateRange,
+): PeriodComparison => {
+  if (previousPeriod === 0) {
+    return {
+      currentPeriod,
+      previousPeriod,
+      label:
+        currentPeriod === 0
+          ? `No change vs previous ${dayCount} days`
+          : `+${formatNumber(currentPeriod)} vs previous ${dayCount} days`,
+      className:
+        currentPeriod === 0
+          ? "text-gray-700 dark:text-gray-300"
+          : "text-emerald-700 dark:text-emerald-400",
+    };
+  }
+
+  const change = currentPeriod - previousPeriod;
+  const percentageChange = Math.round((change / previousPeriod) * 100);
+  const prefix = percentageChange > 0 ? "+" : "";
+
+  return {
+    currentPeriod,
+    previousPeriod,
+    label:
+      percentageChange === 0
+        ? `No change vs previous ${dayCount} days`
+        : `${prefix}${percentageChange}% vs previous ${dayCount} days`,
+    className:
+      percentageChange > 0
+        ? "text-emerald-700 dark:text-emerald-400"
+        : percentageChange < 0
+          ? "text-rose-700 dark:text-rose-400"
+          : "text-gray-700 dark:text-gray-300",
+  };
+};
+
 export default function TutorGrowthChart() {
   const [activeMetric, setActiveMetric] = useState<ChartMetric>("all");
   const [dayCount, setDayCount] = useState<DateRange>(DEFAULT_DAY_COUNT);
@@ -221,6 +293,34 @@ export default function TutorGrowthChart() {
   const todayTotal = visibleMetrics.reduce((total, metric) => {
     return total + (dailyData[metric.key].at(-1)?.value || 0);
   }, 0);
+
+  const currentPeriodTotal = visibleMetrics.reduce((total, metric) => {
+    return (
+      total +
+      dailyData[metric.key].reduce((metricTotal, day) => {
+        return metricTotal + day.value;
+      }, 0)
+    );
+  }, 0);
+
+  const todayStart = getStartOfDay(new Date());
+  const currentPeriodStart = addDays(todayStart, -(dayCount - 1));
+  const previousPeriodStart = addDays(currentPeriodStart, -dayCount);
+  const previousPeriodTotal = visibleMetrics.reduce((total, metric) => {
+    return (
+      total +
+      countRecordsInRange(
+        metricData[metric.key].records,
+        previousPeriodStart,
+        currentPeriodStart,
+      )
+    );
+  }, 0);
+  const periodComparison = buildPeriodComparison(
+    currentPeriodTotal,
+    previousPeriodTotal,
+    dayCount,
+  );
 
   const totalResults = visibleMetrics.reduce((total, metric) => {
     return total + metricData[metric.key].total;
@@ -379,6 +479,7 @@ export default function TutorGrowthChart() {
             <Skeleton className="h-8 w-16 rounded-lg" />
             <Skeleton className="h-8 w-24 rounded-lg" />
             <Skeleton className="h-8 w-28 rounded-lg" />
+            <Skeleton className="h-8 w-44 rounded-lg" />
           </div>
           <Skeleton className="mt-5 h-72 w-full rounded-xl" />
         </div>
@@ -464,6 +565,11 @@ export default function TutorGrowthChart() {
           </span>
           <span className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
             Today: +{formatNumber(todayTotal)}
+          </span>
+          <span
+            className={`inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium dark:border-gray-700 dark:bg-gray-800 ${periodComparison.className}`}
+          >
+            {periodComparison.label}
           </span>
           <span className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
             Peak Day: {formatNumber(peakDailyValue)}
