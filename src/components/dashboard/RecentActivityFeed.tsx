@@ -1,9 +1,6 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFetchInquiriesQuery } from "@/store/api/splits/inquiries";
-import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
-import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import type { Inquiry, RequestTutors, Tutor } from "@/types/response-types";
 import {
   Activity,
@@ -17,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import type { DashboardAnalytics } from "./useDashboardAnalytics";
 
 type ActivityItem = {
   id: string;
@@ -120,62 +118,30 @@ const getInquiryActivity = (inquiry: Inquiry): ActivityItem => ({
   tone: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
 });
 
-export default function RecentActivityFeed() {
-  const tutorsQuery = useFetchTutorsQuery({
-    page: 1,
-    limit: 5,
-    sortBy: "createdAt:desc",
-  });
-
-  const tutorRequestsQuery = useFetchRequestForTutorsQuery({
-    page: 1,
-    limit: 5,
-    sortBy: "updatedAt:desc",
-  });
-
-  const inquiriesQuery = useFetchInquiriesQuery({
-    page: 1,
-    limit: 5,
-    sortBy: "createdAt:desc",
-  });
-
+export default function RecentActivityFeed({
+  analytics,
+}: {
+  analytics: DashboardAnalytics;
+}) {
   const activities = useMemo(
     () =>
       [
-        ...(tutorsQuery.data?.results || []).map(getTutorActivity),
-        ...(tutorRequestsQuery.data?.results || []).map(
-          getTutorRequestActivity,
-        ),
-        ...(inquiriesQuery.data?.results || []).map(getInquiryActivity),
+        ...analytics.tutorApplications.map(getTutorActivity),
+        ...analytics.tutorRequests.map(getTutorRequestActivity),
+        ...analytics.inquiries.map(getInquiryActivity),
       ]
         .sort(
           (first, second) =>
             getTimestamp(second.timestamp) - getTimestamp(first.timestamp),
         )
         .slice(0, MAX_ACTIVITY_ITEMS),
-    [
-      inquiriesQuery.data?.results,
-      tutorRequestsQuery.data?.results,
-      tutorsQuery.data?.results,
-    ],
+    [analytics.inquiries, analytics.tutorApplications, analytics.tutorRequests],
   );
 
-  const isLoading =
-    tutorsQuery.isLoading ||
-    tutorRequestsQuery.isLoading ||
-    inquiriesQuery.isLoading;
-  const isRefetching =
-    tutorsQuery.isFetching ||
-    tutorRequestsQuery.isFetching ||
-    inquiriesQuery.isFetching;
-
-  const isError =
-    tutorsQuery.isError || tutorRequestsQuery.isError || inquiriesQuery.isError;
-  const refetchActivity = () => {
-    tutorsQuery.refetch();
-    tutorRequestsQuery.refetch();
-    inquiriesQuery.refetch();
-  };
+  const isLoading = analytics.isRecentLoading;
+  const isRefetching = analytics.isRecentFetching;
+  const isError = analytics.isRecentError;
+  const refetchActivity = analytics.refetchRecent;
 
   if (isLoading) {
     return (

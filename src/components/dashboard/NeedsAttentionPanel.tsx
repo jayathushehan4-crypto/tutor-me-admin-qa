@@ -1,9 +1,6 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFetchInquiriesQuery } from "@/store/api/splits/inquiries";
-import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
-import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import type { RequestTutors } from "@/types/response-types";
 import {
   AlertCircle,
@@ -16,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import type { DashboardAnalytics } from "./useDashboardAnalytics";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
@@ -64,41 +62,25 @@ type AttentionItem = {
   tone: string;
 };
 
-export default function NeedsAttentionPanel() {
-  const pendingTutorsQuery = useFetchTutorsQuery({
-    page: 1,
-    limit: 1,
-    status: "pending",
-    sortBy: "createdAt:desc",
-  });
-
-  const tutorRequestsQuery = useFetchRequestForTutorsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "updatedAt:desc",
-  });
-
-  const inquiriesQuery = useFetchInquiriesQuery({
-    page: 1,
-    limit: 3,
-    sortBy: "createdAt:desc",
-  });
-
+export default function NeedsAttentionPanel({
+  analytics,
+}: {
+  analytics: DashboardAnalytics;
+}) {
   const openTutorRequests = useMemo(
     () =>
-      (tutorRequestsQuery.data?.results || []).filter((request) =>
-        isRequestOpen(request),
-      ).length,
-    [tutorRequestsQuery.data?.results],
+      analytics.tutorRequests.filter((request) => isRequestOpen(request))
+        .length,
+    [analytics.tutorRequests],
   );
 
-  const latestInquiry = inquiriesQuery.data?.results?.[0];
+  const latestInquiry = analytics.inquiries[0];
 
   const items: AttentionItem[] = [
     {
       title: "Pending tutor applications",
       description: "Review and approve new tutor registrations.",
-      count: pendingTutorsQuery.data?.totalResults || 0,
+      count: analytics.pendingTutorApplicationsTotal,
       href: "/tutors",
       icon: UserPlus,
       tone: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
@@ -116,33 +98,19 @@ export default function NeedsAttentionPanel() {
       description: latestInquiry?.sender?.name
         ? `Latest message from ${latestInquiry.sender.name}.`
         : "Check new messages from the contact form.",
-      count: inquiriesQuery.data?.totalResults || 0,
+      count: analytics.inquiriesTotal,
       href: "/inquiries/contactus",
       icon: Mail,
       tone: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
     },
   ];
 
-  const isLoading =
-    pendingTutorsQuery.isLoading ||
-    tutorRequestsQuery.isLoading ||
-    inquiriesQuery.isLoading;
-  const isRefetching =
-    pendingTutorsQuery.isFetching ||
-    tutorRequestsQuery.isFetching ||
-    inquiriesQuery.isFetching;
-
-  const isError =
-    pendingTutorsQuery.isError ||
-    tutorRequestsQuery.isError ||
-    inquiriesQuery.isError;
+  const isLoading = analytics.isAttentionLoading;
+  const isRefetching = analytics.isAttentionFetching;
+  const isError = analytics.isAttentionError;
 
   const activeItems = items.filter((item) => item.count > 0);
-  const refetchAttentionItems = () => {
-    pendingTutorsQuery.refetch();
-    tutorRequestsQuery.refetch();
-    inquiriesQuery.refetch();
-  };
+  const refetchAttentionItems = analytics.refetchAttention;
 
   if (isLoading) {
     return (

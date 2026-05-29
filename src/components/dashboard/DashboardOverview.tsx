@@ -3,13 +3,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "@/context";
 import { useFetchDashboardSummaryQuery } from "@/store/api/splits/dashboard";
-import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
-import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import { useFetchUserByIdQuery } from "@/store/api/splits/users";
 import { containerVariants } from "@/types/animation-types";
 import { statCards } from "@/types/dashboard-types";
 import type { SummaryKey } from "@/types/dashboard-types";
-import type { RequestTutors, Tutor } from "@/types/response-types";
 import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
@@ -18,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import NeedsAttentionPanel from "./NeedsAttentionPanel";
 import RecentActivityFeed from "./RecentActivityFeed";
 import TutorGrowthChart from "./TutorGrowthChart";
+import { useDashboardAnalytics } from "./useDashboardAnalytics";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 const STAT_COMPARISON_DAYS = 7;
@@ -147,24 +145,7 @@ export default function DashboardOverview() {
     refetch: refetchSummary,
   } = useFetchDashboardSummaryQuery();
 
-  const approvedTutorsQuery = useFetchTutorsQuery({
-    page: 1,
-    limit: 1000,
-    status: "approved",
-    sortBy: "createdAt:desc",
-  });
-
-  const tutorApplicationsQuery = useFetchTutorsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "createdAt:desc",
-  });
-
-  const tutorRequestsQuery = useFetchRequestForTutorsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "createdAt:desc",
-  });
+  const analytics = useDashboardAnalytics();
 
   const [isImageError, setIsImageError] = useState(false);
 
@@ -179,47 +160,27 @@ export default function DashboardOverview() {
   const avatarSrc = user?.avatar || authUser?.avatar || "";
 
   const showProfileSkeleton = !isUserLoaded || isUserLoading;
-  const isStatTrendLoading =
-    approvedTutorsQuery.isLoading ||
-    tutorApplicationsQuery.isLoading ||
-    tutorRequestsQuery.isLoading;
-  const isStatTrendError =
-    approvedTutorsQuery.isError ||
-    tutorApplicationsQuery.isError ||
-    tutorRequestsQuery.isError;
-  const isStatsError = isSummaryError || isStatTrendError;
-  const isStatsRefetching =
-    isSummaryFetching ||
-    approvedTutorsQuery.isFetching ||
-    tutorApplicationsQuery.isFetching ||
-    tutorRequestsQuery.isFetching;
-  const showSummarySkeleton = isSummaryLoading || isStatTrendLoading;
+  const isStatsError = isSummaryError || analytics.isCoreError;
+  const isStatsRefetching = isSummaryFetching || analytics.isCoreFetching;
+  const showSummarySkeleton = isSummaryLoading || analytics.isCoreLoading;
   const isPositiveStatus = ["active", "approved"].includes(
     displayStatus.toLowerCase(),
   );
   const statTrends = useMemo<Record<SummaryKey, StatTrend>>(
     () => ({
-      registeredTutors: buildStatTrend(
-        (approvedTutorsQuery.data?.results || []) as Tutor[],
-      ),
-      requestTutorRequests: buildStatTrend(
-        (tutorRequestsQuery.data?.results || []) as RequestTutors[],
-      ),
-      registerAsTutorRequests: buildStatTrend(
-        (tutorApplicationsQuery.data?.results || []) as Tutor[],
-      ),
+      registeredTutors: buildStatTrend(analytics.approvedTutors),
+      requestTutorRequests: buildStatTrend(analytics.tutorRequests),
+      registerAsTutorRequests: buildStatTrend(analytics.tutorApplications),
     }),
     [
-      approvedTutorsQuery.data?.results,
-      tutorApplicationsQuery.data?.results,
-      tutorRequestsQuery.data?.results,
+      analytics.approvedTutors,
+      analytics.tutorApplications,
+      analytics.tutorRequests,
     ],
   );
   const refetchStats = () => {
     refetchSummary();
-    approvedTutorsQuery.refetch();
-    tutorApplicationsQuery.refetch();
-    tutorRequestsQuery.refetch();
+    analytics.refetchCore();
   };
 
   return (
@@ -443,11 +404,11 @@ export default function DashboardOverview() {
         </motion.div>
       )}
 
-      <NeedsAttentionPanel />
+      <NeedsAttentionPanel analytics={analytics} />
 
-      <TutorGrowthChart />
+      <TutorGrowthChart analytics={analytics} />
 
-      <RecentActivityFeed />
+      <RecentActivityFeed analytics={analytics} />
     </motion.div>
   );
 }

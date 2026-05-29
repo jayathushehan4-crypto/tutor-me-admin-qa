@@ -1,13 +1,11 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
-import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
-import type { RequestTutors, Tutor } from "@/types/response-types";
 import { ApexOptions } from "apexcharts";
 import { AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
+import type { DashboardAnalytics } from "./useDashboardAnalytics";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -217,51 +215,36 @@ const buildPeriodComparison = (
   };
 };
 
-export default function TutorGrowthChart() {
+export default function TutorGrowthChart({
+  analytics,
+}: {
+  analytics: DashboardAnalytics;
+}) {
   const [activeMetric, setActiveMetric] = useState<ChartMetric>("all");
   const [dayCount, setDayCount] = useState<DateRange>(DEFAULT_DAY_COUNT);
-
-  const approvedTutorsQuery = useFetchTutorsQuery({
-    page: 1,
-    limit: 1000,
-    status: "approved",
-    sortBy: "createdAt:asc",
-  });
-
-  const tutorApplicationsQuery = useFetchTutorsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "createdAt:asc",
-  });
-
-  const tutorRequestsQuery = useFetchRequestForTutorsQuery({
-    page: 1,
-    limit: 1000,
-    sortBy: "createdAt:asc",
-  });
 
   const metricData = useMemo(
     (): MetricData => ({
       tutors: {
-        records: (approvedTutorsQuery.data?.results || []) as Tutor[],
-        total: approvedTutorsQuery.data?.totalResults || 0,
+        records: analytics.approvedTutors,
+        total: analytics.approvedTutorsTotal,
       },
       tutorRequests: {
-        records: (tutorRequestsQuery.data?.results || []) as RequestTutors[],
-        total: tutorRequestsQuery.data?.totalResults || 0,
+        records: analytics.tutorRequests,
+        total: analytics.tutorRequestsTotal,
       },
       tutorApplications: {
-        records: (tutorApplicationsQuery.data?.results || []) as Tutor[],
-        total: tutorApplicationsQuery.data?.totalResults || 0,
+        records: analytics.tutorApplications,
+        total: analytics.tutorApplicationsTotal,
       },
     }),
     [
-      approvedTutorsQuery.data?.results,
-      approvedTutorsQuery.data?.totalResults,
-      tutorApplicationsQuery.data?.results,
-      tutorApplicationsQuery.data?.totalResults,
-      tutorRequestsQuery.data?.results,
-      tutorRequestsQuery.data?.totalResults,
+      analytics.approvedTutors,
+      analytics.approvedTutorsTotal,
+      analytics.tutorApplications,
+      analytics.tutorApplicationsTotal,
+      analytics.tutorRequests,
+      analytics.tutorRequestsTotal,
     ],
   );
 
@@ -443,28 +426,14 @@ export default function TutorGrowthChart() {
     },
   };
 
-  const isLoading =
-    approvedTutorsQuery.isLoading ||
-    tutorApplicationsQuery.isLoading ||
-    tutorRequestsQuery.isLoading;
-  const isRefetching =
-    approvedTutorsQuery.isFetching ||
-    tutorApplicationsQuery.isFetching ||
-    tutorRequestsQuery.isFetching;
-
-  const isError =
-    approvedTutorsQuery.isError ||
-    tutorApplicationsQuery.isError ||
-    tutorRequestsQuery.isError;
+  const isLoading = analytics.isCoreLoading;
+  const isRefetching = analytics.isCoreFetching;
+  const isError = analytics.isCoreError;
 
   const hasChartData = metricConfigs.some(
     (metric) => metricData[metric.key].total > 0,
   );
-  const refetchChartData = () => {
-    approvedTutorsQuery.refetch();
-    tutorApplicationsQuery.refetch();
-    tutorRequestsQuery.refetch();
-  };
+  const refetchChartData = analytics.refetchCore;
 
   if (isLoading) {
     return (
