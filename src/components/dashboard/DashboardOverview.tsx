@@ -10,7 +10,7 @@ import { containerVariants } from "@/types/animation-types";
 import { statCards } from "@/types/dashboard-types";
 import type { SummaryKey } from "@/types/dashboard-types";
 import type { RequestTutors, Tutor } from "@/types/response-types";
-import { ArrowUpRight } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -143,6 +143,8 @@ export default function DashboardOverview() {
     data: summary,
     isLoading: isSummaryLoading,
     isError: isSummaryError,
+    isFetching: isSummaryFetching,
+    refetch: refetchSummary,
   } = useFetchDashboardSummaryQuery();
 
   const approvedTutorsQuery = useFetchTutorsQuery({
@@ -181,6 +183,16 @@ export default function DashboardOverview() {
     approvedTutorsQuery.isLoading ||
     tutorApplicationsQuery.isLoading ||
     tutorRequestsQuery.isLoading;
+  const isStatTrendError =
+    approvedTutorsQuery.isError ||
+    tutorApplicationsQuery.isError ||
+    tutorRequestsQuery.isError;
+  const isStatsError = isSummaryError || isStatTrendError;
+  const isStatsRefetching =
+    isSummaryFetching ||
+    approvedTutorsQuery.isFetching ||
+    tutorApplicationsQuery.isFetching ||
+    tutorRequestsQuery.isFetching;
   const showSummarySkeleton = isSummaryLoading || isStatTrendLoading;
   const isPositiveStatus = ["active", "approved"].includes(
     displayStatus.toLowerCase(),
@@ -203,6 +215,12 @@ export default function DashboardOverview() {
       tutorRequestsQuery.data?.results,
     ],
   );
+  const refetchStats = () => {
+    refetchSummary();
+    approvedTutorsQuery.refetch();
+    tutorApplicationsQuery.refetch();
+    tutorRequestsQuery.refetch();
+  };
 
   return (
     <motion.div
@@ -300,15 +318,29 @@ export default function DashboardOverview() {
 
       {/* Error state */}
       <AnimatePresence mode="wait">
-        {isSummaryError && (
+        {isStatsError && (
           <motion.div
             key="error"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300"
+            className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 sm:flex-row sm:items-center sm:justify-between"
           >
-            Could not load the dashboard summary right now.
+            <span className="inline-flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              Could not load all dashboard summary metrics right now.
+            </span>
+            <button
+              type="button"
+              onClick={refetchStats}
+              disabled={isStatsRefetching}
+              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:bg-red-950/40"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isStatsRefetching ? "animate-spin" : ""}`}
+              />
+              Retry
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

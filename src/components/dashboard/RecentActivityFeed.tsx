@@ -12,6 +12,7 @@ import {
   ClipboardList,
   LucideIcon,
   Mail,
+  RefreshCw,
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
@@ -163,9 +164,18 @@ export default function RecentActivityFeed() {
     tutorsQuery.isLoading ||
     tutorRequestsQuery.isLoading ||
     inquiriesQuery.isLoading;
+  const isRefetching =
+    tutorsQuery.isFetching ||
+    tutorRequestsQuery.isFetching ||
+    inquiriesQuery.isFetching;
 
   const isError =
     tutorsQuery.isError || tutorRequestsQuery.isError || inquiriesQuery.isError;
+  const refetchActivity = () => {
+    tutorsQuery.refetch();
+    tutorRequestsQuery.refetch();
+    inquiriesQuery.refetch();
+  };
 
   if (isLoading) {
     return (
@@ -215,16 +225,44 @@ export default function RecentActivityFeed() {
           </div>
 
           {isError && (
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300">
-              <AlertTriangle className="h-4 w-4" />
-              Some activity could not load
-            </span>
+            <button
+              type="button"
+              onClick={refetchActivity}
+              disabled={isRefetching}
+              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
+              />
+              Retry
+            </button>
           )}
         </div>
 
-        {activities.length === 0 && !isError ? (
+        {isError && activities.length === 0 ? (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="font-medium">Could not load recent activity.</p>
+                <p className="mt-1 text-red-600/80 dark:text-red-300/80">
+                  Retry to refresh the latest tutor, request, and inquiry
+                  updates.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : activities.length === 0 ? (
           <div className="mt-5 rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-            Recent activity will appear here once records are added.
+            <p className="font-medium text-gray-700 dark:text-gray-300">
+              No recent activity yet.
+            </p>
+            <p className="mt-1">
+              Tutor registrations, tutor requests, and contact inquiries will
+              appear here once records are added.
+            </p>
           </div>
         ) : (
           <div className="mt-5 divide-y divide-gray-100 rounded-xl border border-gray-200 dark:divide-gray-800 dark:border-gray-800">

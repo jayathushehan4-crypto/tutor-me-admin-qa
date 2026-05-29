@@ -5,7 +5,7 @@ import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor"
 import { useFetchTutorsQuery } from "@/store/api/splits/tutors";
 import type { RequestTutors, Tutor } from "@/types/response-types";
 import { ApexOptions } from "apexcharts";
-import { TrendingUp } from "lucide-react";
+import { AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 
@@ -447,6 +447,10 @@ export default function TutorGrowthChart() {
     approvedTutorsQuery.isLoading ||
     tutorApplicationsQuery.isLoading ||
     tutorRequestsQuery.isLoading;
+  const isRefetching =
+    approvedTutorsQuery.isFetching ||
+    tutorApplicationsQuery.isFetching ||
+    tutorRequestsQuery.isFetching;
 
   const isError =
     approvedTutorsQuery.isError ||
@@ -456,6 +460,11 @@ export default function TutorGrowthChart() {
   const hasChartData = metricConfigs.some(
     (metric) => metricData[metric.key].total > 0,
   );
+  const refetchChartData = () => {
+    approvedTutorsQuery.refetch();
+    tutorApplicationsQuery.refetch();
+    tutorRequestsQuery.refetch();
+  };
 
   if (isLoading) {
     return (
@@ -578,11 +587,39 @@ export default function TutorGrowthChart() {
 
         {isError ? (
           <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300">
-            Could not load dashboard activity data right now.
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="font-medium">Could not load activity data.</p>
+                <p className="mt-1 text-red-600/80 dark:text-red-300/80">
+                  Retry to refresh tutor registrations, tutor requests, and
+                  application activity.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={refetchChartData}
+                disabled={isRefetching}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:bg-red-950/40"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
+                />
+                Retry
+              </button>
+            </div>
           </div>
         ) : !hasChartData ? (
           <div className="mt-5 rounded-xl border border-dashed border-gray-300 px-4 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-            Dashboard activity will appear here once records are added.
+            <p className="font-medium text-gray-700 dark:text-gray-300">
+              No dashboard activity yet.
+            </p>
+            <p className="mt-1">
+              Tutor registrations, tutor requests, and tutor applications will
+              appear here once records are added.
+            </p>
           </div>
         ) : (
           <div className="mt-5 w-full">

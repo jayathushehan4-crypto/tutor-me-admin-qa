@@ -11,6 +11,7 @@ import {
   ClipboardList,
   LucideIcon,
   Mail,
+  RefreshCw,
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
@@ -126,6 +127,10 @@ export default function NeedsAttentionPanel() {
     pendingTutorsQuery.isLoading ||
     tutorRequestsQuery.isLoading ||
     inquiriesQuery.isLoading;
+  const isRefetching =
+    pendingTutorsQuery.isFetching ||
+    tutorRequestsQuery.isFetching ||
+    inquiriesQuery.isFetching;
 
   const isError =
     pendingTutorsQuery.isError ||
@@ -133,6 +138,11 @@ export default function NeedsAttentionPanel() {
     inquiriesQuery.isError;
 
   const activeItems = items.filter((item) => item.count > 0);
+  const refetchAttentionItems = () => {
+    pendingTutorsQuery.refetch();
+    tutorRequestsQuery.refetch();
+    inquiriesQuery.refetch();
+  };
 
   if (isLoading) {
     return (
@@ -175,16 +185,40 @@ export default function NeedsAttentionPanel() {
           </div>
 
           {isError && (
-            <span className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300">
-              Some items could not load
-            </span>
+            <button
+              type="button"
+              onClick={refetchAttentionItems}
+              disabled={isRefetching}
+              className="inline-flex h-9 w-fit items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
+              />
+              Retry
+            </button>
           )}
         </div>
 
-        {activeItems.length === 0 && !isError ? (
+        {isError && activeItems.length === 0 ? (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300">
+            <p className="font-medium">Could not load attention items.</p>
+            <p className="mt-1 text-red-600/80 dark:text-red-300/80">
+              Retry to check pending tutor applications, open tutor requests,
+              and recent inquiries.
+            </p>
+          </div>
+        ) : activeItems.length === 0 ? (
           <div className="mt-5 flex items-center gap-3 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
-            No urgent admin items right now.
+            <div>
+              <p className="font-medium text-gray-700 dark:text-gray-300">
+                No urgent admin items right now.
+              </p>
+              <p className="mt-0.5">
+                Pending applications, open tutor requests, and new inquiries
+                will appear here.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="mt-5 grid overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 lg:grid-cols-3 lg:divide-x lg:divide-gray-200 lg:dark:divide-gray-800">
