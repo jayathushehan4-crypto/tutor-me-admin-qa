@@ -150,6 +150,12 @@ const buildDailyGrowth = <T extends TimestampedRecord>(
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
+const getDateLabelInterval = (dayCount: DateRange) => {
+  if (dayCount === 30) return 5;
+  if (dayCount === 14) return 2;
+  return 1;
+};
+
 const getStartOfDay = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -217,8 +223,10 @@ const buildPeriodComparison = (
 
 export default function TutorGrowthChart({
   analytics,
+  className = "",
 }: {
   analytics: DashboardAnalytics;
+  className?: string;
 }) {
   const [activeMetric, setActiveMetric] = useState<ChartMetric>("all");
   const [dayCount, setDayCount] = useState<DateRange>(DEFAULT_DAY_COUNT);
@@ -318,7 +326,15 @@ export default function TutorGrowthChart({
 
   const maxDailyValue = Math.max(peakDailyValue, 1);
 
-  const categories = dailyData.tutors.map((day) => day.label);
+  const dateLabelInterval = getDateLabelInterval(dayCount);
+  const categories = dailyData.tutors.map((day, index) => {
+    const isFirst = index === 0;
+    const isLast = index === dailyData.tutors.length - 1;
+
+    return isFirst || isLast || index % dateLabelInterval === 0
+      ? day.label
+      : "";
+  });
 
   const series = visibleMetrics.map((metric) => ({
     name: metric.label,
@@ -331,6 +347,7 @@ export default function TutorGrowthChart({
       fontFamily: "Outfit, sans-serif",
       height: 280,
       type: "line",
+      parentHeightOffset: 0,
       toolbar: {
         show: false,
       },
@@ -342,8 +359,9 @@ export default function TutorGrowthChart({
       borderColor: "#EAECF0",
       strokeDashArray: 4,
       padding: {
-        left: 8,
-        right: 8,
+        bottom: 0,
+        left: 4,
+        right: 16,
         top: 0,
       },
       xaxis: {
@@ -369,11 +387,11 @@ export default function TutorGrowthChart({
       },
     },
     markers: {
-      size: activeMetric === "all" ? 3 : 4,
+      size: activeMetric === "all" ? 2.5 : 4,
       strokeColors: "#fff",
       strokeWidth: 2,
       hover: {
-        size: 6,
+        size: 5,
       },
     },
     states: {
@@ -390,12 +408,22 @@ export default function TutorGrowthChart({
     tooltip: {
       shared: activeMetric === "all",
       intersect: false,
+      marker: {
+        show: true,
+      },
+      style: {
+        fontSize: "12px",
+        fontFamily: "Outfit, sans-serif",
+      },
       y: {
         formatter: (value: number) => formatNumber(value),
       },
     },
     xaxis: {
       categories,
+      crosshairs: {
+        show: false,
+      },
       axisBorder: {
         show: false,
       },
@@ -405,11 +433,14 @@ export default function TutorGrowthChart({
       labels: {
         rotate: 0,
         hideOverlappingLabels: true,
-        trim: true,
+        trim: false,
         style: {
           colors: "#667085",
           fontSize: "11px",
         },
+      },
+      tooltip: {
+        enabled: false,
       },
     },
     yaxis: {
@@ -437,7 +468,9 @@ export default function TutorGrowthChart({
 
   if (isLoading) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div
+        className={`h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
+      >
         <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
@@ -467,7 +500,9 @@ export default function TutorGrowthChart({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div
+      className={`h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
+    >
       <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">

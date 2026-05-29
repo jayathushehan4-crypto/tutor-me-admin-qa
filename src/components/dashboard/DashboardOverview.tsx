@@ -190,21 +190,19 @@ export default function DashboardOverview() {
       animate="show"
       variants={containerVariants}
     >
-      {/* Profile card */}
+      {/* Profile bar */}
       <motion.div
         layout
-        className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+        className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
       >
-        <div className="h-[3px] bg-blue-600" />
-
-        <div className="p-5 sm:p-6 md:p-8">
+        <div className="p-4 sm:p-5">
           {showProfileSkeleton ? (
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
+                <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="space-y-2">
                   <Skeleton className="h-3.5 w-24" />
-                  <Skeleton className="h-7 w-44" />
+                  <Skeleton className="h-6 w-44" />
                   <Skeleton className="h-3.5 w-36" />
                 </div>
               </div>
@@ -214,20 +212,20 @@ export default function DashboardOverview() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-16 sm:w-16">
+                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
                   {avatarSrc && !isImageError ? (
                     <Image
-                      width={64}
-                      height={64}
+                      width={48}
+                      height={48}
                       src={avatarSrc}
                       alt={`${displayName} avatar`}
                       className="h-full w-full object-cover"
                       onError={() => setIsImageError(true)}
                     />
                   ) : (
-                    <span className="text-base font-semibold text-gray-600 dark:text-gray-300 sm:text-lg">
+                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                       {getInitials(displayName)}
                     </span>
                   )}
@@ -238,7 +236,7 @@ export default function DashboardOverview() {
                     Welcome back
                   </p>
                   <motion.h1
-                    className="mt-0.5 break-words text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl"
+                    className="mt-0.5 break-words text-xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-2xl"
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -312,7 +310,7 @@ export default function DashboardOverview() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="min-h-[210px] rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6"
+              className="min-h-[180px] rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
             >
               <Skeleton className="h-10 w-10 rounded-lg" />
               <Skeleton className="mt-4 h-4 w-32" />
@@ -341,12 +339,12 @@ export default function DashboardOverview() {
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.99 }}
                   layout
-                  className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+                  className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
                 >
                   <Link
                     href={href}
                     aria-label={`View ${label}`}
-                    className="group block h-full min-h-[210px] p-5 outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900 sm:p-6"
+                    className="group block h-full min-h-[180px] p-5 outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-900"
                   >
                     <div className="flex items-start justify-between">
                       <div
@@ -366,7 +364,7 @@ export default function DashboardOverview() {
                           {label}
                         </p>
                         <motion.p
-                          className="mt-1 text-3xl font-bold tracking-tight text-gray-900 dark:text-white"
+                          className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.1 + index * 0.05 }}
@@ -404,9 +402,10 @@ export default function DashboardOverview() {
         </motion.div>
       )}
 
-      <NeedsAttentionPanel analytics={analytics} />
-
-      <TutorGrowthChart analytics={analytics} />
+      <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-12 xl:gap-6">
+        <TutorGrowthChart analytics={analytics} className="xl:col-span-8" />
+        <NeedsAttentionPanel analytics={analytics} className="xl:col-span-4" />
+      </div>
 
       <RecentActivityFeed analytics={analytics} />
     </motion.div>

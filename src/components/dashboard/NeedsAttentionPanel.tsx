@@ -64,8 +64,10 @@ type AttentionItem = {
 
 export default function NeedsAttentionPanel({
   analytics,
+  className = "",
 }: {
   analytics: DashboardAnalytics;
+  className?: string;
 }) {
   const openTutorRequests = useMemo(
     () =>
@@ -114,7 +116,9 @@ export default function NeedsAttentionPanel({
 
   if (isLoading) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div
+        className={`h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
+      >
         <div className="p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <Skeleton className="h-10 w-10 rounded-lg" />
@@ -123,9 +127,9 @@ export default function NeedsAttentionPanel({
               <Skeleton className="h-4 w-64" />
             </div>
           </div>
-          <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <div className="mt-5 space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-32 rounded-xl lg:h-28" />
+              <Skeleton key={index} className="h-24 rounded-lg" />
             ))}
           </div>
         </div>
@@ -135,7 +139,9 @@ export default function NeedsAttentionPanel({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div
+      className={`h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
+    >
       <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
@@ -189,30 +195,32 @@ export default function NeedsAttentionPanel({
             </div>
           </div>
         ) : (
-          <div className="mt-5 grid overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 lg:grid-cols-3 lg:divide-x lg:divide-gray-200 lg:dark:divide-gray-800">
+          <div className="mt-5 divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
             {items.map(
               ({ title, description, count, href, icon: Icon, tone }) => (
                 <Link
                   key={title}
                   href={href}
-                  className="group min-h-[132px] border-b border-gray-200 p-4 outline-none transition last:border-b-0 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:border-gray-800 dark:hover:bg-gray-800/50 dark:focus-visible:ring-blue-400 lg:min-h-[150px] lg:border-b-0"
+                  className="group flex min-h-[96px] items-start gap-3 p-4 outline-none transition hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:hover:bg-gray-800/50 dark:focus-visible:ring-blue-400"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-lg ${tone}`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                      {formatNumber(count)}
-                    </span>
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone}`}
+                  >
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-4 break-words text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
-                    {title}
-                  </h3>
-                  <p className="mt-1 break-words text-sm text-gray-500 dark:text-gray-400">
-                    {description}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="break-words text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                        {title}
+                      </h3>
+                      <span className="shrink-0 text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        {formatNumber(count)}
+                      </span>
+                    </div>
+                    <p className="mt-1 break-words text-sm text-gray-500 dark:text-gray-400">
+                      {description}
+                    </p>
+                  </div>
                 </Link>
               ),
             )}
