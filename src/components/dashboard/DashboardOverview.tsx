@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import NeedsAttentionPanel from "./NeedsAttentionPanel";
 import TutorGrowthChart from "./TutorGrowthChart";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
@@ -249,6 +250,8 @@ export default function DashboardOverview() {
           )}
         </motion.div>
       )}
+
+      <NeedsAttentionPanel />
 
       <TutorGrowthChart />
     </motion.div>
