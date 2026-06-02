@@ -185,7 +185,7 @@ export default function DashboardOverview() {
 
   return (
     <motion.div
-      className="space-y-5 sm:space-y-6"
+      className="grid gap-5 sm:gap-6"
       initial="hidden"
       animate="show"
       variants={containerVariants}
@@ -306,7 +306,7 @@ export default function DashboardOverview() {
 
       {/* Stats grid */}
       {showSummarySkeleton ? (
-        <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
@@ -321,7 +321,7 @@ export default function DashboardOverview() {
         </div>
       ) : (
         <motion.div
-          className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
           animate="show"
@@ -402,7 +402,7 @@ export default function DashboardOverview() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-12 xl:gap-6">
+      <div className="grid grid-cols-1 items-stretch gap-5 sm:gap-6 xl:grid-cols-12">
         <TutorGrowthChart analytics={analytics} className="xl:col-span-8" />
         <NeedsAttentionPanel analytics={analytics} className="xl:col-span-4" />
       </div>
