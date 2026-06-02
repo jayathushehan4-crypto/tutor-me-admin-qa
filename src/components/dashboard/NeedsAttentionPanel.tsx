@@ -117,9 +117,9 @@ export default function NeedsAttentionPanel({
   if (isLoading) {
     return (
       <div
-        className={`h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
+        className={`flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
       >
-        <div className="p-5 sm:p-6">
+        <div className="flex-1 p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <Skeleton className="h-10 w-10 rounded-lg" />
             <div className="space-y-2">
@@ -140,9 +140,9 @@ export default function NeedsAttentionPanel({
 
   return (
     <div
-      className={`h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
+      className={`flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`}
     >
-      <div className="p-5 sm:p-6">
+      <div className="flex-1 p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10">
