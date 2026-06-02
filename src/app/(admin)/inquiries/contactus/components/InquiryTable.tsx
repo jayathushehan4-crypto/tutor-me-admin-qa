@@ -25,46 +25,62 @@ interface Inquiry {
 
 export default function InquiryTable() {
   const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
-  const [nameSearch, setNameSearch] = useState("");
-  const [emailSearch, setEmailSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
-  const debouncedNameSearch = useDebounce(nameSearch, 400);
-  const debouncedEmailSearch = useDebounce(emailSearch, 400);
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  const hasSearchFilter = Boolean(debouncedSearchTerm.trim());
+  const requestPage = hasSearchFilter ? TABLE_CONFIG.DEFAULT_PAGE : page;
+  const requestLimit = hasSearchFilter ? 10000 : limit;
 
   const inquiriesQuery = useMemo(
     () => ({
-      page,
-      limit,
+      page: requestPage,
+      limit: requestLimit,
       sortBy: "createdAt:desc",
-      ...(debouncedNameSearch.trim()
-        ? { name: debouncedNameSearch.trim() }
-        : {}),
-      ...(debouncedEmailSearch.trim()
-        ? { email: debouncedEmailSearch.trim() }
-        : {}),
     }),
-    [debouncedEmailSearch, debouncedNameSearch, limit, page],
+    [requestLimit, requestPage],
   );
 
   const { data, isFetching } = useFetchInquiriesQuery(inquiriesQuery);
 
-  const inquiries =
-    data?.results.map((inq: Inquiry) => ({
-      ...inq,
-      senderName: inq.sender?.name || "",
-      senderEmail: inq.sender?.email || "",
-    })) || [];
-  const totalPages = data?.totalPages || 1;
-  const totalResults = data?.totalResults || 0;
-  const hasFilters = Boolean(nameSearch || emailSearch);
+  const allInquiries = useMemo(
+    () =>
+      data?.results.map((inq: Inquiry) => ({
+        ...inq,
+        senderName: inq.sender?.name || "",
+        senderEmail: inq.sender?.email || "",
+      })) || [],
+    [data?.results],
+  );
+
+  const filteredInquiries = useMemo(() => {
+    const searchValue = debouncedSearchTerm.trim().toLowerCase();
+    if (!searchValue) return allInquiries;
+
+    return allInquiries.filter((inquiry) =>
+      [inquiry.senderName, inquiry.senderEmail].some((value) =>
+        value.toLowerCase().includes(searchValue),
+      ),
+    );
+  }, [allInquiries, debouncedSearchTerm]);
+
+  const inquiries = hasSearchFilter
+    ? filteredInquiries.slice((page - 1) * limit, page * limit)
+    : filteredInquiries;
+  const totalResults = hasSearchFilter
+    ? filteredInquiries.length
+    : data?.totalResults || 0;
+  const totalPages = hasSearchFilter
+    ? Math.max(1, Math.ceil(totalResults / limit))
+    : data?.totalPages || 1;
+  const hasFilters = Boolean(searchTerm);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
 
   const resetFilters = () => {
-    setNameSearch("");
-    setEmailSearch("");
+    setSearchTerm("");
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
@@ -200,52 +216,26 @@ export default function InquiryTable() {
           </p>
         </div>
 
-        <div className="grid w-full gap-3 sm:max-w-2xl sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px]">
+        <div className="grid w-full gap-3 sm:max-w-xl sm:grid-cols-[minmax(0,1fr)_44px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              value={nameSearch}
+              value={searchTerm}
               onChange={(event) => {
-                setNameSearch(event.target.value);
+                setSearchTerm(event.target.value);
                 setPage(TABLE_CONFIG.DEFAULT_PAGE);
               }}
-              placeholder="Search name"
+              placeholder="Search by name or email"
               className="h-11 w-full pl-10 pr-10"
             />
-            {nameSearch && (
+            {searchTerm && (
               <button
                 type="button"
                 onClick={() => {
-                  setNameSearch("");
+                  setSearchTerm("");
                   setPage(TABLE_CONFIG.DEFAULT_PAGE);
                 }}
-                aria-label="Clear name search"
-                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              value={emailSearch}
-              onChange={(event) => {
-                setEmailSearch(event.target.value);
-                setPage(TABLE_CONFIG.DEFAULT_PAGE);
-              }}
-              placeholder="Search email"
-              className="h-11 w-full pl-10 pr-10"
-            />
-            {emailSearch && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailSearch("");
-                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
-                }}
-                aria-label="Clear email search"
+                aria-label="Clear search"
                 className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <X className="h-4 w-4" />

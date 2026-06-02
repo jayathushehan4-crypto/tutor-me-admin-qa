@@ -115,11 +115,11 @@ export default function UpdateUser() {
   }, [user, isModalOpen, reset]);
 
   useEffect(() => {
-    if (avatarUrl) {
-      setImageSrc(avatarUrl);
-      setHasImageError(false);
-    }
-  }, [avatarUrl]);
+    if (!isModalOpen) return;
+
+    setImageSrc(avatarUrl || user?.avatar || "/images/user/user.png");
+    setHasImageError(false);
+  }, [avatarUrl, isModalOpen, user?.avatar]);
 
   const [initialValues, setInitialValues] = useState<UpdateUserSchema | null>(
     null,
@@ -254,8 +254,11 @@ export default function UpdateUser() {
               <FileUploadDropzone
                 imageOnly
                 onUploaded={(url) => {
-                  setValue("avatar", url, { shouldValidate: true });
-                  setImageSrc(url);
+                  const restoredAvatar = user.avatar || "";
+                  const nextAvatar = url || restoredAvatar;
+
+                  setValue("avatar", nextAvatar, { shouldValidate: true });
+                  setImageSrc(nextAvatar || "/images/user/user.png");
                   setHasImageError(false);
                 }}
               />
@@ -264,7 +267,7 @@ export default function UpdateUser() {
                 <p className="text-sm text-red-500">{errors.avatar.message}</p>
               )}
 
-              <div className="flex items-center gap-4 mt-3">
+              <div className="mt-3 flex flex-col items-center justify-center gap-3 text-center">
                 <img
                   src={imageSrc}
                   alt="avatar preview"

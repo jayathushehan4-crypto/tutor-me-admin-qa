@@ -19,7 +19,10 @@ import {
 } from "@/store/api/splits/users";
 import { getErrorInApiResult } from "@/utils/api";
 import {
+  ArrowDown,
+  ArrowUp,
   CheckCircle,
+  ChevronsUpDown,
   Loader2,
   Search,
   ShieldOff,
@@ -28,7 +31,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { DeleteUser } from "./DeleteUser";
 import { UpdateUser } from "./edit-user/UpdateUser";
@@ -61,6 +64,12 @@ interface User {
 
 type UserRoleFilter = "all" | "admin" | "tutor";
 type UserStatus = "pending" | "approved" | "rejected" | "suspended";
+type UserSortField = "name" | "email";
+type SortDirection = "asc" | "desc";
+type UserSort = {
+  field: UserSortField;
+  direction: SortDirection;
+} | null;
 
 const USER_STATUS_BADGE_CLASSES: Record<UserStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -81,6 +90,43 @@ function StatusBadge({ status }: { status: string }) {
     >
       {normalizedStatus}
     </span>
+  );
+}
+
+function SortableHeader({
+  label,
+  field,
+  sort,
+  onToggleSort,
+}: {
+  label: string;
+  field: UserSortField;
+  sort: UserSort;
+  onToggleSort: (field: UserSortField) => void;
+}) {
+  const isActive = sort?.field === field;
+  const isAscending = isActive && sort.direction === "asc";
+  const isDescending = isActive && sort.direction === "desc";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggleSort(field)}
+      title={`Sort ${label}`}
+      aria-label={`Sort ${label}`}
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-white ${
+        isActive ? "text-brand-500 dark:text-brand-400" : ""
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {isAscending ? (
+        <ArrowUp className="h-3.5 w-3.5 shrink-0" />
+      ) : isDescending ? (
+        <ArrowDown className="h-3.5 w-3.5 shrink-0" />
+      ) : (
+        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+      )}
+    </button>
   );
 }
 
@@ -226,24 +272,27 @@ export default function UsersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRoleFilter>("all");
+  const [sortCriteria, setSortCriteria] = useState<UserSort>(null);
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   useEffect(() => {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  }, [debouncedSearchTerm, roleFilter]);
+  }, [debouncedSearchTerm, roleFilter, sortCriteria]);
 
   const queryParams = useMemo(
     () => ({
       page,
       limit,
-      sortBy: "createdAt:desc",
+      sortBy: sortCriteria
+        ? `${sortCriteria.field}:${sortCriteria.direction}`
+        : "createdAt:desc",
       ...(debouncedSearchTerm.trim()
         ? { search: debouncedSearchTerm.trim() }
         : {}),
       ...(roleFilter !== "all" ? { role: roleFilter } : {}),
     }),
-    [debouncedSearchTerm, limit, page, roleFilter],
+    [debouncedSearchTerm, limit, page, roleFilter, sortCriteria],
   );
 
   const { data, isFetching } = useFetchUsersQuery(queryParams);
@@ -261,10 +310,37 @@ export default function UsersTable() {
     return value;
   };
 
+  const handleToggleSort = useCallback((field: UserSortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) {
+        return { field, direction: "asc" };
+      }
+
+      if (current.direction === "asc") {
+        return { field, direction: "desc" };
+      }
+
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
+  const clearSort = () => {
+    setSortCriteria(null);
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  };
+
   const columns = [
     {
       key: "name",
-      header: "Name",
+      header: (
+        <SortableHeader
+          label="Full Name"
+          field="name"
+          sort={sortCriteria}
+          onToggleSort={handleToggleSort}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
       render: (row: User) => (
@@ -279,7 +355,14 @@ export default function UsersTable() {
     },
     {
       key: "email",
-      header: "Email",
+      header: (
+        <SortableHeader
+          label="Email"
+          field="email"
+          sort={sortCriteria}
+          onToggleSort={handleToggleSort}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden cursor-default",
       render: (row: User) => (
@@ -352,7 +435,7 @@ export default function UsersTable() {
       key: "view",
       header: <div className="flex justify-center w-full">View</div>,
       className:
-        "min-w-[80px] max-w-[80px] sticky right-[260px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => (
         <div className="w-full flex justify-center ">
           <UserDetails
@@ -380,7 +463,7 @@ export default function UsersTable() {
       key: "edit",
       header: <div className="flex justify-center w-full">Edit</div>,
       className:
-        "min-w-[80px] max-w-[80px] sticky right-[180px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => {
         const isTutor = row.role === "tutor";
 
@@ -419,14 +502,14 @@ export default function UsersTable() {
       key: "resetPassword",
       header: (
         <span
-          className="truncate w-full text-center block max-w-[100px]"
+          className="block w-full text-center leading-tight"
           title="Reset Password"
         >
           Reset Password
         </span>
       ),
       className:
-        "min-w-[80px] max-w-[100px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => (
         <div className="w-full flex justify-center">
           <ResetPassword userId={row.id} />
@@ -480,47 +563,62 @@ export default function UsersTable() {
             </p>
           </div>
 
-          <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[32rem]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[32rem]">
+            <div className="grid w-full gap-3 sm:grid-cols-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by name or email"
-                className="h-11 w-full pl-10 pr-10"
-              />
+                <Input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search by name or email"
+                  className="h-11 w-full pl-10 pr-10"
+                />
 
-              {searchTerm && (
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="w-full">
+                <Select
+                  value={roleFilter}
+                  onValueChange={(value) =>
+                    setRoleFilter(value as UserRoleFilter)
+                  }
+                >
+                  <SelectTrigger className="h-11 min-h-11 w-full">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="tutor">Tutor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {sortCriteria && (
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  aria-label="Clear search"
+                  onClick={clearSort}
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 sm:w-auto"
                 >
-                  <X className="h-4 w-4" />
+                  <ChevronsUpDown className="h-4 w-4" />
+                  Clear sort
                 </button>
-              )}
-            </div>
-
-            <div className="w-full">
-              <Select
-                value={roleFilter}
-                onValueChange={(value) =>
-                  setRoleFilter(value as UserRoleFilter)
-                }
-              >
-                <SelectTrigger className="h-11 min-h-11 w-full">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="tutor">Tutor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -536,6 +634,7 @@ export default function UsersTable() {
         isLoading={isFetching}
         emptyMessage="No users found for the current search or role filter."
         className="w-full max-w-full"
+        preserveDataOrder
       />
     </div>
   );

@@ -96,8 +96,7 @@ export default function ResetPasswordForm({ token }: Props) {
                 className="space-y-6"
               >
                 <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-900 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-100">
-                  Your account has already been created. Set a new password
-                  below, then sign in with your email.
+                  Enter and Confirm your new password to continue
                 </div>
 
                 <InputPassword

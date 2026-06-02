@@ -24,7 +24,7 @@ import { FetchRequestForTutor } from "@/types/request-types";
 import { RequestTutors } from "@/types/response-types";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
-import { Search, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssignTutorDialog } from "./assignTutor";
 import { ChangeStatusDialog } from "./changeStatus";
@@ -37,6 +37,12 @@ type RequestTutorStatusFilter =
   | "Pending"
   | "Rejected"
   | "Tutor Assigned";
+type RequestTutorSortField = "name" | "email";
+type SortDirection = "asc" | "desc";
+type RequestTutorSort = {
+  field: RequestTutorSortField;
+  direction: SortDirection;
+} | null;
 
 type RequestTutorFilters = {
   status: RequestTutorStatusFilter;
@@ -108,10 +114,48 @@ function RequestTutorStatusBadge({ status }: { status: string }) {
   );
 }
 
+function SortableHeader({
+  label,
+  field,
+  sort,
+  onToggleSort,
+}: {
+  label: string;
+  field: RequestTutorSortField;
+  sort: RequestTutorSort;
+  onToggleSort: (field: RequestTutorSortField) => void;
+}) {
+  const isActive = sort?.field === field;
+  const isAscending = isActive && sort.direction === "asc";
+  const isDescending = isActive && sort.direction === "desc";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggleSort(field)}
+      title={`Sort ${label}`}
+      aria-label={`Sort ${label}`}
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-white ${
+        isActive ? "text-brand-500 dark:text-brand-400" : ""
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {isAscending ? (
+        <ArrowUp className="h-3.5 w-3.5 shrink-0" />
+      ) : isDescending ? (
+        <ArrowDown className="h-3.5 w-3.5 shrink-0" />
+      ) : (
+        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+      )}
+    </button>
+  );
+}
+
 export default function RequestForTutorsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<RequestTutorFilters>(INITIAL_FILTERS);
+  const [sortCriteria, setSortCriteria] = useState<RequestTutorSort>(null);
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
 
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
@@ -120,7 +164,9 @@ export default function RequestForTutorsList() {
   const debouncedFrequency = useDebounce(filters.frequency, 400);
   const hasStatusFilter = filters.status !== "all";
   const hasSearchFilter = Boolean(debouncedSearchTerm.trim());
-  const needsClientSideFiltering = hasStatusFilter || hasSearchFilter;
+  const hasSortCriteria = Boolean(sortCriteria);
+  const needsClientSideFiltering =
+    hasStatusFilter || hasSearchFilter || hasSortCriteria;
   const requestPage = needsClientSideFiltering ? TABLE_CONFIG.DEFAULT_PAGE : page;
   const requestLimit = needsClientSideFiltering ? 10000 : limit;
 
@@ -245,6 +291,7 @@ export default function RequestForTutorsList() {
     filters.preferredTutorType,
     filters.status,
     filters.subject,
+    sortCriteria,
   ]);
 
   const handlePageChange = (newPage: number) => setPage(newPage);
@@ -263,6 +310,27 @@ export default function RequestForTutorsList() {
   const handleResetFilters = () => {
     setSearchTerm("");
     setFilters(INITIAL_FILTERS);
+    setSortCriteria(null);
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  };
+
+  const handleToggleSort = useCallback((field: RequestTutorSortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) {
+        return { field, direction: "asc" };
+      }
+
+      if (current.direction === "asc") {
+        return { field, direction: "desc" };
+      }
+
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
+  const handleClearSort = () => {
+    setSortCriteria(null);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
@@ -333,11 +401,25 @@ export default function RequestForTutorsList() {
       ),
     [filters.status, getEffectiveStatus, searchFilteredTutors],
   );
+  const sortedTutors = useMemo(() => {
+    if (!sortCriteria) return statusFilteredTutors;
+
+    return [...statusFilteredTutors].sort((first, second) => {
+      const firstValue = String(first[sortCriteria.field] || "").trim();
+      const secondValue = String(second[sortCriteria.field] || "").trim();
+      const comparison = firstValue.localeCompare(secondValue, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+
+      return sortCriteria.direction === "asc" ? comparison : -comparison;
+    });
+  }, [sortCriteria, statusFilteredTutors]);
   const tutors = needsClientSideFiltering
-    ? statusFilteredTutors.slice((page - 1) * limit, page * limit)
-    : statusFilteredTutors;
+    ? sortedTutors.slice((page - 1) * limit, page * limit)
+    : sortedTutors;
   const totalResults = needsClientSideFiltering
-    ? statusFilteredTutors.length
+    ? sortedTutors.length
     : data?.totalResults || tutors.length;
   const totalPages = needsClientSideFiltering
     ? Math.max(1, Math.ceil(totalResults / limit))
@@ -394,7 +476,14 @@ export default function RequestForTutorsList() {
     () => [
       {
         key: "name",
-        header: "Full Name",
+        header: (
+          <SortableHeader
+            label="Full Name"
+            field="name"
+            sort={sortCriteria}
+            onToggleSort={handleToggleSort}
+          />
+        ),
         className:
           "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
         render: (row: RequestTutors) => (
@@ -409,7 +498,14 @@ export default function RequestForTutorsList() {
       },
       {
         key: "email",
-        header: "Email",
+        header: (
+          <SortableHeader
+            label="Email"
+            field="email"
+            sort={sortCriteria}
+            onToggleSort={handleToggleSort}
+          />
+        ),
         className: "min-w-[150px] max-w-[250px] truncate overflow-hidden",
         render: (row: RequestTutors) => (
           <span
@@ -567,7 +663,14 @@ export default function RequestForTutorsList() {
         render: (row: RequestTutors) => <DeleteTutorRequest tutorId={row.id} />,
       },
     ],
-    [getEffectiveStatus, getGradeId, getGradeTitle, refetch],
+    [
+      getEffectiveStatus,
+      getGradeId,
+      getGradeTitle,
+      handleToggleSort,
+      refetch,
+      sortCriteria,
+    ],
   );
 
   return (
@@ -585,15 +688,29 @@ export default function RequestForTutorsList() {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleResetFilters}
-            className="w-full gap-2 lg:w-auto"
-          >
-            <X className="h-4 w-4" />
-            Clear filters
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+            {sortCriteria && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClearSort}
+                className="w-full gap-2 lg:w-auto"
+              >
+                <ChevronsUpDown className="h-4 w-4" />
+                Clear sort
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResetFilters}
+              className="w-full gap-2 lg:w-auto"
+            >
+              <X className="h-4 w-4" />
+              Clear filters
+            </Button>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -768,6 +885,7 @@ export default function RequestForTutorsList() {
         limit={limit}
         isLoading={isLoading}
         emptyMessage="No tutor requests found for the current filters."
+        preserveDataOrder
       />
     </div>
   );

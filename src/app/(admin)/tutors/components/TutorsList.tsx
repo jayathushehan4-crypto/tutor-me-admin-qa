@@ -31,14 +31,17 @@ import { getErrorInApiResult } from "@/utils/api";
 import { getAdminId } from "@/utils/auth";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import {
+  ArrowDown,
+  ArrowUp,
   CheckCircle,
+  ChevronsUpDown,
   Loader2,
   Search,
   ShieldOff,
   X,
   XCircle,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { DeleteTutor } from "./DeleteTutor";
 import { EditTutor } from "./edit-tutor/EditTutor";
@@ -78,6 +81,12 @@ type TutorStatusFilter =
   | "approved"
   | "suspended"
   | "rejected";
+type TutorSortField = "fullName" | "email";
+type SortDirection = "asc" | "desc";
+type TutorSort = {
+  field: TutorSortField;
+  direction: SortDirection;
+} | null;
 
 type FilterOption = {
   value: string;
@@ -202,6 +211,43 @@ function SearchableFilterSelect({
         </div>
       )}
     </div>
+  );
+}
+
+function SortableHeader({
+  label,
+  field,
+  sort,
+  onToggleSort,
+}: {
+  label: string;
+  field: TutorSortField;
+  sort: TutorSort;
+  onToggleSort: (field: TutorSortField) => void;
+}) {
+  const isActive = sort?.field === field;
+  const isAscending = isActive && sort.direction === "asc";
+  const isDescending = isActive && sort.direction === "desc";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggleSort(field)}
+      title={`Sort ${label}`}
+      aria-label={`Sort ${label}`}
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-white ${
+        isActive ? "text-brand-500 dark:text-brand-400" : ""
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {isAscending ? (
+        <ArrowUp className="h-3.5 w-3.5 shrink-0" />
+      ) : isDescending ? (
+        <ArrowDown className="h-3.5 w-3.5 shrink-0" />
+      ) : (
+        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+      )}
+    </button>
   );
 }
 
@@ -582,6 +628,7 @@ export default function TutorsList() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
+  const [sortCriteria, setSortCriteria] = useState<TutorSort>(null);
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
@@ -592,6 +639,7 @@ export default function TutorsList() {
     classTypeFilter,
     gradeFilter,
     locationFilter,
+    sortCriteria,
     statusFilter,
     subjectFilter,
     tutorTypeFilter,
@@ -601,7 +649,9 @@ export default function TutorsList() {
     () => ({
       page,
       limit,
-      sortBy: "createdAt:desc",
+      sortBy: sortCriteria
+        ? `${sortCriteria.field}:${sortCriteria.direction}`
+        : "createdAt:desc",
       ...(debouncedSearchTerm.trim()
         ? { search: debouncedSearchTerm.trim() }
         : {}),
@@ -621,6 +671,7 @@ export default function TutorsList() {
       limit,
       locationFilter,
       page,
+      sortCriteria,
       statusFilter,
       subjectFilter,
       tutorTypeFilter,
@@ -686,7 +737,8 @@ export default function TutorsList() {
       classTypeFilter !== "all" ||
       locationFilter !== "all" ||
       gradeFilter !== "all" ||
-      subjectFilter !== "all",
+      subjectFilter !== "all" ||
+      Boolean(sortCriteria),
   );
 
   const handlePageChange = (newPage: number) => setPage(newPage);
@@ -699,6 +751,27 @@ export default function TutorsList() {
     setLocationFilter("all");
     setGradeFilter("all");
     setSubjectFilter("all");
+    setSortCriteria(null);
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  };
+
+  const handleToggleSort = useCallback((field: TutorSortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) {
+        return { field, direction: "asc" };
+      }
+
+      if (current.direction === "asc") {
+        return { field, direction: "desc" };
+      }
+
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
+  const clearSort = () => {
+    setSortCriteria(null);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
@@ -719,7 +792,14 @@ export default function TutorsList() {
     () => [
       {
         key: "fullName",
-        header: "Full Name",
+        header: (
+          <SortableHeader
+            label="Full Name"
+            field="fullName"
+            sort={sortCriteria}
+            onToggleSort={handleToggleSort}
+          />
+        ),
         className:
           "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
@@ -734,7 +814,14 @@ export default function TutorsList() {
       },
       {
         key: "email",
-        header: "Email",
+        header: (
+          <SortableHeader
+            label="Email"
+            field="email"
+            sort={sortCriteria}
+            onToggleSort={handleToggleSort}
+          />
+        ),
         className:
           "min-w-[150px] max-w-[250px] truncate overflow-hidden cursor-default",
         render: (row: Tutor) => (
@@ -774,7 +861,7 @@ export default function TutorsList() {
         key: "view",
         header: <div className="text-center w-full">View</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[240px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <ViewTutor tutor={row} />
@@ -787,7 +874,7 @@ export default function TutorsList() {
         key: "edit",
         header: <div className="text-center w-full">Edit</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[160px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <EditTutor id={row.id} />
@@ -800,14 +887,14 @@ export default function TutorsList() {
         key: "resetPassword",
         header: (
           <span
-            className="truncate w-full text-center block max-w-[100px]"
+            className="block w-full text-center leading-tight"
             title="Reset Password"
           >
             Reset Password
           </span>
         ),
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => {
           const isApproved = row.status?.toLowerCase() === "approved";
 
@@ -845,7 +932,7 @@ export default function TutorsList() {
         ),
       },
     ],
-    [],
+    [handleToggleSort, sortCriteria],
   );
 
   return (
@@ -862,15 +949,28 @@ export default function TutorsList() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={resetFilters}
-            disabled={!hasFilters}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 lg:w-auto"
-          >
-            <X className="h-4 w-4" />
-            Clear filters
-          </button>
+          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+            {sortCriteria && (
+              <button
+                type="button"
+                onClick={clearSort}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 lg:w-auto"
+              >
+                <ChevronsUpDown className="h-4 w-4" />
+                Clear sort
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!hasFilters}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 lg:w-auto"
+            >
+              <X className="h-4 w-4" />
+              Clear filters
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -1016,6 +1116,7 @@ export default function TutorsList() {
         limit={limit}
         isLoading={isFetching}
         emptyMessage="No tutors found for the current search or status filter."
+        preserveDataOrder
       />
     </div>
   );
