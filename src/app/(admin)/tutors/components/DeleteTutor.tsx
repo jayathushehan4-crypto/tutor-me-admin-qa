@@ -26,18 +26,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import { useLazyFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
+import {
+  useLazyFetchRequestForTutorsQuery,
+  useUnassignTutorMutation,
+} from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { useDeleteTutorMutation } from "@/store/api/splits/tutors";
 import type { PaginatedResponse, RequestTutors } from "@/types/response-types";
 import { getErrorInApiResult } from "@/utils/api";
-import { Loader2, Trash2, TriangleAlert } from "lucide-react";
+import { Loader2, Trash2, TriangleAlert, UserMinus } from "lucide-react";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 type AssignedRequestRow = {
   id: string;
+  requestId: string;
+  tutorBlockId: string;
   requestEmail: string;
   grade: unknown;
   subject: unknown;
@@ -56,6 +62,7 @@ interface DeleteTutorProps {
 }
 
 const LARGE_LIMIT = 10000;
+const DIRECT_UNASSIGN_REASON = "Tutor is no longer available";
 
 const normalizeText = (value: unknown) =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -126,6 +133,8 @@ function AssignedRequestsModal({
   isLoading,
   gradeTitleById,
   subjectTitleById,
+  unassigningRowId,
+  onUnassignRequest,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -134,6 +143,8 @@ function AssignedRequestsModal({
   isLoading: boolean;
   gradeTitleById: Map<string, string>;
   subjectTitleById: Map<string, string>;
+  unassigningRowId: string | null;
+  onUnassignRequest: (row: AssignedRequestRow) => void;
 }) {
   const getDisplayNameFromEntity = (
     value: unknown,
@@ -212,7 +223,7 @@ function AssignedRequestsModal({
             </p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-              <Table className="min-w-[600px]">
+              <Table className="min-w-[760px]">
                 <TableHeader className="border-b border-brand-100 bg-brand-50/70 dark:border-brand-500/20 dark:bg-brand-500/10">
                   <TableRow>
                     <TableCell
@@ -233,30 +244,57 @@ function AssignedRequestsModal({
                     >
                       Subject Name
                     </TableCell>
+                    <TableCell
+                      isHeader
+                      className="px-5 py-3 text-right text-xs font-semibold uppercase text-brand-700 dark:text-brand-300"
+                    >
+                      Action
+                    </TableCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {requestRows.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="px-5 py-4 text-sm font-medium text-gray-700 dark:text-gray-200">
-                        {row.requestEmail}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {getDisplayNameFromEntity(
-                          row.grade,
-                          gradeTitleById,
-                          "Unknown grade",
-                        )}
-                      </TableCell>
-                      <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
-                        {getDisplayNameFromEntity(
-                          row.subject,
-                          subjectTitleById,
-                          "Unknown subject",
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {requestRows.map((row) => {
+                    const isUnassigning = unassigningRowId === row.id;
+
+                    return (
+                      <TableRow key={row.id}>
+                        <TableCell className="px-5 py-4 text-sm font-medium text-gray-700 dark:text-gray-200">
+                          {row.requestEmail}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {getDisplayNameFromEntity(
+                            row.grade,
+                            gradeTitleById,
+                            "Unknown grade",
+                          )}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {getDisplayNameFromEntity(
+                            row.subject,
+                            subjectTitleById,
+                            "Unknown subject",
+                          )}
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onUnassignRequest(row)}
+                            disabled={isUnassigning || !!unassigningRowId}
+                            className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                          >
+                            {isUnassigning ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <UserMinus className="h-4 w-4" />
+                            )}
+                            {isUnassigning ? "Unassigning" : "Unassign"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -279,6 +317,7 @@ export function DeleteTutor({
   tutorEmail,
 }: DeleteTutorProps) {
   const [deleteTutor, { isLoading: isDeleting }] = useDeleteTutorMutation();
+  const [unassignTutor] = useUnassignTutorMutation();
   const [loadRequests] = useLazyFetchRequestForTutorsQuery();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [assignedRequestsOpen, setAssignedRequestsOpen] = useState(false);
@@ -286,6 +325,7 @@ export function DeleteTutor({
     AssignedRequestRow[]
   >([]);
   const [checkingAssignments, setCheckingAssignments] = useState(false);
+  const [unassigningRowId, setUnassigningRowId] = useState<string | null>(null);
 
   const { data: gradesData, isFetching: isFetchingGrades } =
     useFetchGradesQuery(
@@ -359,6 +399,8 @@ export function DeleteTutor({
 
         requestRows.push({
           id: `${request.id}-${block._id}`,
+          requestId: request.id,
+          tutorBlockId: block._id,
           requestEmail,
           grade: request.grade,
           subject: block.subject,
@@ -416,6 +458,28 @@ export function DeleteTutor({
     }
   };
 
+  const handleUnassignRequest = async (row: AssignedRequestRow) => {
+    setUnassigningRowId(row.id);
+
+    try {
+      await unassignTutor({
+        requestId: row.requestId,
+        tutorBlockIds: [row.tutorBlockId],
+        unassignReason: DIRECT_UNASSIGN_REASON,
+      }).unwrap();
+
+      setAssignedRequests((currentRows) =>
+        currentRows.filter((currentRow) => currentRow.id !== row.id),
+      );
+      toast.success("Tutor unassigned from request");
+    } catch (error) {
+      console.error("Failed to unassign tutor from request:", error);
+      toast.error("Failed to unassign tutor from request");
+    } finally {
+      setUnassigningRowId(null);
+    }
+  };
+
   const isModalLoading = isFetchingGrades || isFetchingSubjects;
 
   return (
@@ -464,6 +528,8 @@ export function DeleteTutor({
         isLoading={isModalLoading}
         gradeTitleById={gradeTitleById}
         subjectTitleById={subjectTitleById}
+        unassigningRowId={unassigningRowId}
+        onUnassignRequest={handleUnassignRequest}
       />
     </>
   );
