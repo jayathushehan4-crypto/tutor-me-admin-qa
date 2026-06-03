@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Inquiry, RequestTutors, Tutor } from "@/types/response-types";
+import type { DashboardRecentActivityItem } from "@/store/api/splits/dashboard";
 import {
   Activity,
   AlertTriangle,
@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { DashboardAnalytics } from "./useDashboardAnalytics";
 
-type ActivityItem = {
+type ActivityDisplayItem = {
   id: string;
   title: string;
   description: string;
@@ -27,42 +27,22 @@ type ActivityItem = {
   tone: string;
 };
 
-const MAX_ACTIVITY_ITEMS = 8;
-
-const getTimestamp = (value?: string | null) => {
-  if (!value) return 0;
-
-  const timestamp = new Date(value).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-};
-
 const formatActivityTime = (value: string) => {
-  const timestamp = getTimestamp(value);
-  if (!timestamp) return "Unknown time";
+  const timestamp = new Date(value).getTime();
+  if (!timestamp || Number.isNaN(timestamp)) return "Unknown time";
 
   const now = Date.now();
   const diffInSeconds = Math.round((timestamp - now) / 1000);
   const absoluteDiff = Math.abs(diffInSeconds);
   const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
-  if (absoluteDiff < 60) {
-    return formatter.format(diffInSeconds, "second");
-  }
-
+  if (absoluteDiff < 60) return formatter.format(diffInSeconds, "second");
   const diffInMinutes = Math.round(diffInSeconds / 60);
-  if (Math.abs(diffInMinutes) < 60) {
-    return formatter.format(diffInMinutes, "minute");
-  }
-
+  if (Math.abs(diffInMinutes) < 60) return formatter.format(diffInMinutes, "minute");
   const diffInHours = Math.round(diffInMinutes / 60);
-  if (Math.abs(diffInHours) < 24) {
-    return formatter.format(diffInHours, "hour");
-  }
-
+  if (Math.abs(diffInHours) < 24) return formatter.format(diffInHours, "hour");
   const diffInDays = Math.round(diffInHours / 24);
-  if (Math.abs(diffInDays) < 7) {
-    return formatter.format(diffInDays, "day");
-  }
+  if (Math.abs(diffInDays) < 7) return formatter.format(diffInDays, "day");
 
   return new Date(timestamp).toLocaleDateString("en-US", {
     month: "short",
@@ -79,63 +59,61 @@ const normalizeRequestStatus = (status: string) => {
   return status || "Pending";
 };
 
-const getTutorActivity = (tutor: Tutor): ActivityItem => ({
-  id: `tutor-${tutor.id}`,
-  title: tutor.fullName || tutor.name || "New tutor application",
-  description: tutor.email
-    ? `Tutor registration from ${tutor.email}`
-    : "Tutor registration submitted.",
-  href: "/tutors",
-  timestamp: tutor.createdAt,
-  status: capitalize(tutor.status || "pending"),
-  icon: UserPlus,
-  tone: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
-});
+const toDisplayItem = (item: DashboardRecentActivityItem): ActivityDisplayItem => {
+  if (item.type === "tutor") {
+    return {
+      id: `tutor-${item.id}`,
+      title: item.name || "New tutor application",
+      description: item.email
+        ? `Tutor registration from ${item.email}`
+        : "Tutor registration submitted.",
+      href: "/tutors",
+      timestamp: item.timestamp,
+      status: capitalize(item.status || "pending"),
+      icon: UserPlus,
+      tone: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+    };
+  }
 
-const getTutorRequestActivity = (request: RequestTutors): ActivityItem => ({
-  id: `request-${request.id}`,
-  title: request.name || "New tutor request",
-  description: [request.grade, request.medium].filter(Boolean).join(" - ")
-    ? [request.grade, request.medium].filter(Boolean).join(" - ")
-    : "Tutor request submitted.",
-  href: "/request-tutor",
-  timestamp: request.updatedAt || request.createdAt,
-  status: normalizeRequestStatus(request.status),
-  icon: ClipboardList,
-  tone: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
-});
+  if (item.type === "tutorRequest") {
+    return {
+      id: `request-${item.id}`,
+      title: item.name || "New tutor request",
+      description:
+        [item.grade, item.medium].filter(Boolean).join(" - ") ||
+        "Tutor request submitted.",
+      href: "/request-tutor",
+      timestamp: item.timestamp,
+      status: normalizeRequestStatus(item.status),
+      icon: ClipboardList,
+      tone: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
+    };
+  }
 
-const getInquiryActivity = (inquiry: Inquiry): ActivityItem => ({
-  id: `inquiry-${inquiry.id}`,
-  title: inquiry.sender?.name || "New contact inquiry",
-  description: inquiry.sender?.email
-    ? `Message from ${inquiry.sender.email}`
-    : inquiry.message || "Contact inquiry received.",
-  href: "/inquiries/contactus",
-  timestamp: inquiry.createdAt,
-  status: "Inquiry",
-  icon: Mail,
-  tone: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-});
+  // inquiry
+  return {
+    id: `inquiry-${item.id}`,
+    title: item.senderName || "New contact inquiry",
+    description: item.senderEmail
+      ? `Message from ${item.senderEmail}`
+      : item.message || "Contact inquiry received.",
+    href: "/inquiries/contactus",
+    timestamp: item.timestamp,
+    status: "Inquiry",
+    icon: Mail,
+    tone: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
+  };
+};
 
 export default function RecentActivityFeed({
   analytics,
 }: {
   analytics: DashboardAnalytics;
 }) {
+  // Backend already returns the 8 most-recent items merged and sorted
   const activities = useMemo(
-    () =>
-      [
-        ...analytics.tutorApplications.map(getTutorActivity),
-        ...analytics.tutorRequests.map(getTutorRequestActivity),
-        ...analytics.inquiries.map(getInquiryActivity),
-      ]
-        .sort(
-          (first, second) =>
-            getTimestamp(second.timestamp) - getTimestamp(first.timestamp),
-        )
-        .slice(0, MAX_ACTIVITY_ITEMS),
-    [analytics.inquiries, analytics.tutorApplications, analytics.tutorRequests],
+    () => analytics.recentActivity.map(toDisplayItem),
+    [analytics.recentActivity],
   );
 
   const isLoading = analytics.isRecentLoading;

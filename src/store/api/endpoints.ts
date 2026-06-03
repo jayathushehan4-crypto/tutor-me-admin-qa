@@ -24,4 +24,6 @@ export const Endpoints = {
   TuitionAssignments: "/v1/tuition-assignments",
   RequestTutor: "/v1/requestTutor",
   DashboardSummary: "/v1/dashboard/summary",
+  DashboardFull: "/v1/dashboard/full",
+
 };
