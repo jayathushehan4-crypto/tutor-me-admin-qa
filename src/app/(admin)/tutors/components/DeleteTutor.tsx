@@ -326,6 +326,8 @@ export function DeleteTutor({
   >([]);
   const [checkingAssignments, setCheckingAssignments] = useState(false);
   const [unassigningRowId, setUnassigningRowId] = useState<string | null>(null);
+  const [unassignConfirmRow, setUnassignConfirmRow] =
+    useState<AssignedRequestRow | null>(null);
 
   const { data: gradesData, isFetching: isFetchingGrades } =
     useFetchGradesQuery(
@@ -458,7 +460,16 @@ export function DeleteTutor({
     }
   };
 
-  const handleUnassignRequest = async (row: AssignedRequestRow) => {
+  const handleUnassignRequest = (row: AssignedRequestRow) => {
+    setUnassignConfirmRow(row);
+  };
+
+  const handleConfirmUnassign = async () => {
+    const row = unassignConfirmRow;
+    if (!row) {
+      return;
+    }
+
     setUnassigningRowId(row.id);
 
     try {
@@ -471,6 +482,7 @@ export function DeleteTutor({
       setAssignedRequests((currentRows) =>
         currentRows.filter((currentRow) => currentRow.id !== row.id),
       );
+      setUnassignConfirmRow(null);
       toast.success("Tutor unassigned from request");
     } catch (error) {
       console.error("Failed to unassign tutor from request:", error);
@@ -515,6 +527,51 @@ export function DeleteTutor({
               className="bg-red-500 text-white hover:bg-red-600"
             >
               {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!unassignConfirmRow}
+        onOpenChange={(open) => {
+          if (!open && !unassigningRowId) {
+            setUnassignConfirmRow(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unassign this tutor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove{" "}
+              {tutorName ? (
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {tutorName}
+                </span>
+              ) : (
+                "this tutor"
+              )}{" "}
+              from the selected request block
+              {unassignConfirmRow?.requestEmail
+                ? ` for ${unassignConfirmRow.requestEmail}`
+                : ""}
+              . The request can be assigned to another tutor later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!unassigningRowId}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleConfirmUnassign();
+              }}
+              disabled={!!unassigningRowId}
+              className="bg-rose-600 text-white hover:bg-rose-700"
+            >
+              {unassigningRowId ? "Unassigning..." : "Unassign"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
