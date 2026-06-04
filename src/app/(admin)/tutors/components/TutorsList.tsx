@@ -737,8 +737,7 @@ export default function TutorsList() {
       classTypeFilter !== "all" ||
       locationFilter !== "all" ||
       gradeFilter !== "all" ||
-      subjectFilter !== "all" ||
-      Boolean(sortCriteria),
+      subjectFilter !== "all",
   );
 
   const handlePageChange = (newPage: number) => setPage(newPage);
@@ -751,7 +750,6 @@ export default function TutorsList() {
     setLocationFilter("all");
     setGradeFilter("all");
     setSubjectFilter("all");
-    setSortCriteria(null);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 

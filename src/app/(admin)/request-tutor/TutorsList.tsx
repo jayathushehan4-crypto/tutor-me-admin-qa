@@ -310,7 +310,6 @@ export default function RequestForTutorsList() {
   const handleResetFilters = () => {
     setSearchTerm("");
     setFilters(INITIAL_FILTERS);
-    setSortCriteria(null);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
