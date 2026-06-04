@@ -28,14 +28,15 @@ type MetricConfig = {
   mutedClassName: string;
 };
 
-type TimestampedRecord = {
-  createdAt: string;
+type ChartDayEntry = {
+  date: string;
+  count: number;
 };
 
 type MetricData = Record<
   Exclude<ChartMetric, "all">,
   {
-    records: TimestampedRecord[];
+    records: ChartDayEntry[];
     total: number;
   }
 >;
@@ -90,95 +91,12 @@ const metricConfigs: MetricConfig[] = [
   },
 ];
 
-const getDayKey = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate(),
-  ).padStart(2, "0")}`;
-
-const getDayLabel = (date: Date) =>
-  date.toLocaleString("en-US", { day: "numeric", month: "short" });
-
-const createEmptyDays = (dayCount: DateRange) => {
-  const today = new Date();
-
-  return Array.from({ length: dayCount }, (_, index) => {
-    const date = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() - (dayCount - 1 - index),
-    );
-
-    return {
-      key: getDayKey(date),
-      label: getDayLabel(date),
-      value: 0,
-    };
-  });
-};
-
-const buildDailyGrowth = <T extends TimestampedRecord>(
-  records: T[],
-  dayCount: DateRange,
-): GrowthBucket[] => {
-  const days = createEmptyDays(dayCount);
-  const firstDay = days[0]?.key;
-  const dailyTotals = new Map(days.map((day) => [day.key, 0]));
-
-  records.forEach((record) => {
-    const createdAt = new Date(record.createdAt);
-
-    if (Number.isNaN(createdAt.getTime())) {
-      return;
-    }
-
-    const dayKey = getDayKey(createdAt);
-
-    if (firstDay && dayKey < firstDay) {
-      return;
-    }
-
-    if (dailyTotals.has(dayKey)) {
-      dailyTotals.set(dayKey, (dailyTotals.get(dayKey) || 0) + 1);
-    }
-  });
-
-  return days.map((day) => ({
-    ...day,
-    value: dailyTotals.get(day.key) || 0,
-  }));
-};
-
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
 const getDateLabelInterval = (dayCount: DateRange) => {
   if (dayCount === 30) return 5;
   if (dayCount === 14) return 2;
   return 1;
-};
-
-const getStartOfDay = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-const addDays = (date: Date, days: number) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-
-const getRecordTimestamp = (record: TimestampedRecord) => {
-  const timestamp = new Date(record.createdAt).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-};
-
-const countRecordsInRange = (
-  records: TimestampedRecord[],
-  start: Date,
-  end: Date,
-) => {
-  const startTime = start.getTime();
-  const endTime = end.getTime();
-
-  return records.filter((record) => {
-    const timestamp = getRecordTimestamp(record);
-    return timestamp >= startTime && timestamp < endTime;
-  }).length;
 };
 
 const buildPeriodComparison = (
@@ -256,16 +174,25 @@ export default function TutorGrowthChart({
     ],
   );
 
+  // Backend sends enough { date, count } history for current and previous windows.
+  // Slice the last `dayCount` items for the visible chart.
+  // and map to the GrowthBucket shape the chart internals expect.
   const dailyData = useMemo(
     () =>
       metricConfigs.reduce(
-        (acc, metric) => ({
-          ...acc,
-          [metric.key]: buildDailyGrowth(
-            metricData[metric.key].records,
-            dayCount,
-          ),
-        }),
+        (acc, metric) => {
+          const allDays = metricData[metric.key].records;
+          const sliced = allDays.slice(-dayCount);
+          const buckets: GrowthBucket[] = sliced.map((d) => ({
+            key: d.date,
+            label: new Date(d.date + "T00:00:00Z").toLocaleString("en-US", {
+              day: "numeric",
+              month: "short",
+            }),
+            value: d.count,
+          }));
+          return { ...acc, [metric.key]: buckets };
+        },
         {} as Record<Exclude<ChartMetric, "all">, GrowthBucket[]>,
       ),
     [dayCount, metricData],
@@ -294,18 +221,11 @@ export default function TutorGrowthChart({
     );
   }, 0);
 
-  const todayStart = getStartOfDay(new Date());
-  const currentPeriodStart = addDays(todayStart, -(dayCount - 1));
-  const previousPeriodStart = addDays(currentPeriodStart, -dayCount);
+  // For period comparison: sum the dayCount slice BEFORE the current window
   const previousPeriodTotal = visibleMetrics.reduce((total, metric) => {
-    return (
-      total +
-      countRecordsInRange(
-        metricData[metric.key].records,
-        previousPeriodStart,
-        currentPeriodStart,
-      )
-    );
+    const allDays = metricData[metric.key].records;
+    const prevSlice = allDays.slice(-(dayCount * 2), -dayCount);
+    return total + prevSlice.reduce((s, d) => s + d.count, 0);
   }, 0);
   const periodComparison = buildPeriodComparison(
     currentPeriodTotal,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import type { RequestTutors } from "@/types/response-types";
+
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,46 +12,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+
 import type { DashboardAnalytics } from "./useDashboardAnalytics";
-
-const formatNumber = (value: number) => value.toLocaleString("en-US");
-
-const hasAssignedTutor = (assigned: unknown) => {
-  if (!assigned) return false;
-  if (typeof assigned === "string") return assigned.trim() !== "";
-  if (Array.isArray(assigned)) {
-    return assigned.some((item) => {
-      if (typeof item === "string") return item.trim() !== "";
-      if (!item || typeof item !== "object") return false;
-
-      return typeof (item as { id?: unknown }).id === "string";
-    });
-  }
-  if (typeof assigned === "object") {
-    return typeof (assigned as { id?: unknown }).id === "string";
-  }
-
-  return false;
-};
-
-const isRequestOpen = (request: RequestTutors) => {
-  if (
-    request.status === "Rejected" ||
-    request.status === "Tutor Assigned" ||
-    request.status === "Assiged" ||
-    request.status === "Assigned"
-  ) {
-    return false;
-  }
-
-  const tutorBlocks = Array.isArray(request.tutors) ? request.tutors : [];
-  if (tutorBlocks.length === 0) return true;
-
-  return tutorBlocks.some(
-    (tutorBlock) => !hasAssignedTutor(tutorBlock.assignedTutor),
-  );
-};
 
 type AttentionItem = {
   title: string;
@@ -62,6 +24,9 @@ type AttentionItem = {
   tone: string;
 };
 
+const formatNumber = (value: number) => value.toLocaleString("en-US");
+
+
 export default function NeedsAttentionPanel({
   analytics,
   className = "",
@@ -69,14 +34,8 @@ export default function NeedsAttentionPanel({
   analytics: DashboardAnalytics;
   className?: string;
 }) {
-  const openTutorRequests = useMemo(
-    () =>
-      analytics.tutorRequests.filter((request) => isRequestOpen(request))
-        .length,
-    [analytics.tutorRequests],
-  );
-
-  const latestInquiry = analytics.inquiries[0];
+  const openTutorRequests = analytics.attention?.openTutorRequestsTotal ?? 0;
+  const latestInquirySenderName = analytics.attention?.latestInquirySenderName ?? null;
 
   const items: AttentionItem[] = [
     {
@@ -97,10 +56,10 @@ export default function NeedsAttentionPanel({
     },
     {
       title: "Recent contact inquiries",
-      description: latestInquiry?.sender?.name
-        ? `Latest message from ${latestInquiry.sender.name}.`
+      description: latestInquirySenderName
+        ? `Latest message from ${latestInquirySenderName}.`
         : "Check new messages from the contact form.",
-      count: analytics.inquiriesTotal,
+      count: analytics.attention?.inquiriesTotal ?? analytics.inquiriesTotal,
       href: "/inquiries/contactus",
       icon: Mail,
       tone: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",

@@ -2,7 +2,6 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthContext } from "@/context";
-import { useFetchDashboardSummaryQuery } from "@/store/api/splits/dashboard";
 import { useFetchUserByIdQuery } from "@/store/api/splits/users";
 import { containerVariants } from "@/types/animation-types";
 import { statCards } from "@/types/dashboard-types";
@@ -18,16 +17,10 @@ import TutorGrowthChart from "./TutorGrowthChart";
 import { useDashboardAnalytics } from "./useDashboardAnalytics";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
-const STAT_COMPARISON_DAYS = 7;
 
-type TimestampedRecord = {
-  createdAt?: string | null;
-};
 
 type StatTrend = {
   today: number;
-  currentPeriod: number;
-  previousPeriod: number;
   label: string;
   className: string;
 };
@@ -44,86 +37,42 @@ const getInitials = (name: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-const getStartOfDay = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+/** Convert a pre-computed backend trend into the display shape used by stat cards. */
+const buildStatTrendFromServer = (trend: {
+  today: number;
+  last7Days: number;
+  prev7Days: number;
+}): StatTrend => {
+  const { today, last7Days, prev7Days } = trend;
+  const change = last7Days - prev7Days;
 
-const addDays = (date: Date, days: number) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-
-const getRecordTimestamp = (record: TimestampedRecord) => {
-  if (!record.createdAt) return 0;
-
-  const timestamp = new Date(record.createdAt).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-};
-
-const countRecordsInRange = (
-  records: TimestampedRecord[],
-  start: Date,
-  end: Date,
-) => {
-  const startTime = start.getTime();
-  const endTime = end.getTime();
-
-  return records.filter((record) => {
-    const timestamp = getRecordTimestamp(record);
-    return timestamp >= startTime && timestamp < endTime;
-  }).length;
-};
-
-const buildStatTrend = (records: TimestampedRecord[]): StatTrend => {
-  const todayStart = getStartOfDay(new Date());
-  const tomorrowStart = addDays(todayStart, 1);
-  const currentPeriodStart = addDays(todayStart, -(STAT_COMPARISON_DAYS - 1));
-  const previousPeriodStart = addDays(
-    currentPeriodStart,
-    -STAT_COMPARISON_DAYS,
-  );
-
-  const today = countRecordsInRange(records, todayStart, tomorrowStart);
-  const currentPeriod = countRecordsInRange(
-    records,
-    currentPeriodStart,
-    tomorrowStart,
-  );
-  const previousPeriod = countRecordsInRange(
-    records,
-    previousPeriodStart,
-    currentPeriodStart,
-  );
-  const change = currentPeriod - previousPeriod;
-
-  if (previousPeriod === 0) {
+  if (prev7Days === 0) {
     return {
       today,
-      currentPeriod,
-      previousPeriod,
       label:
-        currentPeriod === 0
+        last7Days === 0
           ? "No change vs previous 7 days"
-          : `+${formatNumber(currentPeriod)} vs previous 7 days`,
+          : `+${formatNumber(last7Days)} vs previous 7 days`,
       className:
-        currentPeriod === 0
+        last7Days === 0
           ? "text-gray-500 dark:text-gray-400"
           : "text-emerald-600 dark:text-emerald-400",
     };
   }
 
-  const percentageChange = Math.round((change / previousPeriod) * 100);
-  const prefix = percentageChange > 0 ? "+" : "";
+  const pct = Math.round((change / prev7Days) * 100);
+  const prefix = pct > 0 ? "+" : "";
 
   return {
     today,
-    currentPeriod,
-    previousPeriod,
     label:
-      percentageChange === 0
+      pct === 0
         ? "No change vs previous 7 days"
-        : `${prefix}${percentageChange}% vs previous 7 days`,
+        : `${prefix}${pct}% vs previous 7 days`,
     className:
-      percentageChange > 0
+      pct > 0
         ? "text-emerald-600 dark:text-emerald-400"
-        : percentageChange < 0
+        : pct < 0
           ? "text-rose-600 dark:text-rose-400"
           : "text-gray-500 dark:text-gray-400",
   };
@@ -136,14 +85,6 @@ export default function DashboardOverview() {
     authUser?.id || "",
     { skip: !authUser?.id },
   );
-
-  const {
-    data: summary,
-    isLoading: isSummaryLoading,
-    isError: isSummaryError,
-    isFetching: isSummaryFetching,
-    refetch: refetchSummary,
-  } = useFetchDashboardSummaryQuery();
 
   const analytics = useDashboardAnalytics();
 
@@ -160,28 +101,25 @@ export default function DashboardOverview() {
   const avatarSrc = user?.avatar || authUser?.avatar || "";
 
   const showProfileSkeleton = !isUserLoaded || isUserLoading;
-  const isStatsError = isSummaryError || analytics.isCoreError;
-  const isStatsRefetching = isSummaryFetching || analytics.isCoreFetching;
-  const showSummarySkeleton = isSummaryLoading || analytics.isCoreLoading;
+  const isStatsError = analytics.isCoreError;
+  const isStatsRefetching = analytics.isCoreFetching;
+  const showSummarySkeleton = analytics.isCoreLoading;
   const isPositiveStatus = ["active", "approved"].includes(
     displayStatus.toLowerCase(),
   );
-  const statTrends = useMemo<Record<SummaryKey, StatTrend>>(
-    () => ({
-      registeredTutors: buildStatTrend(analytics.approvedTutors),
-      requestTutorRequests: buildStatTrend(analytics.tutorRequests),
-      registerAsTutorRequests: buildStatTrend(analytics.tutorApplications),
-    }),
-    [
-      analytics.approvedTutors,
-      analytics.tutorApplications,
-      analytics.tutorRequests,
-    ],
-  );
-  const refetchStats = () => {
-    refetchSummary();
-    analytics.refetchCore();
-  };
+
+  // Build stat-card trend labels from the pre-computed backend data
+  const statTrends = useMemo<Record<SummaryKey, StatTrend>>(() => {
+    const empty = { today: 0, label: "No change vs previous 7 days", className: "text-gray-500 dark:text-gray-400" };
+    if (!analytics.trends) return { registeredTutors: empty, requestTutorRequests: empty, registerAsTutorRequests: empty };
+    return {
+      registeredTutors: buildStatTrendFromServer(analytics.trends.registeredTutors),
+      requestTutorRequests: buildStatTrendFromServer(analytics.trends.requestTutorRequests),
+      registerAsTutorRequests: buildStatTrendFromServer(analytics.trends.registerAsTutorRequests),
+    };
+  }, [analytics.trends]);
+
+  const refetchStats = () => analytics.refetchAll();
 
   return (
     <motion.div
@@ -369,7 +307,7 @@ export default function DashboardOverview() {
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.1 + index * 0.05 }}
                         >
-                          {formatNumber(summary?.[key] ?? 0)}
+                          {formatNumber(analytics.summary?.[key] ?? 0)}
                         </motion.p>
                       </div>
                       <span
