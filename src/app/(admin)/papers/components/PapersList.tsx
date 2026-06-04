@@ -2,6 +2,10 @@
 
 import DataTable from "@/components/tables/DataTable";
 import TablePagination from "@/components/tables/Pagination";
+import {
+  SortableHeader,
+  type SortDirection,
+} from "@/components/tables/SortableHeader";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,7 +27,7 @@ import { escapeRegex } from "@/utils/form";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { Copy, FileText, RotateCcw, Search, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { DeletePaper } from "./DeletePaper";
 import { EditPaper } from "./edit-paper/EditPaper";
@@ -78,6 +82,11 @@ const staggerContainer: Variants = {
   },
 };
 
+type PaperSortField = "title" | "subject" | "grade" | "year";
+type PaperSort = { field: PaperSortField; direction: SortDirection } | null;
+
+const RELATIONAL_SORT_FETCH_LIMIT = 10000;
+
 export default function PapersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [titleFilter, setTitleFilter] = useState("");
@@ -87,11 +96,34 @@ export default function PapersTable() {
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedTitleFilter = useDebounce(titleFilter, 400);
 
+  const [sortCriteria, setSortCriteria] = useState<PaperSort>(null);
+  const isRelationalSort =
+    sortCriteria?.field === "subject" || sortCriteria?.field === "grade";
+
+  const serverSortBy = useMemo(() => {
+    if (sortCriteria?.field === "title") {
+      return `title:${sortCriteria.direction}`;
+    }
+    if (sortCriteria?.field === "year") {
+      return `year:${sortCriteria.direction}`;
+    }
+    return "createdAt:desc";
+  }, [sortCriteria]);
+
+  const handleToggleSort = useCallback((field: PaperSortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) return { field, direction: "asc" };
+      if (current.direction === "asc") return { field, direction: "desc" };
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
   const papersQuery = useMemo(
     () => ({
-      page,
-      limit,
-      sortBy: "createdAt:desc",
+      page: isRelationalSort ? TABLE_CONFIG.DEFAULT_PAGE : page,
+      limit: isRelationalSort ? RELATIONAL_SORT_FETCH_LIMIT : limit,
+      sortBy: serverSortBy,
       ...(debouncedTitleFilter.trim()
         ? { title: escapeRegex(debouncedTitleFilter.trim()) }
         : {}),
@@ -99,7 +131,16 @@ export default function PapersTable() {
       ...(subjectFilter ? { subject: subjectFilter } : {}),
       ...(mediumFilter ? { medium: mediumFilter } : {}),
     }),
-    [debouncedTitleFilter, gradeFilter, limit, mediumFilter, page, subjectFilter],
+    [
+      debouncedTitleFilter,
+      gradeFilter,
+      isRelationalSort,
+      limit,
+      mediumFilter,
+      page,
+      serverSortBy,
+      subjectFilter,
+    ],
   );
 
   const { data, isFetching } = useFetchPapersQuery(papersQuery);
@@ -130,9 +171,43 @@ export default function PapersTable() {
     [gradesData?.results],
   );
 
-  const papers = data?.results || [];
-  const totalResults = data?.totalResults || 0;
-  const totalPages = data?.totalPages || 1;
+  const sortedPapers = useMemo(() => {
+    const raw = data?.results || [];
+    if (!sortCriteria) return raw;
+    if (sortCriteria.field === "title" || sortCriteria.field === "year") {
+      return raw;
+    }
+
+    return [...raw].sort((a, b) => {
+      let aVal = "";
+      let bVal = "";
+      if (sortCriteria.field === "subject") {
+        aVal = String(a.subject?.title ?? "");
+        bVal = String(b.subject?.title ?? "");
+      } else if (sortCriteria.field === "grade") {
+        aVal = String(a.grade?.title ?? "");
+        bVal = String(b.grade?.title ?? "");
+      }
+      const cmp = aVal.localeCompare(bVal, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+      return sortCriteria.direction === "asc" ? cmp : -cmp;
+    });
+  }, [data, sortCriteria]);
+  const papers = useMemo(
+    () =>
+      isRelationalSort
+        ? sortedPapers.slice((page - 1) * limit, page * limit)
+        : sortedPapers,
+    [isRelationalSort, limit, page, sortedPapers],
+  );
+  const totalResults = isRelationalSort
+    ? sortedPapers.length
+    : data?.totalResults || 0;
+  const totalPages = isRelationalSort
+    ? Math.max(1, Math.ceil(totalResults / limit))
+    : data?.totalPages || 1;
   const hasFilters = Boolean(
     titleFilter || gradeFilter || subjectFilter || mediumFilter,
   );
@@ -237,7 +312,15 @@ export default function PapersTable() {
   const columns = [
     {
       key: "title",
-      header: "Title",
+      header: (
+        <SortableHeader
+          label="Title"
+          direction={
+            sortCriteria?.field === "title" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("title")}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
       render: (row: Paper) => {
@@ -255,7 +338,15 @@ export default function PapersTable() {
     },
     {
       key: "subject",
-      header: "Subject",
+      header: (
+        <SortableHeader
+          label="Subject"
+          direction={
+            sortCriteria?.field === "subject" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("subject")}
+        />
+      ),
       className:
         "min-w-[120px] max-w-[180px] truncate overflow-hidden cursor-default",
       render: (row: Paper) => {
@@ -276,7 +367,15 @@ export default function PapersTable() {
     },
     {
       key: "grade",
-      header: "Grade",
+      header: (
+        <SortableHeader
+          label="Grade"
+          direction={
+            sortCriteria?.field === "grade" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("grade")}
+        />
+      ),
       className:
         "min-w-[100px] max-w-[150px] truncate overflow-hidden cursor-default",
       render: (row: Paper) => {
@@ -297,7 +396,15 @@ export default function PapersTable() {
     },
     {
       key: "year",
-      header: "Year",
+      header: (
+        <SortableHeader
+          label="Year"
+          direction={
+            sortCriteria?.field === "year" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("year")}
+        />
+      ),
       className: "min-w-[80px] max-w-[100px] cursor-default",
       render: (row: Paper) => {
         const safeYear = getSafeValue(row.year, "No year");
@@ -540,6 +647,7 @@ export default function PapersTable() {
             limit={limit}
             isLoading={isFetching}
             emptyMessage="No papers found for the current filters."
+            preserveDataOrder={Boolean(sortCriteria)}
           />
         </motion.div>
       </motion.div>
