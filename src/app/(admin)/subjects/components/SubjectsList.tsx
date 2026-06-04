@@ -34,7 +34,7 @@ export default function SubjectsTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [titleSortDirection, setTitleSortDirection] =
     useState<SortDirection | null>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const subjectsQuery = useMemo(
@@ -221,6 +221,7 @@ export default function SubjectsTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No subjects found for the current search."
         preserveDataOrder={Boolean(titleSortDirection)}

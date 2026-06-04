@@ -43,7 +43,7 @@ export default function InquiryTable() {
   const [deleteInquiry] = useDeleteInquiryMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortCriteria, setSortCriteria] = useState<InquirySort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const hasSearchFilter = Boolean(debouncedSearchTerm.trim());
   const usesClientPagination = hasSearchFilter || Boolean(sortCriteria);
@@ -324,6 +324,7 @@ export default function InquiryTable() {
         totalPages={totalPages}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         onPageChange={handlePageChange}
         isLoading={isFetching}
         emptyMessage="No inquiries found for the current search."

@@ -633,7 +633,7 @@ export default function TutorsList() {
   const [gradeFilter, setGradeFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [sortCriteria, setSortCriteria] = useState<TutorSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   useEffect(() => {
@@ -1127,6 +1127,7 @@ export default function TutorsList() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No tutors found for the current search or status filter."
         preserveDataOrder

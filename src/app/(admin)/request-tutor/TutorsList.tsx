@@ -165,7 +165,7 @@ export default function RequestForTutorsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<RequestTutorFilters>(INITIAL_FILTERS);
   const [sortCriteria, setSortCriteria] = useState<RequestTutorSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const debouncedAssignedTutor = useDebounce(filters.assignedTutor, 400);
@@ -912,6 +912,7 @@ export default function RequestForTutorsList() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isLoading}
         emptyMessage="No tutor requests found for the current filters."
         preserveDataOrder

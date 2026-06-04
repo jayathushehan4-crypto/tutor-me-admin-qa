@@ -31,7 +31,7 @@ interface Level {
 export default function LevelsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [deleteLevel] = useDeleteLevelMutation();
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading } = useFetchLevelsQuery({
     page,
@@ -235,6 +235,7 @@ export default function LevelsTable() {
       onPageChange={handlePageChange}
       totalResults={totalResults}
       limit={limit}
+      onLimitChange={setLimit}
       isLoading={isLoading}
       bulkDelete={{
         entityName: "level",

@@ -40,7 +40,7 @@ export default function GradesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [titleSortDirection, setTitleSortDirection] =
     useState<SortDirection | null>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const gradesQuery = useMemo(
@@ -254,6 +254,7 @@ export default function GradesTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No grades found for the current search."
         preserveDataOrder={Boolean(titleSortDirection)}

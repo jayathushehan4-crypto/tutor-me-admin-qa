@@ -21,7 +21,7 @@ export default function SubjectsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [deleteGrade] = useDeleteGradeMutation();
   const [searchTerm, setSearchTerm] = useState("");
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading } = useFetchGradesQuery({
     page,
@@ -223,6 +223,7 @@ export default function SubjectsTable() {
             onPageChange={handlePageChange}
             totalResults={searchTerm ? filteredGrades.length : totalResults}
             limit={limit}
+            onLimitChange={setLimit}
             isLoading={isLoading}
             bulkDelete={{
               entityName: "grade",

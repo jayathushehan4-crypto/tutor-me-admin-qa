@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { cn } from "@/lib/utils";
+import { TABLE_CONFIG } from "@/configs/table";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
 import { Trash2 } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
@@ -58,6 +59,7 @@ interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   totalResults?: number;
   limit?: number;
+  onLimitChange?: (limit: number) => void;
   isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
@@ -122,6 +124,7 @@ export default function DataTable<T extends { id: string | number }>({
   onPageChange,
   totalResults = 0,
   limit = 10,
+  onLimitChange,
   isLoading = false,
   emptyMessage = "This is empty. Please create a new one.",
   className,
@@ -244,54 +247,81 @@ export default function DataTable<T extends { id: string | number }>({
         className,
       )}
     >
-      {bulkDelete && (
+      {(bulkDelete || onLimitChange) && (
         <div className="flex min-h-14 items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/80 px-4 py-2 dark:border-white/5 dark:bg-white/3">
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
               Bulk actions
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {selectedRows.length > 0
+              {bulkDelete && selectedRows.length > 0
                 ? `${selectedRows.length} row${selectedRows.length === 1 ? "" : "s"} selected`
-                : "Select rows from this page to delete them"}
+                : `(${totalResults}) Records Found`}
             </p>
           </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                type="button"
-                disabled={selectedRows.length === 0}
-                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Delete {selectedRows.length} selected {bulkDelete.entityName}
-                  {selectedRows.length === 1 ? "" : "s"}?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. The selected rows will be
-                  permanently deleted.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isBulkDeleting}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleBulkDelete}
-                  disabled={isBulkDeleting}
-                  className="bg-red-500 text-white hover:bg-red-600"
+          <div className="flex shrink-0 items-center gap-3">
+            {onLimitChange && (
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="hidden whitespace-nowrap sm:inline">
+                  Rows per page
+                </span>
+                <select
+                  value={limit}
+                  onChange={(event) => {
+                    onPageChange?.(1);
+                    onLimitChange(Number(event.target.value));
+                  }}
+                  aria-label="Rows per page"
+                  className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                 >
-                  {isBulkDeleting ? "Deleting..." : "Delete selected"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  {TABLE_CONFIG.PAGINATION_LIMITS.map((rowLimit) => (
+                    <option key={rowLimit} value={rowLimit}>
+                      {rowLimit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {bulkDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={selectedRows.length === 0}
+                    className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete selected
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Delete {selectedRows.length} selected{" "}
+                      {bulkDelete.entityName}
+                      {selectedRows.length === 1 ? "" : "s"}?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. The selected rows will be
+                      permanently deleted.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isBulkDeleting}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleBulkDelete}
+                      disabled={isBulkDeleting}
+                      className="bg-red-500 text-white hover:bg-red-600"
+                    >
+                      {isBulkDeleting ? "Deleting..." : "Delete selected"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
       )}
       <div className="custom-scrollbar max-w-full overflow-x-auto">

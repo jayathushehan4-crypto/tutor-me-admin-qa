@@ -64,7 +64,7 @@ export default function TuitionRatesTable() {
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [sortCriteria, setSortCriteria] = useState<TuitionRateSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const tuitionRatesQuery = useMemo(
     () => ({
@@ -325,6 +325,7 @@ export default function TuitionRatesTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No tuition rates found for the current filters."
         preserveDataOrder={Boolean(sortCriteria)}

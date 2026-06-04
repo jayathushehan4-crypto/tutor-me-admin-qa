@@ -48,7 +48,7 @@ export default function FAQTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] =
     useState<CategoryFilter>(ALL_CATEGORIES);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   // TODO:Best for small/medium datasets. For very large datasets, move search to the backend.
   const { data, isLoading } = useFetchFaqsQuery({
@@ -316,6 +316,7 @@ export default function FAQTable() {
             totalPages={totalPages}
             totalResults={totalResults}
             limit={limit}
+            onLimitChange={setLimit}
             onPageChange={handlePageChange}
             isLoading={isLoading}
             bulkDelete={{

@@ -97,7 +97,7 @@ export default function PapersTable() {
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [mediumFilter, setMediumFilter] = useState("");
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedTitleFilter = useDebounce(titleFilter, 400);
 
   const [sortCriteria, setSortCriteria] = useState<PaperSort>(null);
@@ -649,6 +649,7 @@ export default function PapersTable() {
             onPageChange={handlePageChange}
             totalResults={totalResults}
             limit={limit}
+            onLimitChange={setLimit}
             isLoading={isFetching}
             emptyMessage="No papers found for the current filters."
             preserveDataOrder={Boolean(sortCriteria)}

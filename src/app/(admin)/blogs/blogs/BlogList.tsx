@@ -57,7 +57,7 @@ const normalizeMongoId = (value?: string | { $oid?: string }) => {
 export default function BlogsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [deleteBlog] = useDeleteBlogMutation();
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading, refetch } = useFetchBlogsQuery({
     page,
@@ -191,6 +191,7 @@ export default function BlogsTable() {
       onPageChange={handlePageChange}
       totalResults={totalResults}
       limit={limit}
+      onLimitChange={setLimit}
       isLoading={isLoading}
       bulkDelete={{
         entityName: "blog",

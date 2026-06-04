@@ -275,7 +275,7 @@ export default function UsersTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRoleFilter>("all");
   const [sortCriteria, setSortCriteria] = useState<UserSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   useEffect(() => {
@@ -615,6 +615,7 @@ export default function UsersTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No users found for the current search or role filter."
         className="w-full max-w-full"

@@ -21,7 +21,7 @@ interface Tag {
 export default function TagsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [deleteTag] = useDeleteTagMutation();
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading } = useFetchTagsQuery({
     page,
@@ -140,6 +140,7 @@ export default function TagsList() {
       onPageChange={handlePageChange}
       totalResults={totalResults}
       limit={limit}
+      onLimitChange={setLimit}
       isLoading={isLoading}
       bulkDelete={{
         entityName: "tag",

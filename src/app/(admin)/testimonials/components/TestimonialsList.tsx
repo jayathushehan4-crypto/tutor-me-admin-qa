@@ -57,7 +57,7 @@ export default function TestimonialsTable() {
   const [roleSearch, setRoleSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [sortCriteria, setSortCriteria] = useState<TestimonialSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedNameSearch = useDebounce(nameSearch, 400);
   const debouncedRoleSearch = useDebounce(roleSearch, 400);
   const normalizedNameSearch = debouncedNameSearch.trim().toLowerCase();
@@ -413,6 +413,7 @@ export default function TestimonialsTable() {
           onPageChange={handlePageChange}
           totalResults={totalResults}
           limit={limit}
+          onLimitChange={setLimit}
           isLoading={isFetching}
           emptyMessage="No testimonials found for the current filters."
           preserveDataOrder={Boolean(sortCriteria)}
