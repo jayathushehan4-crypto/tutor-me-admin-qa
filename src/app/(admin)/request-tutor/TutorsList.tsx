@@ -18,7 +18,10 @@ import {
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
+import {
+  useDeleteRequestForTutorMutation,
+  useFetchRequestForTutorsQuery,
+} from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { FetchRequestForTutor } from "@/types/request-types";
 import { RequestTutors } from "@/types/response-types";
@@ -154,6 +157,7 @@ function SortableHeader({
 
 export default function RequestForTutorsList() {
   const router = useRouter();
+  const [deleteTutorRequest] = useDeleteRequestForTutorMutation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const focusedRequestId = searchParams.get("requestId")?.trim() ?? "";
@@ -911,6 +915,10 @@ export default function RequestForTutorsList() {
         isLoading={isLoading}
         emptyMessage="No tutor requests found for the current filters."
         preserveDataOrder
+        bulkDelete={{
+          entityName: "tutor request",
+          deleteRow: (row) => deleteTutorRequest(String(row.id)).unwrap(),
+        }}
       />
     </div>
   );

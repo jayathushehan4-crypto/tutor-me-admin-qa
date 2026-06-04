@@ -21,7 +21,10 @@ import {
   useFetchGradeByIdQuery,
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
-import { useFetchPapersQuery } from "@/store/api/splits/papers";
+import {
+  useDeletePaperMutation,
+  useFetchPapersQuery,
+} from "@/store/api/splits/papers";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { escapeRegex } from "@/utils/form";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
@@ -89,6 +92,7 @@ const RELATIONAL_SORT_FETCH_LIMIT = 10000;
 
 export default function PapersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deletePaper] = useDeletePaperMutation();
   const [titleFilter, setTitleFilter] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
@@ -648,6 +652,10 @@ export default function PapersTable() {
             isLoading={isFetching}
             emptyMessage="No papers found for the current filters."
             preserveDataOrder={Boolean(sortCriteria)}
+            bulkDelete={{
+              entityName: "paper",
+              deleteRow: (row) => deletePaper(String(row.id)).unwrap(),
+            }}
           />
         </motion.div>
       </motion.div>

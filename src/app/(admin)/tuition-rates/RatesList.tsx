@@ -18,7 +18,10 @@ import {
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
-import { useFetchTuitionRatesQuery } from "@/store/api/splits/tuition-rates";
+import {
+  useDeleteTuitionRateMutation,
+  useFetchTuitionRatesQuery,
+} from "@/store/api/splits/tuition-rates";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { RotateCcw } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -57,6 +60,7 @@ const SORT_FETCH_LIMIT = 10000;
 
 export default function TuitionRatesTable() {
   const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteTuitionRate] = useDeleteTuitionRateMutation();
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [sortCriteria, setSortCriteria] = useState<TuitionRateSort>(null);
@@ -324,6 +328,10 @@ export default function TuitionRatesTable() {
         isLoading={isFetching}
         emptyMessage="No tuition rates found for the current filters."
         preserveDataOrder={Boolean(sortCriteria)}
+        bulkDelete={{
+          entityName: "tuition rate",
+          deleteRow: (row) => deleteTuitionRate(String(row.id)).unwrap(),
+        }}
       />
     </div>
   );

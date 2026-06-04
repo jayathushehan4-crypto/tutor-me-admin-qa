@@ -14,6 +14,7 @@ import {
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
+  useDeleteUserMutation,
   useFetchUsersQuery,
   useUpdateUserMutation,
 } from "@/store/api/splits/users";
@@ -270,6 +271,7 @@ function UserStatusActions({ user }: { user: User }) {
 
 export default function UsersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteUser] = useDeleteUserMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRoleFilter>("all");
   const [sortCriteria, setSortCriteria] = useState<UserSort>(null);
@@ -617,6 +619,12 @@ export default function UsersTable() {
         emptyMessage="No users found for the current search or role filter."
         className="w-full max-w-full"
         preserveDataOrder
+        bulkDelete={{
+          entityName: "user",
+          isRowSelectable: (row: User) =>
+            row.role === "admin" && row.status === "rejected",
+          deleteRow: (row: User) => deleteUser(row.id).unwrap(),
+        }}
       />
     </div>
   );

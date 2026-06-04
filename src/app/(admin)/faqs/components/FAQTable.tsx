@@ -16,7 +16,10 @@ import {
   getFaqCategoryLabel,
   type FaqCategory,
 } from "@/lib/faq-categories";
-import { useFetchFaqsQuery } from "@/store/api/splits/faqs";
+import {
+  useDeleteFaqMutation,
+  useFetchFaqsQuery,
+} from "@/store/api/splits/faqs";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
 import { Layers3, RotateCcw, Search, X } from "lucide-react";
@@ -41,6 +44,7 @@ type CategoryFilter = typeof ALL_CATEGORIES | FaqCategory;
 
 export default function FAQTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteFaq] = useDeleteFaqMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] =
     useState<CategoryFilter>(ALL_CATEGORIES);
@@ -314,6 +318,10 @@ export default function FAQTable() {
             limit={limit}
             onPageChange={handlePageChange}
             isLoading={isLoading}
+            bulkDelete={{
+              entityName: "FAQ",
+              deleteRow: (row) => deleteFaq(String(row.id)).unwrap(),
+            }}
           />
         </motion.div>
       </motion.div>

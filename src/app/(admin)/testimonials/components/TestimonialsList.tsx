@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchTestimonialsQuery } from "@/store/api/splits/testimonials";
+import {
+  useDeleteTestimonialMutation,
+  useFetchTestimonialsQuery,
+} from "@/store/api/splits/testimonials";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { RotateCcw, Search, Star, User, X } from "lucide-react";
 import { motion } from "motion/react";
@@ -49,6 +52,7 @@ const SORT_FETCH_LIMIT = 10000;
 
 export default function TestimonialsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteTestimonial] = useDeleteTestimonialMutation();
   const [nameSearch, setNameSearch] = useState("");
   const [roleSearch, setRoleSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
@@ -412,6 +416,10 @@ export default function TestimonialsTable() {
           isLoading={isFetching}
           emptyMessage="No testimonials found for the current filters."
           preserveDataOrder={Boolean(sortCriteria)}
+          bulkDelete={{
+            entityName: "testimonial",
+            deleteRow: (row) => deleteTestimonial(String(row.id)).unwrap(),
+          }}
         />
       </motion.div>
 

@@ -8,7 +8,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchInquiriesQuery } from "@/store/api/splits/inquiries";
+import {
+  useDeleteInquiryMutation,
+  useFetchInquiriesQuery,
+} from "@/store/api/splits/inquiries";
 import { Copy, RotateCcw, Search, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -37,6 +40,7 @@ const SORT_FETCH_LIMIT = 10000;
 
 export default function InquiryTable() {
   const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteInquiry] = useDeleteInquiryMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortCriteria, setSortCriteria] = useState<InquirySort>(null);
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
@@ -324,6 +328,10 @@ export default function InquiryTable() {
         isLoading={isFetching}
         emptyMessage="No inquiries found for the current search."
         preserveDataOrder={Boolean(sortCriteria)}
+        bulkDelete={{
+          entityName: "inquiry",
+          deleteRow: (row) => deleteInquiry(String(row.id)).unwrap(),
+        }}
       />
     </div>
   );

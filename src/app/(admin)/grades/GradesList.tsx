@@ -8,7 +8,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import {
+  useDeleteGradeMutation,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { escapeRegex } from "@/utils/form";
 import { Search, X } from "lucide-react";
@@ -33,6 +36,7 @@ interface Grade {
 
 export default function GradesTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteGrade] = useDeleteGradeMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [titleSortDirection, setTitleSortDirection] =
     useState<SortDirection | null>(null);
@@ -253,6 +257,10 @@ export default function GradesTable() {
         isLoading={isFetching}
         emptyMessage="No grades found for the current search."
         preserveDataOrder={Boolean(titleSortDirection)}
+        bulkDelete={{
+          entityName: "grade",
+          deleteRow: (row) => deleteGrade(String(row.id)).unwrap(),
+        }}
       />
     </motion.div>
   );

@@ -22,8 +22,10 @@ import {
   useFetchGradeByIdQuery,
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
+import { useLazyFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import {
+  useDeleteTutorMutation,
   useFetchTutorsQuery,
   useUpdateTutorStatusMutation,
 } from "@/store/api/splits/tutors";
@@ -43,7 +45,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { DeleteTutor } from "./DeleteTutor";
+import { assignedTutorMatches, DeleteTutor } from "./DeleteTutor";
 import { EditTutor } from "./edit-tutor/EditTutor";
 import { ResetPassword } from "./ResetPassword";
 import { ViewTutor } from "./ViewTutor";
@@ -621,6 +623,8 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
 
 export default function TutorsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteTutor] = useDeleteTutorMutation();
+  const [loadTutorRequests] = useLazyFetchRequestForTutorsQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<TutorStatusFilter>("all");
   const [tutorTypeFilter, setTutorTypeFilter] = useState("all");
@@ -696,6 +700,34 @@ export default function TutorsList() {
   const tutors = data?.results || [];
   const totalPages = data?.totalPages || 1;
   const totalResults = data?.totalResults || tutors.length;
+
+  const deleteTutorForBulk = useCallback(
+    async (tutor: Tutor) => {
+      const requestResponse = await loadTutorRequests({
+        page: 1,
+        limit: 10000,
+        sortBy: "updatedAt:desc",
+      }).unwrap();
+      const hasAssignedRequest = (requestResponse.results || []).some(
+        (request) =>
+          (request.tutors || []).some((requestTutor) =>
+            assignedTutorMatches(
+              requestTutor.assignedTutor,
+              tutor.id,
+              tutor.fullName,
+              tutor.email,
+            ),
+          ),
+      );
+
+      if (hasAssignedRequest) {
+        throw new Error("Tutor is assigned to one or more tutor requests");
+      }
+
+      return deleteTutor(tutor.id).unwrap();
+    },
+    [deleteTutor, loadTutorRequests],
+  );
   const locationOptions = useMemo(
     () => [
       { value: "all", label: "All locations" },
@@ -719,10 +751,9 @@ export default function TutorsList() {
   const subjectOptions = useMemo(
     () => [
       { value: "all", label: "All subjects" },
-      ...(
-        gradeFilter !== "all"
-          ? selectedGradeData?.subjects || []
-          : subjectsData?.results || []
+      ...(gradeFilter !== "all"
+        ? selectedGradeData?.subjects || []
+        : subjectsData?.results || []
       ).map((subject) => ({
         value: subject.id,
         label: subject.title,
@@ -1099,6 +1130,10 @@ export default function TutorsList() {
         isLoading={isFetching}
         emptyMessage="No tutors found for the current search or status filter."
         preserveDataOrder
+        bulkDelete={{
+          entityName: "tutor",
+          deleteRow: deleteTutorForBulk,
+        }}
       />
     </div>
   );

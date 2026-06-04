@@ -2,7 +2,10 @@
 
 import DataTable from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
-import { useFetchBlogsQuery } from "@/store/api/splits/blogs";
+import {
+  useDeleteBlogMutation,
+  useFetchBlogsQuery,
+} from "@/store/api/splits/blogs";
 import { BlogStatus } from "@/types/blogs-types";
 import { Blogs } from "@/types/response-types";
 import { useState } from "react";
@@ -53,6 +56,7 @@ const normalizeMongoId = (value?: string | { $oid?: string }) => {
 
 export default function BlogsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteBlog] = useDeleteBlogMutation();
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
 
   const { data, isLoading, refetch } = useFetchBlogsQuery({
@@ -188,6 +192,10 @@ export default function BlogsTable() {
       totalResults={totalResults}
       limit={limit}
       isLoading={isLoading}
+      bulkDelete={{
+        entityName: "blog",
+        deleteRow: (row) => deleteBlog(String(row.id)).unwrap(),
+      }}
     />
   );
 }

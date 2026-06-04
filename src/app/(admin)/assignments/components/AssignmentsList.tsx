@@ -1,7 +1,10 @@
 "use client";
 
 import DataTable from "@/components/tables/DataTable";
-import { useFetchAssignmentsQuery } from "@/store/api/splits/tuition-assignments";
+import {
+  useDeleteAssignmentMutation,
+  useFetchAssignmentsQuery,
+} from "@/store/api/splits/tuition-assignments";
 import { useState } from "react";
 import { DeleteAssignment } from "./DeleteAssignment";
 import ViewDetails from "./ViewDetails";
@@ -9,6 +12,7 @@ import { UpdateAssignment } from "./edit-assignment/UpdateAssignment";
 
 export default function AssignmentsList() {
   const [page, setPage] = useState(1);
+  const [deleteAssignment] = useDeleteAssignmentMutation();
   const limit = 10;
 
   const { data, isLoading } = useFetchAssignmentsQuery({
@@ -126,6 +130,10 @@ export default function AssignmentsList() {
       totalResults={totalResults}
       limit={limit}
       isLoading={isLoading}
+      bulkDelete={{
+        entityName: "assignment",
+        deleteRow: (row) => deleteAssignment(String(row.id)).unwrap(),
+      }}
     />
   );
 }

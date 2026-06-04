@@ -8,7 +8,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
+import {
+  useDeleteSubjectMutation,
+  useFetchSubjectsQuery,
+} from "@/store/api/splits/subjects";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { escapeRegex } from "@/utils/form";
 import { Search, X } from "lucide-react";
@@ -27,6 +30,7 @@ interface Subject {
 
 export default function SubjectsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteSubject] = useDeleteSubjectMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [titleSortDirection, setTitleSortDirection] =
     useState<SortDirection | null>(null);
@@ -220,6 +224,10 @@ export default function SubjectsTable() {
         isLoading={isFetching}
         emptyMessage="No subjects found for the current search."
         preserveDataOrder={Boolean(titleSortDirection)}
+        bulkDelete={{
+          entityName: "subject",
+          deleteRow: (row) => deleteSubject(String(row.id)).unwrap(),
+        }}
       />
     </motion.div>
   );
