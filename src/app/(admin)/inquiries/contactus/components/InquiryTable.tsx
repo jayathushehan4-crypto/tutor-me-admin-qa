@@ -1,12 +1,16 @@
 "use client";
 
 import DataTable from "@/components/tables/DataTable";
+import {
+  SortableHeader,
+  type SortDirection,
+} from "@/components/tables/SortableHeader";
 import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchInquiriesQuery } from "@/store/api/splits/inquiries";
 import { Copy, RotateCcw, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { DeleteInquiry } from "./DeleteInquiry";
 import { InquiryDetails } from "./ViewInquiries";
@@ -23,14 +27,24 @@ interface Inquiry {
   sender?: Sender;
 }
 
+type InquirySortField = "senderName" | "senderEmail";
+type InquirySort = {
+  field: InquirySortField;
+  direction: SortDirection;
+} | null;
+
+const SORT_FETCH_LIMIT = 10000;
+
 export default function InquiryTable() {
   const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortCriteria, setSortCriteria] = useState<InquirySort>(null);
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const hasSearchFilter = Boolean(debouncedSearchTerm.trim());
-  const requestPage = hasSearchFilter ? TABLE_CONFIG.DEFAULT_PAGE : page;
-  const requestLimit = hasSearchFilter ? 10000 : limit;
+  const usesClientPagination = hasSearchFilter || Boolean(sortCriteria);
+  const requestPage = usesClientPagination ? TABLE_CONFIG.DEFAULT_PAGE : page;
+  const requestLimit = usesClientPagination ? SORT_FETCH_LIMIT : limit;
 
   const inquiriesQuery = useMemo(
     () => ({
@@ -64,13 +78,29 @@ export default function InquiryTable() {
     );
   }, [allInquiries, debouncedSearchTerm]);
 
-  const inquiries = hasSearchFilter
-    ? filteredInquiries.slice((page - 1) * limit, page * limit)
-    : filteredInquiries;
-  const totalResults = hasSearchFilter
-    ? filteredInquiries.length
+  const sortedInquiries = useMemo(() => {
+    if (!sortCriteria) return filteredInquiries;
+
+    return [...filteredInquiries].sort((first, second) => {
+      const comparison = first[sortCriteria.field].localeCompare(
+        second[sortCriteria.field],
+        undefined,
+        {
+          numeric: true,
+          sensitivity: "base",
+        },
+      );
+
+      return sortCriteria.direction === "asc" ? comparison : -comparison;
+    });
+  }, [filteredInquiries, sortCriteria]);
+  const inquiries = usesClientPagination
+    ? sortedInquiries.slice((page - 1) * limit, page * limit)
+    : sortedInquiries;
+  const totalResults = usesClientPagination
+    ? sortedInquiries.length
     : data?.totalResults || 0;
-  const totalPages = hasSearchFilter
+  const totalPages = usesClientPagination
     ? Math.max(1, Math.ceil(totalResults / limit))
     : data?.totalPages || 1;
   const hasFilters = Boolean(searchTerm);
@@ -78,6 +108,15 @@ export default function InquiryTable() {
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
+
+  const handleToggleSort = useCallback((field: InquirySortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) return { field, direction: "asc" };
+      if (current.direction === "asc") return { field, direction: "desc" };
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -114,7 +153,15 @@ export default function InquiryTable() {
     },
     {
       key: "senderName",
-      header: "Sender Name",
+      header: (
+        <SortableHeader
+          label="Sender Name"
+          direction={
+            sortCriteria?.field === "senderName" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("senderName")}
+        />
+      ),
       className:
         "min-w-[100px] max-w-[150px] truncate overflow-hidden cursor-default",
       render: (row: { senderName: string }) => (
@@ -128,7 +175,17 @@ export default function InquiryTable() {
     },
     {
       key: "senderEmail",
-      header: "Sender Email",
+      header: (
+        <SortableHeader
+          label="Sender Email"
+          direction={
+            sortCriteria?.field === "senderEmail"
+              ? sortCriteria.direction
+              : null
+          }
+          onToggle={() => handleToggleSort("senderEmail")}
+        />
+      ),
       className:
         "min-w-[200px] max-w-[200px] truncate overflow-hidden cursor-default",
       render: (row: { senderEmail: string }) => (
@@ -266,6 +323,7 @@ export default function InquiryTable() {
         onPageChange={handlePageChange}
         isLoading={isFetching}
         emptyMessage="No inquiries found for the current search."
+        preserveDataOrder={Boolean(sortCriteria)}
       />
     </div>
   );
