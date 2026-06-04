@@ -2,6 +2,10 @@
 
 import DataTable from "@/components/tables/DataTable";
 import {
+  SortableHeader,
+  type SortDirection,
+} from "@/components/tables/SortableHeader";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -14,10 +18,13 @@ import {
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
-import { useFetchTuitionRatesQuery } from "@/store/api/splits/tuition-rates";
+import {
+  useDeleteTuitionRateMutation,
+  useFetchTuitionRatesQuery,
+} from "@/store/api/splits/tuition-rates";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DeleteTuitionRate } from "./DeleteTuitionRate";
 import { TuitionRateDetails } from "./ViewDetails";
 import { UpdateTuitionRate } from "./edit-tuition-rates/UpdateTuitionRate";
@@ -43,21 +50,31 @@ interface TuitionRateData {
   moeTeacherRate: TuitionRateObject;
 }
 
+type TuitionRateSortField = "subject" | "grade";
+type TuitionRateSort = {
+  field: TuitionRateSortField;
+  direction: SortDirection;
+} | null;
+
+const SORT_FETCH_LIMIT = 10000;
+
 export default function TuitionRatesTable() {
   const [page, setPage] = useState(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteTuitionRate] = useDeleteTuitionRateMutation();
   const [gradeFilter, setGradeFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [sortCriteria, setSortCriteria] = useState<TuitionRateSort>(null);
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const tuitionRatesQuery = useMemo(
     () => ({
-      page,
-      limit,
+      page: sortCriteria ? TABLE_CONFIG.DEFAULT_PAGE : page,
+      limit: sortCriteria ? SORT_FETCH_LIMIT : limit,
       sortBy: "createdAt:desc",
       ...(gradeFilter ? { grade: gradeFilter } : {}),
       ...(subjectFilter ? { subject: subjectFilter } : {}),
     }),
-    [gradeFilter, limit, page, subjectFilter],
+    [gradeFilter, limit, page, sortCriteria, subjectFilter],
   );
 
   const { data, isFetching } = useFetchTuitionRatesQuery(tuitionRatesQuery);
@@ -78,9 +95,34 @@ export default function TuitionRatesTable() {
       sortBy: "title:asc",
     });
 
-  const tuitionRates = data?.results || [];
-  const totalPages = data?.totalPages || 1;
-  const totalResults = data?.totalResults || 0;
+  const sortedTuitionRates = useMemo(() => {
+    const rates = data?.results || [];
+    if (!sortCriteria) return rates;
+
+    return [...rates].sort((first, second) => {
+      const firstValue = first[sortCriteria.field]?.title || "";
+      const secondValue = second[sortCriteria.field]?.title || "";
+      const comparison = firstValue.localeCompare(secondValue, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+
+      return sortCriteria.direction === "asc" ? comparison : -comparison;
+    });
+  }, [data?.results, sortCriteria]);
+  const tuitionRates = useMemo(
+    () =>
+      sortCriteria
+        ? sortedTuitionRates.slice((page - 1) * limit, page * limit)
+        : sortedTuitionRates,
+    [limit, page, sortCriteria, sortedTuitionRates],
+  );
+  const totalResults = sortCriteria
+    ? sortedTuitionRates.length
+    : data?.totalResults || 0;
+  const totalPages = sortCriteria
+    ? Math.max(1, Math.ceil(totalResults / limit))
+    : data?.totalPages || 1;
   const gradeOptions = useMemo(
     () => sortBySchoolGradeOrder(gradesData?.results || []),
     [gradesData?.results],
@@ -97,6 +139,15 @@ export default function TuitionRatesTable() {
     setPage(newPage);
   };
 
+  const handleToggleSort = useCallback((field: TuitionRateSortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) return { field, direction: "asc" };
+      if (current.direction === "asc") return { field, direction: "desc" };
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
   const resetFilters = () => {
     setGradeFilter("");
     setSubjectFilter("");
@@ -106,7 +157,15 @@ export default function TuitionRatesTable() {
   const columns = [
     {
       key: "grade",
-      header: "Grade",
+      header: (
+        <SortableHeader
+          label="Grade"
+          direction={
+            sortCriteria?.field === "grade" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("grade")}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
       render: (row: TuitionRateData) => (
@@ -121,7 +180,15 @@ export default function TuitionRatesTable() {
     },
     {
       key: "subject",
-      header: "Subject",
+      header: (
+        <SortableHeader
+          label="Subject"
+          direction={
+            sortCriteria?.field === "subject" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("subject")}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden cursor-default",
       render: (row: TuitionRateData) => row.subject?.title || "N/A",
@@ -258,8 +325,14 @@ export default function TuitionRatesTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No tuition rates found for the current filters."
+        preserveDataOrder={Boolean(sortCriteria)}
+        bulkDelete={{
+          entityName: "tuition rate",
+          deleteRow: (row) => deleteTuitionRate(String(row.id)).unwrap(),
+        }}
       />
     </div>
   );

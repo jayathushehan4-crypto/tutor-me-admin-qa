@@ -74,7 +74,7 @@ const DIRECT_UNASSIGN_REASON = "Tutor is no longer available";
 const normalizeText = (value: unknown) =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
 
-const assignedTutorMatches = (
+export const assignedTutorMatches = (
   assignedTutor: AssignedTutorValue,
   tutorId: string,
   tutorName?: string,

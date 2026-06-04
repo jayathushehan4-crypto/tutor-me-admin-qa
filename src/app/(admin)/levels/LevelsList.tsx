@@ -2,7 +2,10 @@
 
 import DataTable from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
-import { useFetchLevelsQuery } from "@/store/api/splits/levels";
+import {
+  useDeleteLevelMutation,
+  useFetchLevelsQuery,
+} from "@/store/api/splits/levels";
 import { useState } from "react";
 import { DeleteLevel } from "./DeleteLevel";
 import { LevelDetails } from "./ViewDetails";
@@ -27,7 +30,8 @@ interface Level {
 
 export default function LevelsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [deleteLevel] = useDeleteLevelMutation();
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading } = useFetchLevelsQuery({
     page,
@@ -231,7 +235,12 @@ export default function LevelsTable() {
       onPageChange={handlePageChange}
       totalResults={totalResults}
       limit={limit}
+      onLimitChange={setLimit}
       isLoading={isLoading}
+      bulkDelete={{
+        entityName: "level",
+        deleteRow: (row) => deleteLevel(String(row.id)).unwrap(),
+      }}
     />
   );
 }

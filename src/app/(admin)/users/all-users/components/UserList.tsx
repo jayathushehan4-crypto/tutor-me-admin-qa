@@ -14,6 +14,7 @@ import {
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
+  useDeleteUserMutation,
   useFetchUsersQuery,
   useUpdateUserMutation,
 } from "@/store/api/splits/users";
@@ -270,10 +271,11 @@ function UserStatusActions({ user }: { user: User }) {
 
 export default function UsersTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteUser] = useDeleteUserMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRoleFilter>("all");
   const [sortCriteria, setSortCriteria] = useState<UserSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   useEffect(() => {
@@ -324,11 +326,6 @@ export default function UsersTable() {
     });
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
-
-  const clearSort = () => {
-    setSortCriteria(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
 
   const columns = [
     {
@@ -606,19 +603,6 @@ export default function UsersTable() {
                 </Select>
               </div>
             </div>
-
-            {sortCriteria && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={clearSort}
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 sm:w-auto"
-                >
-                  <ChevronsUpDown className="h-4 w-4" />
-                  Clear sort
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -631,10 +615,17 @@ export default function UsersTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No users found for the current search or role filter."
         className="w-full max-w-full"
         preserveDataOrder
+        bulkDelete={{
+          entityName: "user",
+          isRowSelectable: (row: User) =>
+            row.role === "admin" && row.status === "rejected",
+          deleteRow: (row: User) => deleteUser(row.id).unwrap(),
+        }}
       />
     </div>
   );

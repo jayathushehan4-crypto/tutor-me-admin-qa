@@ -22,8 +22,10 @@ import {
   useFetchGradeByIdQuery,
   useFetchGradesQuery,
 } from "@/store/api/splits/grades";
+import { useLazyFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import {
+  useDeleteTutorMutation,
   useFetchTutorsQuery,
   useUpdateTutorStatusMutation,
 } from "@/store/api/splits/tutors";
@@ -43,7 +45,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { DeleteTutor } from "./DeleteTutor";
+import { assignedTutorMatches, DeleteTutor } from "./DeleteTutor";
 import { EditTutor } from "./edit-tutor/EditTutor";
 import { ResetPassword } from "./ResetPassword";
 import { ViewTutor } from "./ViewTutor";
@@ -621,6 +623,8 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
 
 export default function TutorsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteTutor] = useDeleteTutorMutation();
+  const [loadTutorRequests] = useLazyFetchRequestForTutorsQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<TutorStatusFilter>("all");
   const [tutorTypeFilter, setTutorTypeFilter] = useState("all");
@@ -629,7 +633,7 @@ export default function TutorsList() {
   const [gradeFilter, setGradeFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [sortCriteria, setSortCriteria] = useState<TutorSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   useEffect(() => {
@@ -696,6 +700,34 @@ export default function TutorsList() {
   const tutors = data?.results || [];
   const totalPages = data?.totalPages || 1;
   const totalResults = data?.totalResults || tutors.length;
+
+  const deleteTutorForBulk = useCallback(
+    async (tutor: Tutor) => {
+      const requestResponse = await loadTutorRequests({
+        page: 1,
+        limit: 10000,
+        sortBy: "updatedAt:desc",
+      }).unwrap();
+      const hasAssignedRequest = (requestResponse.results || []).some(
+        (request) =>
+          (request.tutors || []).some((requestTutor) =>
+            assignedTutorMatches(
+              requestTutor.assignedTutor,
+              tutor.id,
+              tutor.fullName,
+              tutor.email,
+            ),
+          ),
+      );
+
+      if (hasAssignedRequest) {
+        throw new Error("Tutor is assigned to one or more tutor requests");
+      }
+
+      return deleteTutor(tutor.id).unwrap();
+    },
+    [deleteTutor, loadTutorRequests],
+  );
   const locationOptions = useMemo(
     () => [
       { value: "all", label: "All locations" },
@@ -719,10 +751,9 @@ export default function TutorsList() {
   const subjectOptions = useMemo(
     () => [
       { value: "all", label: "All subjects" },
-      ...(
-        gradeFilter !== "all"
-          ? selectedGradeData?.subjects || []
-          : subjectsData?.results || []
+      ...(gradeFilter !== "all"
+        ? selectedGradeData?.subjects || []
+        : subjectsData?.results || []
       ).map((subject) => ({
         value: subject.id,
         label: subject.title,
@@ -737,8 +768,7 @@ export default function TutorsList() {
       classTypeFilter !== "all" ||
       locationFilter !== "all" ||
       gradeFilter !== "all" ||
-      subjectFilter !== "all" ||
-      Boolean(sortCriteria),
+      subjectFilter !== "all",
   );
 
   const handlePageChange = (newPage: number) => setPage(newPage);
@@ -751,7 +781,6 @@ export default function TutorsList() {
     setLocationFilter("all");
     setGradeFilter("all");
     setSubjectFilter("all");
-    setSortCriteria(null);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   };
 
@@ -769,11 +798,6 @@ export default function TutorsList() {
     });
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
-
-  const clearSort = () => {
-    setSortCriteria(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
 
   const getSafeValue = (
     value: string | number | undefined | null,
@@ -950,17 +974,6 @@ export default function TutorsList() {
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-            {sortCriteria && (
-              <button
-                type="button"
-                onClick={clearSort}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 lg:w-auto"
-              >
-                <ChevronsUpDown className="h-4 w-4" />
-                Clear sort
-              </button>
-            )}
-
             <button
               type="button"
               onClick={resetFilters}
@@ -1114,9 +1127,14 @@ export default function TutorsList() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No tutors found for the current search or status filter."
         preserveDataOrder
+        bulkDelete={{
+          entityName: "tutor",
+          deleteRow: deleteTutorForBulk,
+        }}
       />
     </div>
   );

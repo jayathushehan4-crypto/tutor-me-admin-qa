@@ -1,15 +1,22 @@
 "use client";
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
+import {
+  SortableHeader,
+  type SortDirection,
+} from "@/components/tables/SortableHeader";
 import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
-import { escapeRegex } from "@/utils/form";
+import {
+  useDeleteSubjectMutation,
+  useFetchSubjectsQuery,
+} from "@/store/api/splits/subjects";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
+import { escapeRegex } from "@/utils/form";
 import { Search, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DeleteSubject } from "./DeleteSubject";
 import { UpdateSubject } from "./edit-subject/UpdateSubject";
 import { SubjectDetails } from "./ViewDetails";
@@ -23,20 +30,25 @@ interface Subject {
 
 export default function SubjectsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteSubject] = useDeleteSubjectMutation();
   const [searchTerm, setSearchTerm] = useState("");
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [titleSortDirection, setTitleSortDirection] =
+    useState<SortDirection | null>(null);
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const subjectsQuery = useMemo(
     () => ({
       page,
       limit,
-      sortBy: "createdAt:desc",
+      sortBy: titleSortDirection
+        ? `title:${titleSortDirection}`
+        : "createdAt:desc",
       ...(debouncedSearchTerm.trim()
         ? { title: escapeRegex(debouncedSearchTerm.trim()) }
         : {}),
     }),
-    [debouncedSearchTerm, limit, page],
+    [debouncedSearchTerm, limit, page, titleSortDirection],
   );
 
   const { data, isFetching } = useFetchSubjectsQuery(subjectsQuery);
@@ -48,6 +60,15 @@ export default function SubjectsTable() {
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
+
+  const handleToggleTitleSort = useCallback(() => {
+    setTitleSortDirection((current) => {
+      if (!current) return "asc";
+      if (current === "asc") return "desc";
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
 
   const getSafeValue = (
     value: string | undefined | null,
@@ -62,7 +83,13 @@ export default function SubjectsTable() {
   const columns: Column<Subject>[] = [
     {
       key: "title",
-      header: "Title",
+      header: (
+        <SortableHeader
+          label="Title"
+          direction={titleSortDirection}
+          onToggle={handleToggleTitleSort}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
       render: (row: Subject) => {
@@ -157,30 +184,32 @@ export default function SubjectsTable() {
           </p>
         </div>
 
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(TABLE_CONFIG.DEFAULT_PAGE);
-            }}
-            placeholder="Search by title"
-            className="h-11 w-full pl-10 pr-10"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm("");
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
                 setPage(TABLE_CONFIG.DEFAULT_PAGE);
               }}
-              aria-label="Clear search"
-              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+              placeholder="Search by title"
+              className="h-11 w-full pl-10 pr-10"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
+                }}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -192,8 +221,14 @@ export default function SubjectsTable() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isFetching}
         emptyMessage="No subjects found for the current search."
+        preserveDataOrder={Boolean(titleSortDirection)}
+        bulkDelete={{
+          entityName: "subject",
+          deleteRow: (row) => deleteSubject(String(row.id)).unwrap(),
+        }}
       />
     </motion.div>
   );

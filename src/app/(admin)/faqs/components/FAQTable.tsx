@@ -16,7 +16,10 @@ import {
   getFaqCategoryLabel,
   type FaqCategory,
 } from "@/lib/faq-categories";
-import { useFetchFaqsQuery } from "@/store/api/splits/faqs";
+import {
+  useDeleteFaqMutation,
+  useFetchFaqsQuery,
+} from "@/store/api/splits/faqs";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
 import { Layers3, RotateCcw, Search, X } from "lucide-react";
@@ -41,10 +44,11 @@ type CategoryFilter = typeof ALL_CATEGORIES | FaqCategory;
 
 export default function FAQTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteFaq] = useDeleteFaqMutation();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] =
     useState<CategoryFilter>(ALL_CATEGORIES);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   // TODO:Best for small/medium datasets. For very large datasets, move search to the backend.
   const { data, isLoading } = useFetchFaqsQuery({
@@ -312,8 +316,13 @@ export default function FAQTable() {
             totalPages={totalPages}
             totalResults={totalResults}
             limit={limit}
+            onLimitChange={setLimit}
             onPageChange={handlePageChange}
             isLoading={isLoading}
+            bulkDelete={{
+              entityName: "FAQ",
+              deleteRow: (row) => deleteFaq(String(row.id)).unwrap(),
+            }}
           />
         </motion.div>
       </motion.div>

@@ -4,6 +4,10 @@
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
 import TablePagination from "@/components/tables/Pagination";
+import {
+  SortableHeader,
+  type SortDirection,
+} from "@/components/tables/SortableHeader";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,11 +18,14 @@ import {
 } from "@/components/ui/select";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFetchTestimonialsQuery } from "@/store/api/splits/testimonials";
+import {
+  useDeleteTestimonialMutation,
+  useFetchTestimonialsQuery,
+} from "@/store/api/splits/testimonials";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { RotateCcw, Search, Star, User, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DeleteTestimonial } from "./DeleteTestimonial";
 import { UpdateTestimonial } from "./edit-testimonial/UpdateTestimonial";
 import { TestimonialDetails } from "./ViewDetails";
@@ -35,22 +42,33 @@ interface Testimonial {
   };
 }
 
+type TestimonialSortField = "owner" | "rating";
+type TestimonialSort = {
+  field: TestimonialSortField;
+  direction: SortDirection;
+} | null;
+
+const SORT_FETCH_LIMIT = 10000;
+
 export default function TestimonialsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteTestimonial] = useDeleteTestimonialMutation();
   const [nameSearch, setNameSearch] = useState("");
   const [roleSearch, setRoleSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [sortCriteria, setSortCriteria] = useState<TestimonialSort>(null);
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedNameSearch = useDebounce(nameSearch, 400);
   const debouncedRoleSearch = useDebounce(roleSearch, 400);
   const normalizedNameSearch = debouncedNameSearch.trim().toLowerCase();
   const normalizedRoleSearch = debouncedRoleSearch.trim().toLowerCase();
   const hasTextFilters = Boolean(normalizedNameSearch || normalizedRoleSearch);
+  const usesClientPagination = hasTextFilters || Boolean(sortCriteria);
 
   const testimonialsQuery = useMemo(
     () => ({
-      page: hasTextFilters ? TABLE_CONFIG.DEFAULT_PAGE : page,
-      limit: hasTextFilters ? 1000 : limit,
+      page: usesClientPagination ? TABLE_CONFIG.DEFAULT_PAGE : page,
+      limit: usesClientPagination ? SORT_FETCH_LIMIT : limit,
       sortBy: "createdAt:desc",
       ...(normalizedNameSearch ? { name: debouncedNameSearch.trim() } : {}),
       ...(normalizedRoleSearch ? { role: debouncedRoleSearch.trim() } : {}),
@@ -59,19 +77,19 @@ export default function TestimonialsTable() {
     [
       debouncedNameSearch,
       debouncedRoleSearch,
-      hasTextFilters,
       limit,
       normalizedNameSearch,
       normalizedRoleSearch,
       page,
       ratingFilter,
+      usesClientPagination,
     ],
   );
 
   const { data, isFetching } = useFetchTestimonialsQuery(testimonialsQuery);
 
-  const fetchedTestimonials = data?.results || [];
   const filteredTestimonials = useMemo(() => {
+    const fetchedTestimonials = data?.results || [];
     if (!hasTextFilters) return fetchedTestimonials;
 
     return fetchedTestimonials.filter((testimonial) => {
@@ -85,21 +103,42 @@ export default function TestimonialsTable() {
       return matchesName && matchesRole;
     });
   }, [
-    fetchedTestimonials,
+    data?.results,
     hasTextFilters,
     normalizedNameSearch,
     normalizedRoleSearch,
   ]);
-  const testimonials = hasTextFilters
-    ? filteredTestimonials.slice((page - 1) * limit, page * limit)
-    : fetchedTestimonials;
-  const totalResults = hasTextFilters
-    ? filteredTestimonials.length
+  const sortedTestimonials = useMemo(() => {
+    if (!sortCriteria) return filteredTestimonials;
+
+    return [...filteredTestimonials].sort((first, second) => {
+      const comparison =
+        sortCriteria.field === "owner"
+          ? (first.owner?.name || "").localeCompare(
+              second.owner?.name || "",
+              undefined,
+              {
+                numeric: true,
+                sensitivity: "base",
+              },
+            )
+          : Number(first.rating || 0) - Number(second.rating || 0);
+
+      return sortCriteria.direction === "asc" ? comparison : -comparison;
+    });
+  }, [filteredTestimonials, sortCriteria]);
+  const testimonials = usesClientPagination
+    ? sortedTestimonials.slice((page - 1) * limit, page * limit)
+    : sortedTestimonials;
+  const totalResults = usesClientPagination
+    ? sortedTestimonials.length
     : data?.totalResults || 0;
-  const totalPages = hasTextFilters
-    ? Math.max(1, Math.ceil(filteredTestimonials.length / limit))
+  const totalPages = usesClientPagination
+    ? Math.max(1, Math.ceil(sortedTestimonials.length / limit))
     : data?.totalPages || 1;
-  const hasFilters = Boolean(nameSearch || roleSearch || ratingFilter !== "all");
+  const hasFilters = Boolean(
+    nameSearch || roleSearch || ratingFilter !== "all",
+  );
 
   const getSafeValue = (value: unknown, fallback = "N/A"): string => {
     if (value === undefined || value === null) return fallback;
@@ -111,6 +150,15 @@ export default function TestimonialsTable() {
     setPage(newPage);
   };
 
+  const handleToggleSort = useCallback((field: TestimonialSortField) => {
+    setSortCriteria((current) => {
+      if (current?.field !== field) return { field, direction: "asc" };
+      if (current.direction === "asc") return { field, direction: "desc" };
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
   const resetFilters = () => {
     setNameSearch("");
     setRoleSearch("");
@@ -121,7 +169,15 @@ export default function TestimonialsTable() {
   const columns: Column<Testimonial>[] = [
     {
       key: "owner",
-      header: "Owner",
+      header: (
+        <SortableHeader
+          label="Owner"
+          direction={
+            sortCriteria?.field === "owner" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("owner")}
+        />
+      ),
       className:
         "min-w-[200px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
       render: (row: Testimonial) => (
@@ -169,7 +225,15 @@ export default function TestimonialsTable() {
     },
     {
       key: "rating",
-      header: "Rating",
+      header: (
+        <SortableHeader
+          label="Rating"
+          direction={
+            sortCriteria?.field === "rating" ? sortCriteria.direction : null
+          }
+          onToggle={() => handleToggleSort("rating")}
+        />
+      ),
       className: "min-w-[120px] text-center",
       render: (row: Testimonial) => {
         const rating = Number(row.rating) || 0;
@@ -349,8 +413,14 @@ export default function TestimonialsTable() {
           onPageChange={handlePageChange}
           totalResults={totalResults}
           limit={limit}
+          onLimitChange={setLimit}
           isLoading={isFetching}
           emptyMessage="No testimonials found for the current filters."
+          preserveDataOrder={Boolean(sortCriteria)}
+          bulkDelete={{
+            entityName: "testimonial",
+            deleteRow: (row) => deleteTestimonial(String(row.id)).unwrap(),
+          }}
         />
       </motion.div>
 

@@ -18,7 +18,10 @@ import {
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import { useFetchRequestForTutorsQuery } from "@/store/api/splits/request-tutor";
+import {
+  useDeleteRequestForTutorMutation,
+  useFetchRequestForTutorsQuery,
+} from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { FetchRequestForTutor } from "@/types/request-types";
 import { RequestTutors } from "@/types/response-types";
@@ -154,6 +157,7 @@ function SortableHeader({
 
 export default function RequestForTutorsList() {
   const router = useRouter();
+  const [deleteTutorRequest] = useDeleteRequestForTutorMutation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const focusedRequestId = searchParams.get("requestId")?.trim() ?? "";
@@ -161,7 +165,7 @@ export default function RequestForTutorsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<RequestTutorFilters>(INITIAL_FILTERS);
   const [sortCriteria, setSortCriteria] = useState<RequestTutorSort>(null);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
   const debouncedAssignedTutor = useDebounce(filters.assignedTutor, 400);
@@ -329,7 +333,6 @@ export default function RequestForTutorsList() {
   const handleResetFilters = () => {
     setSearchTerm("");
     setFilters(INITIAL_FILTERS);
-    setSortCriteria(null);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
     if (focusedRequestId) {
       router.replace(pathname, { scroll: false });
@@ -350,11 +353,6 @@ export default function RequestForTutorsList() {
     });
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
-
-  const handleClearSort = () => {
-    setSortCriteria(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
 
   const getSafeValue = (value: unknown, fallback = "N/A") => {
     if (value === undefined || value === null) {
@@ -732,18 +730,6 @@ export default function RequestForTutorsList() {
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-            {sortCriteria && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClearSort}
-                className="w-full gap-2 lg:w-auto"
-              >
-                <ChevronsUpDown className="h-4 w-4" />
-                Clear sort
-              </Button>
-            )}
-
             <Button
               type="button"
               variant="outline"
@@ -926,9 +912,14 @@ export default function RequestForTutorsList() {
         onPageChange={handlePageChange}
         totalResults={totalResults}
         limit={limit}
+        onLimitChange={setLimit}
         isLoading={isLoading}
         emptyMessage="No tutor requests found for the current filters."
         preserveDataOrder
+        bulkDelete={{
+          entityName: "tutor request",
+          deleteRow: (row) => deleteTutorRequest(String(row.id)).unwrap(),
+        }}
       />
     </div>
   );

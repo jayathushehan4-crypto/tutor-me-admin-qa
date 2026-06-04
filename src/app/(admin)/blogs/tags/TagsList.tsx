@@ -2,7 +2,10 @@
 
 import DataTable from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
-import { useFetchTagsQuery } from "@/store/api/splits/tags";
+import {
+  useDeleteTagMutation,
+  useFetchTagsQuery,
+} from "@/store/api/splits/tags";
 import { useState } from "react";
 import { DeleteTag } from "./DeleteTag";
 import { UpdateTag } from "./edit-tag/UpdateTag";
@@ -17,7 +20,8 @@ interface Tag {
 
 export default function TagsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [deleteTag] = useDeleteTagMutation();
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading } = useFetchTagsQuery({
     page,
@@ -136,7 +140,12 @@ export default function TagsList() {
       onPageChange={handlePageChange}
       totalResults={totalResults}
       limit={limit}
+      onLimitChange={setLimit}
       isLoading={isLoading}
+      bulkDelete={{
+        entityName: "tag",
+        deleteRow: (row) => deleteTag(String(row.id)).unwrap(),
+      }}
     />
   );
 }

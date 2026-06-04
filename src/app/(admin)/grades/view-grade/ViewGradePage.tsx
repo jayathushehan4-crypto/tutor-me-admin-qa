@@ -2,7 +2,10 @@
 
 import DataTable from "@/components/tables/DataTable";
 import { TABLE_CONFIG } from "@/configs/table";
-import { useFetchGradesQuery } from "@/store/api/splits/grades";
+import {
+  useDeleteGradeMutation,
+  useFetchGradesQuery,
+} from "@/store/api/splits/grades";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
 
@@ -16,8 +19,9 @@ import { UpdateGrade } from "../edit-grade/UpdateGrade";
 
 export default function SubjectsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
+  const [deleteGrade] = useDeleteGradeMutation();
   const [searchTerm, setSearchTerm] = useState("");
-  const limit = TABLE_CONFIG.DEFAULT_LIMIT;
+  const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
 
   const { data, isLoading } = useFetchGradesQuery({
     page,
@@ -219,7 +223,12 @@ export default function SubjectsTable() {
             onPageChange={handlePageChange}
             totalResults={searchTerm ? filteredGrades.length : totalResults}
             limit={limit}
+            onLimitChange={setLimit}
             isLoading={isLoading}
+            bulkDelete={{
+              entityName: "grade",
+              deleteRow: (row) => deleteGrade(String(row.id)).unwrap(),
+            }}
           />
         </motion.div>
       </motion.div>
