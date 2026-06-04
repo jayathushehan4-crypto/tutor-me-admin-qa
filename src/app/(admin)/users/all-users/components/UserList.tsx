@@ -325,11 +325,6 @@ export default function UsersTable() {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
 
-  const clearSort = () => {
-    setSortCriteria(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
-
   const columns = [
     {
       key: "name",
@@ -606,19 +601,6 @@ export default function UsersTable() {
                 </Select>
               </div>
             </div>
-
-            {sortCriteria && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={clearSort}
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 sm:w-auto"
-                >
-                  <ChevronsUpDown className="h-4 w-4" />
-                  Clear sort
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

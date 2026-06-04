@@ -770,11 +770,6 @@ export default function TutorsList() {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
 
-  const clearSort = () => {
-    setSortCriteria(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
-
   const getSafeValue = (
     value: string | number | undefined | null,
     fallback = "N/A",
@@ -950,17 +945,6 @@ export default function TutorsList() {
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-            {sortCriteria && (
-              <button
-                type="button"
-                onClick={clearSort}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 lg:w-auto"
-              >
-                <ChevronsUpDown className="h-4 w-4" />
-                Clear sort
-              </button>
-            )}
-
             <button
               type="button"
               onClick={resetFilters}

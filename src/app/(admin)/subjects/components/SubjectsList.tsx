@@ -11,7 +11,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
 import { escapeRegex } from "@/utils/form";
-import { ChevronsUpDown, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { DeleteSubject } from "./DeleteSubject";
@@ -65,11 +65,6 @@ export default function SubjectsTable() {
     });
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
-
-  const clearSort = () => {
-    setTitleSortDirection(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
 
   const getSafeValue = (
     value: string | undefined | null,
@@ -186,17 +181,6 @@ export default function SubjectsTable() {
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {titleSortDirection && (
-            <button
-              type="button"
-              onClick={clearSort}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 sm:w-auto"
-            >
-              <ChevronsUpDown className="h-4 w-4" />
-              Clear sort
-            </button>
-          )}
-
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input

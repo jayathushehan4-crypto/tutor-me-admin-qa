@@ -329,11 +329,6 @@ export default function RequestForTutorsList() {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
   }, []);
 
-  const handleClearSort = () => {
-    setSortCriteria(null);
-    setPage(TABLE_CONFIG.DEFAULT_PAGE);
-  };
-
   const getSafeValue = (value: unknown, fallback = "N/A") => {
     if (value === undefined || value === null) {
       return fallback;
@@ -689,18 +684,6 @@ export default function RequestForTutorsList() {
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-            {sortCriteria && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClearSort}
-                className="w-full gap-2 lg:w-auto"
-              >
-                <ChevronsUpDown className="h-4 w-4" />
-                Clear sort
-              </Button>
-            )}
-
             <Button
               type="button"
               variant="outline"
