@@ -1,15 +1,19 @@
 "use client";
 
 import DataTable, { type Column } from "@/components/tables/DataTable";
+import {
+  SortableHeader,
+  type SortDirection,
+} from "@/components/tables/SortableHeader";
 import { Input } from "@/components/ui/input";
 import { TABLE_CONFIG } from "@/configs/table";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchGradesQuery } from "@/store/api/splits/grades";
-import { escapeRegex } from "@/utils/form";
 import { fadeUp, staggerContainer } from "@/types/animation-types";
-import { Search, X } from "lucide-react";
+import { escapeRegex } from "@/utils/form";
+import { ChevronsUpDown, Search, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DeleteGrade } from "./DeleteGrade";
 import { GradeDetails } from "./ViewDetails";
 import { UpdateGrade } from "./edit-grade/UpdateGrade";
@@ -30,6 +34,8 @@ interface Grade {
 export default function GradesTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
+  const [titleSortDirection, setTitleSortDirection] =
+    useState<SortDirection | null>(null);
   const limit = TABLE_CONFIG.DEFAULT_LIMIT;
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
@@ -37,12 +43,14 @@ export default function GradesTable() {
     () => ({
       page,
       limit,
-      sortBy: "createdAt:desc",
+      sortBy: titleSortDirection
+        ? `title:${titleSortDirection}`
+        : "createdAt:desc",
       ...(debouncedSearchTerm.trim()
         ? { title: escapeRegex(debouncedSearchTerm.trim()) }
         : {}),
     }),
-    [debouncedSearchTerm, limit, page],
+    [debouncedSearchTerm, limit, page, titleSortDirection],
   );
 
   const { data, isFetching } = useFetchGradesQuery(gradesQuery);
@@ -70,10 +78,30 @@ export default function GradesTable() {
     setPage(newPage);
   };
 
+  const handleToggleTitleSort = useCallback(() => {
+    setTitleSortDirection((current) => {
+      if (!current) return "asc";
+      if (current === "asc") return "desc";
+      return null;
+    });
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  }, []);
+
+  const clearSort = () => {
+    setTitleSortDirection(null);
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  };
+
   const columns: Column<Grade>[] = [
     {
       key: "title",
-      header: "Title",
+      header: (
+        <SortableHeader
+          label="Title"
+          direction={titleSortDirection}
+          onToggle={handleToggleTitleSort}
+        />
+      ),
       className:
         "min-w-[150px] max-w-[250px] truncate overflow-hidden sticky left-0 z-20 bg-white dark:bg-gray-900",
       render: (row: Grade) => {
@@ -190,30 +218,43 @@ export default function GradesTable() {
           <p className="text-sm text-gray-500">Search grades by title</p>
         </div>
 
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search by title"
-            className="h-11 w-full pl-10 pr-10"
-          />
-          {searchTerm && (
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {titleSortDirection && (
             <button
               type="button"
-              onClick={() => {
-                setSearchTerm("");
-                setPage(TABLE_CONFIG.DEFAULT_PAGE);
-              }}
-              aria-label="Clear search"
-              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              onClick={clearSort}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 sm:w-auto"
             >
-              <X className="h-4 w-4" />
+              <ChevronsUpDown className="h-4 w-4" />
+              Clear sort
             </button>
           )}
+
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search by title"
+              className="h-11 w-full pl-10 pr-10"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setPage(TABLE_CONFIG.DEFAULT_PAGE);
+                }}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -227,6 +268,7 @@ export default function GradesTable() {
         limit={limit}
         isLoading={isFetching}
         emptyMessage="No grades found for the current search."
+        preserveDataOrder={Boolean(titleSortDirection)}
       />
     </motion.div>
   );
