@@ -25,6 +25,7 @@ import { RequestTutors } from "@/types/response-types";
 import { sortBySchoolGradeOrder } from "@/utils/grade-filter-order";
 import { sortByLatestTimestampDesc } from "@/utils/table-sorting";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Search, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssignTutorDialog } from "./assignTutor";
 import { ChangeStatusDialog } from "./changeStatus";
@@ -152,6 +153,10 @@ function SortableHeader({
 }
 
 export default function RequestForTutorsList() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const focusedRequestId = searchParams.get("requestId")?.trim() ?? "";
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<RequestTutorFilters>(INITIAL_FILTERS);
@@ -166,8 +171,13 @@ export default function RequestForTutorsList() {
   const hasSearchFilter = Boolean(debouncedSearchTerm.trim());
   const hasSortCriteria = Boolean(sortCriteria);
   const needsClientSideFiltering =
-    hasStatusFilter || hasSearchFilter || hasSortCriteria;
-  const requestPage = needsClientSideFiltering ? TABLE_CONFIG.DEFAULT_PAGE : page;
+    hasStatusFilter ||
+    hasSearchFilter ||
+    hasSortCriteria ||
+    Boolean(focusedRequestId);
+  const requestPage = needsClientSideFiltering
+    ? TABLE_CONFIG.DEFAULT_PAGE
+    : page;
   const requestLimit = needsClientSideFiltering ? 10000 : limit;
 
   const { data, isLoading, refetch } = useFetchRequestForTutorsQuery(
@@ -229,11 +239,19 @@ export default function RequestForTutorsList() {
     [data?.results],
   );
 
+  const focusedRequestTutors = useMemo(() => {
+    if (!focusedRequestId) {
+      return rawTutors;
+    }
+
+    return rawTutors.filter((row) => row.id === focusedRequestId);
+  }, [focusedRequestId, rawTutors]);
+
   const searchFilteredTutors = useMemo(() => {
     const searchValue = debouncedSearchTerm.trim().toLowerCase();
-    if (!searchValue) return rawTutors;
+    if (!searchValue) return focusedRequestTutors;
 
-    return rawTutors.filter((row) => {
+    return focusedRequestTutors.filter((row) => {
       const requestReference = getRequestReference(row.id).toLowerCase();
       const searchableValues = [
         row.name,
@@ -248,7 +266,7 @@ export default function RequestForTutorsList() {
           .includes(searchValue),
       );
     });
-  }, [debouncedSearchTerm, rawTutors]);
+  }, [debouncedSearchTerm, focusedRequestTutors]);
 
   const gradeOptions = useMemo(
     () =>
@@ -285,6 +303,7 @@ export default function RequestForTutorsList() {
     debouncedDuration,
     debouncedFrequency,
     debouncedSearchTerm,
+    focusedRequestId,
     filters.grade,
     filters.medium,
     filters.preferredClassType,
@@ -311,6 +330,9 @@ export default function RequestForTutorsList() {
     setSearchTerm("");
     setFilters(INITIAL_FILTERS);
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
+    if (focusedRequestId) {
+      router.replace(pathname, { scroll: false });
+    }
   };
 
   const handleToggleSort = useCallback((field: RequestTutorSortField) => {
@@ -418,40 +440,44 @@ export default function RequestForTutorsList() {
   const totalPages = needsClientSideFiltering
     ? Math.max(1, Math.ceil(totalResults / limit))
     : data?.totalPages || 1;
+  const focusedRequestReference = getRequestReference(focusedRequestId);
 
-  const getGradeId = useCallback((grade: unknown): string => {
-    const gradeTitle =
-      typeof grade === "string"
-        ? grade
-        : grade && typeof grade === "object"
-          ? ((grade as { title?: string; name?: string }).title ??
-            (grade as { title?: string; name?: string }).name ??
-            "")
-          : "";
+  const getGradeId = useCallback(
+    (grade: unknown): string => {
+      const gradeTitle =
+        typeof grade === "string"
+          ? grade
+          : grade && typeof grade === "object"
+            ? ((grade as { title?: string; name?: string }).title ??
+              (grade as { title?: string; name?: string }).name ??
+              "")
+            : "";
 
-    if (grade && typeof grade === "object") {
-      const gradeRecord = grade as { id?: string };
-      const id = gradeRecord.id ?? "";
-      if (/^[a-f\d]{24}$/i.test(id)) {
-        return id;
+      if (grade && typeof grade === "object") {
+        const gradeRecord = grade as { id?: string };
+        const id = gradeRecord.id ?? "";
+        if (/^[a-f\d]{24}$/i.test(id)) {
+          return id;
+        }
       }
-    }
-    if (typeof grade === "string" && /^[a-f\d]{24}$/i.test(grade)) {
-      return grade;
-    }
+      if (typeof grade === "string" && /^[a-f\d]{24}$/i.test(grade)) {
+        return grade;
+      }
 
-    const normalizedGradeTitle = gradeTitle.trim().toLowerCase();
-    const matchedGrade = (gradesData?.results || []).find(
-      (gradeOption) =>
-        gradeOption.title.trim().toLowerCase() === normalizedGradeTitle,
-    );
+      const normalizedGradeTitle = gradeTitle.trim().toLowerCase();
+      const matchedGrade = (gradesData?.results || []).find(
+        (gradeOption) =>
+          gradeOption.title.trim().toLowerCase() === normalizedGradeTitle,
+      );
 
-    if (matchedGrade?.id && /^[a-f\d]{24}$/i.test(matchedGrade.id)) {
-      return matchedGrade.id;
-    }
+      if (matchedGrade?.id && /^[a-f\d]{24}$/i.test(matchedGrade.id)) {
+        return matchedGrade.id;
+      }
 
-    return "";
-  }, [gradesData?.results]);
+      return "";
+    },
+    [gradesData?.results],
+  );
 
   const getGradeTitle = useCallback((grade: unknown): string => {
     if (grade && typeof grade === "object") {
@@ -669,6 +695,23 @@ export default function RequestForTutorsList() {
 
   return (
     <div className="space-y-4">
+      {focusedRequestId && (
+        <div className="flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Showing linked tutor request{" "}
+            <span className="font-semibold">#{focusedRequestReference}</span>.
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.replace(pathname, { scroll: false })}
+            className="w-full border-blue-200 bg-white text-blue-700 hover:bg-blue-100 dark:border-blue-500/30 dark:bg-transparent dark:text-blue-200 dark:hover:bg-blue-500/10 sm:w-auto"
+          >
+            Show all requests
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-gray-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
