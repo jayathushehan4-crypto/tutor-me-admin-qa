@@ -624,6 +624,7 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
 export default function TutorsList() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [deleteTutor] = useDeleteTutorMutation();
+  const [updateTutorStatus] = useUpdateTutorStatusMutation();
   const [loadTutorRequests] = useLazyFetchRequestForTutorsQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<TutorStatusFilter>("all");
@@ -1134,6 +1135,21 @@ export default function TutorsList() {
         bulkDelete={{
           entityName: "tutor",
           deleteRow: deleteTutorForBulk,
+        }}
+        bulkStatusUpdate={{
+          entityName: "tutor",
+          options: [
+            { value: "pending", label: "Pending" },
+            { value: "approved", label: "Approved" },
+            { value: "rejected", label: "Rejected" },
+            { value: "suspended", label: "Suspended" },
+          ],
+          updateRow: (row, status) =>
+            updateTutorStatus({
+              id: row.id,
+              status,
+              adminId: getAdminId(),
+            }).unwrap(),
         }}
       />
     </div>

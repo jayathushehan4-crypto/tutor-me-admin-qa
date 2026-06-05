@@ -51,6 +51,17 @@ export interface BulkDeleteConfig<T> {
   isRowSelectable?: (row: T) => boolean;
 }
 
+export interface BulkStatusUpdateConfig<T> {
+  entityName: string;
+  options: Array<{
+    value: string;
+    label: string;
+  }>;
+  updateRow: (row: T, status: string) => Promise<unknown>;
+  isRowSelectable?: (row: T) => boolean;
+  onCompleted?: () => void;
+}
+
 interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
@@ -65,6 +76,7 @@ interface DataTableProps<T> {
   className?: string;
   preserveDataOrder?: boolean;
   bulkDelete?: BulkDeleteConfig<T>;
+  bulkStatusUpdate?: BulkStatusUpdateConfig<T>;
 }
 
 function getPaginationRange({
@@ -130,12 +142,18 @@ export default function DataTable<T extends { id: string | number }>({
   className,
   preserveDataOrder = false,
   bulkDelete,
+  bulkStatusUpdate,
 }: DataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedRowsById, setSelectedRowsById] = useState<Map<string, T>>(
     new Map(),
   );
+  const [bulkStatusValue, setBulkStatusValue] = useState(
+    bulkStatusUpdate?.options[0]?.value ?? "",
+  );
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
+  const hasRowSelection = Boolean(bulkDelete || bulkStatusUpdate);
   const showPagination = totalResults > limit;
   const isFirstPage = page === 1;
   const isLastPage = page === totalPages;
@@ -151,12 +169,14 @@ export default function DataTable<T extends { id: string | number }>({
   );
   const selectableRows = useMemo(
     () =>
-      bulkDelete
+      hasRowSelection
         ? latestSortedData.filter(
-            (row) => bulkDelete.isRowSelectable?.(row) ?? true,
+            (row) =>
+              (bulkDelete?.isRowSelectable?.(row) ?? true) &&
+              (bulkStatusUpdate?.isRowSelectable?.(row) ?? true),
           )
         : [],
-    [bulkDelete, latestSortedData],
+    [bulkDelete, bulkStatusUpdate, hasRowSelection, latestSortedData],
   );
   const currentPageSelectedRows = useMemo(
     () => selectableRows.filter((row) => selectedIds.has(String(row.id))),
@@ -173,7 +193,7 @@ export default function DataTable<T extends { id: string | number }>({
     currentPageSelectedRows.length > 0 && !allRowsSelected;
 
   useEffect(() => {
-    if (!bulkDelete) {
+    if (!hasRowSelection) {
       setSelectedIds(new Set());
       setSelectedRowsById(new Map());
       return;
@@ -185,7 +205,9 @@ export default function DataTable<T extends { id: string | number }>({
 
       latestSortedData.forEach((row) => {
         const rowId = String(row.id);
-        const isSelectable = bulkDelete.isRowSelectable?.(row) ?? true;
+        const isSelectable =
+          (bulkDelete?.isRowSelectable?.(row) ?? true) &&
+          (bulkStatusUpdate?.isRowSelectable?.(row) ?? true);
 
         if (!isSelectable) {
           if (next.delete(rowId)) {
@@ -202,7 +224,18 @@ export default function DataTable<T extends { id: string | number }>({
 
       return changed ? next : current;
     });
-  }, [bulkDelete, latestSortedData, selectedIds]);
+  }, [
+    bulkDelete,
+    bulkStatusUpdate,
+    hasRowSelection,
+    latestSortedData,
+    selectedIds,
+  ]);
+
+  useEffect(() => {
+    const firstStatusValue = bulkStatusUpdate?.options[0]?.value ?? "";
+    setBulkStatusValue((current) => current || firstStatusValue);
+  }, [bulkStatusUpdate?.options]);
 
   useEffect(() => {
     setSelectedIds((current) => {
@@ -292,6 +325,39 @@ export default function DataTable<T extends { id: string | number }>({
     }
   };
 
+  const handleBulkStatusUpdate = async () => {
+    if (!bulkStatusUpdate || selectedRows.length === 0 || !bulkStatusValue) {
+      return;
+    }
+
+    const selectedOption = bulkStatusUpdate.options.find(
+      (option) => option.value === bulkStatusValue,
+    );
+
+    setIsBulkStatusUpdating(true);
+    const results = await Promise.allSettled(
+      selectedRows.map((row) => bulkStatusUpdate.updateRow(row, bulkStatusValue)),
+    );
+    setIsBulkStatusUpdating(false);
+
+    const succeededCount = results.filter(
+      (result) => result.status === "fulfilled",
+    ).length;
+    const failedCount = results.length - succeededCount;
+
+    if (succeededCount > 0) {
+      toast.success(
+        `${succeededCount} ${bulkStatusUpdate.entityName}${succeededCount === 1 ? "" : "s"} updated to ${selectedOption?.label ?? bulkStatusValue}`,
+      );
+      bulkStatusUpdate.onCompleted?.();
+    }
+    if (failedCount > 0) {
+      toast.error(
+        `Failed to update ${failedCount} ${bulkStatusUpdate.entityName}${failedCount === 1 ? "" : "s"}`,
+      );
+    }
+  };
+
   const rowsToRender = isLoading
     ? Array.from({ length: limit }).map((_, currentPage) => ({
         id: `skeleton-${currentPage}`,
@@ -313,14 +379,14 @@ export default function DataTable<T extends { id: string | number }>({
         className,
       )}
     >
-      {(bulkDelete || onLimitChange) && (
+      {(hasRowSelection || onLimitChange) && (
         <div className="flex min-h-14 items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/80 px-4 py-2 dark:border-white/5 dark:bg-white/3">
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
               Bulk actions
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {bulkDelete && selectedRows.length > 0
+              {hasRowSelection && selectedRows.length > 0
                 ? `${selectedRows.length} row${selectedRows.length === 1 ? "" : "s"} selected`
                 : `(${totalResults}) Records Found`}
             </p>
@@ -348,54 +414,133 @@ export default function DataTable<T extends { id: string | number }>({
                 </select>
               </label>
             )}
-            {bulkDelete && (
+            {hasRowSelection && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={clearSelection}
-                  disabled={selectedRows.length === 0 || isBulkDeleting}
+                  disabled={
+                    selectedRows.length === 0 ||
+                    isBulkDeleting ||
+                    isBulkStatusUpdating
+                  }
                   className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white dark:border-gray-700 dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/5 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
                 >
                   Clear
                 </button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      disabled={selectedRows.length === 0 || isBulkDeleting}
-                      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
+                {bulkStatusUpdate && (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={bulkStatusValue}
+                      onChange={(event) => setBulkStatusValue(event.target.value)}
+                      aria-label={`Bulk ${bulkStatusUpdate.entityName} status`}
+                      disabled={
+                        selectedRows.length === 0 ||
+                        isBulkDeleting ||
+                        isBulkStatusUpdating
+                      }
+                      className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                     >
-                      <Trash2 className="h-4 w-4" />
-                      Delete selected
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Delete {selectedRows.length} selected{" "}
-                        {bulkDelete.entityName}
-                        {selectedRows.length === 1 ? "" : "s"}?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        You are about to delete {selectedRows.length} selected{" "}
-                        row{selectedRows.length === 1 ? "" : "s"}. This action
-                        cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={isBulkDeleting}>
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleBulkDelete}
-                        disabled={isBulkDeleting}
-                        className="bg-red-500 text-white hover:bg-red-600"
+                      {bulkStatusUpdate.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={
+                            selectedRows.length === 0 ||
+                            !bulkStatusValue ||
+                            isBulkDeleting ||
+                            isBulkStatusUpdating
+                          }
+                          className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-blue-200 bg-white px-3 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-blue-500/30 dark:bg-transparent dark:text-blue-400 dark:hover:bg-blue-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
+                        >
+                          Update status
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Update {selectedRows.length} selected{" "}
+                            {bulkStatusUpdate.entityName}
+                            {selectedRows.length === 1 ? "" : "s"}?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You are about to update {selectedRows.length}{" "}
+                            selected row{selectedRows.length === 1 ? "" : "s"}{" "}
+                            to{" "}
+                            {bulkStatusUpdate.options.find(
+                              (option) => option.value === bulkStatusValue,
+                            )?.label ?? bulkStatusValue}
+                            . Existing individual row edit actions will remain
+                            available after this bulk update.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={isBulkStatusUpdating}>
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleBulkStatusUpdate}
+                            disabled={isBulkStatusUpdating}
+                          >
+                            {isBulkStatusUpdating
+                              ? "Updating..."
+                              : "Update status"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
+                {bulkDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={
+                          selectedRows.length === 0 ||
+                          isBulkDeleting ||
+                          isBulkStatusUpdating
+                        }
+                        className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
                       >
-                        {isBulkDeleting ? "Deleting..." : "Delete selected"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="h-4 w-4" />
+                        Delete selected
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Delete {selectedRows.length} selected{" "}
+                          {bulkDelete.entityName}
+                          {selectedRows.length === 1 ? "" : "s"}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          You are about to delete {selectedRows.length} selected{" "}
+                          row{selectedRows.length === 1 ? "" : "s"}. This action
+                          cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isBulkDeleting}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleBulkDelete}
+                          disabled={isBulkDeleting}
+                          className="bg-red-500 text-white hover:bg-red-600"
+                        >
+                          {isBulkDeleting ? "Deleting..." : "Delete selected"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             )}
           </div>
@@ -407,7 +552,7 @@ export default function DataTable<T extends { id: string | number }>({
             {/* Table Header */}
             <TableHeader className="border-b border-gray-100 dark:border-white/5 dark:text-white/90">
               <TableRow>
-                {bulkDelete && (
+                {hasRowSelection && (
                   <TableCell
                     isHeader
                     className="w-[52px] min-w-[52px] px-4 py-3"
@@ -444,7 +589,7 @@ export default function DataTable<T extends { id: string | number }>({
             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
               {rowsToRender.map((row: any) => (
                 <TableRow key={row.id}>
-                  {bulkDelete && (
+                  {hasRowSelection && (
                     <TableCell className="w-[52px] min-w-[52px] px-4 py-3">
                       {isLoading ? (
                         <Skeleton className="h-4 w-4" />
@@ -456,7 +601,11 @@ export default function DataTable<T extends { id: string | number }>({
                           }
                           aria-label={`Select row ${row.id}`}
                           disabled={
-                            !(bulkDelete.isRowSelectable?.(row) ?? true)
+                            !(
+                              (bulkDelete?.isRowSelectable?.(row) ?? true) &&
+                              (bulkStatusUpdate?.isRowSelectable?.(row) ??
+                                true)
+                            )
                           }
                         />
                       )}
