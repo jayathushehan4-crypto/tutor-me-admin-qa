@@ -21,6 +21,7 @@ import { useFetchGradesQuery } from "@/store/api/splits/grades";
 import {
   useDeleteRequestForTutorMutation,
   useFetchRequestForTutorsQuery,
+  useUpdateStatusMutation,
 } from "@/store/api/splits/request-tutor";
 import { useFetchSubjectsQuery } from "@/store/api/splits/subjects";
 import { FetchRequestForTutor } from "@/types/request-types";
@@ -158,6 +159,7 @@ function SortableHeader({
 export default function RequestForTutorsList() {
   const router = useRouter();
   const [deleteTutorRequest] = useDeleteRequestForTutorMutation();
+  const [updateRequestStatus] = useUpdateStatusMutation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const focusedRequestId = searchParams.get("requestId")?.trim() ?? "";
@@ -919,6 +921,22 @@ export default function RequestForTutorsList() {
         bulkDelete={{
           entityName: "tutor request",
           deleteRow: (row) => deleteTutorRequest(String(row.id)).unwrap(),
+        }}
+        bulkStatusUpdate={{
+          entityName: "tutor request",
+          options: [
+            { value: "Pending", label: "Pending" },
+            { value: "Rejected", label: "Rejected" },
+          ],
+          updateRow: (row, status) =>
+            updateRequestStatus({
+              requestId: String(row.id),
+              status: status as "Pending" | "Rejected",
+              ...(status === "Rejected"
+                ? { rejectionReason: "Bulk status update by admin." }
+                : {}),
+            }).unwrap(),
+          onCompleted: () => refetch(),
         }}
       />
     </div>
