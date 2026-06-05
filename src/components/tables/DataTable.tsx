@@ -362,7 +362,7 @@ export default function DataTable<T extends { id: string | number }>({
                   <AlertDialogTrigger asChild>
                     <button
                       type="button"
-                      disabled={selectedRows.length === 0}
+                      disabled={selectedRows.length === 0 || isBulkDeleting}
                       className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -377,8 +377,9 @@ export default function DataTable<T extends { id: string | number }>({
                         {selectedRows.length === 1 ? "" : "s"}?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. The selected rows will be
-                        permanently deleted.
+                        You are about to delete {selectedRows.length} selected{" "}
+                        row{selectedRows.length === 1 ? "" : "s"}. This action
+                        cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
