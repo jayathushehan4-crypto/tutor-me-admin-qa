@@ -132,6 +132,9 @@ export default function DataTable<T extends { id: string | number }>({
   bulkDelete,
 }: DataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedRowsById, setSelectedRowsById] = useState<Map<string, T>>(
+    new Map(),
+  );
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const showPagination = totalResults > limit;
   const isFirstPage = page === 1;
@@ -155,44 +158,102 @@ export default function DataTable<T extends { id: string | number }>({
         : [],
     [bulkDelete, latestSortedData],
   );
-  const selectableIds = useMemo(
-    () => new Set(selectableRows.map((row) => String(row.id))),
-    [selectableRows],
-  );
-  const selectedRows = useMemo(
+  const currentPageSelectedRows = useMemo(
     () => selectableRows.filter((row) => selectedIds.has(String(row.id))),
     [selectableRows, selectedIds],
+  );
+  const selectedRows = useMemo(
+    () => [...selectedRowsById.values()],
+    [selectedRowsById],
   );
   const allRowsSelected =
     selectableRows.length > 0 &&
     selectableRows.every((row) => selectedIds.has(String(row.id)));
-  const someRowsSelected = selectedRows.length > 0 && !allRowsSelected;
+  const someRowsSelected =
+    currentPageSelectedRows.length > 0 && !allRowsSelected;
+
+  useEffect(() => {
+    if (!bulkDelete) {
+      setSelectedIds(new Set());
+      setSelectedRowsById(new Map());
+      return;
+    }
+
+    setSelectedRowsById((current) => {
+      let changed = false;
+      const next = new Map(current);
+
+      latestSortedData.forEach((row) => {
+        const rowId = String(row.id);
+        const isSelectable = bulkDelete.isRowSelectable?.(row) ?? true;
+
+        if (!isSelectable) {
+          if (next.delete(rowId)) {
+            changed = true;
+          }
+          return;
+        }
+
+        if (selectedIds.has(rowId)) {
+          next.set(rowId, row);
+          changed = true;
+        }
+      });
+
+      return changed ? next : current;
+    });
+  }, [bulkDelete, latestSortedData, selectedIds]);
 
   useEffect(() => {
     setSelectedIds((current) => {
       const next = new Set(
-        [...current].filter((selectedId) => selectableIds.has(selectedId)),
+        [...current].filter((selectedId) => selectedRowsById.has(selectedId)),
       );
       return next.size === current.size ? current : next;
     });
-  }, [selectableIds]);
+  }, [selectedRowsById]);
 
   const toggleAllRows = (checked: boolean) => {
-    setSelectedIds(
-      checked
-        ? new Set(selectableRows.map((row) => String(row.id)))
-        : new Set(),
-    );
-  };
-
-  const toggleRow = (rowId: string | number, checked: boolean) => {
     setSelectedIds((current) => {
       const next = new Set(current);
-      const id = String(rowId);
+      selectableRows.forEach((row) => {
+        const rowId = String(row.id);
+        if (checked) next.add(rowId);
+        else next.delete(rowId);
+      });
+      return next;
+    });
+    setSelectedRowsById((current) => {
+      const next = new Map(current);
+      selectableRows.forEach((row) => {
+        const rowId = String(row.id);
+        if (checked) next.set(rowId, row);
+        else next.delete(rowId);
+      });
+      return next;
+    });
+  };
+
+  const toggleRow = (row: T, checked: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      const id = String(row.id);
       if (checked) next.add(id);
       else next.delete(id);
       return next;
     });
+    setSelectedRowsById((current) => {
+      const next = new Map(current);
+      const id = String(row.id);
+      if (checked) next.set(id, row);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setSelectedRowsById(new Map());
   };
 
   const handleBulkDelete = async () => {
@@ -209,6 +270,11 @@ export default function DataTable<T extends { id: string | number }>({
 
     setSelectedIds((current) => {
       const next = new Set(current);
+      succeededIds.forEach((id) => next.delete(id));
+      return next;
+    });
+    setSelectedRowsById((current) => {
+      const next = new Map(current);
       succeededIds.forEach((id) => next.delete(id));
       return next;
     });
@@ -283,43 +349,54 @@ export default function DataTable<T extends { id: string | number }>({
               </label>
             )}
             {bulkDelete && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={selectedRows.length === 0}
-                    className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete selected
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Delete {selectedRows.length} selected{" "}
-                      {bulkDelete.entityName}
-                      {selectedRows.length === 1 ? "" : "s"}?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. The selected rows will be
-                      permanently deleted.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isBulkDeleting}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleBulkDelete}
-                      disabled={isBulkDeleting}
-                      className="bg-red-500 text-white hover:bg-red-600"
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  disabled={selectedRows.length === 0 || isBulkDeleting}
+                  className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white dark:border-gray-700 dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/5 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
+                >
+                  Clear
+                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={selectedRows.length === 0 || isBulkDeleting}
+                      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-red-500/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
                     >
-                      {isBulkDeleting ? "Deleting..." : "Delete selected"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <Trash2 className="h-4 w-4" />
+                      Delete selected
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete {selectedRows.length} selected{" "}
+                        {bulkDelete.entityName}
+                        {selectedRows.length === 1 ? "" : "s"}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You are about to delete {selectedRows.length} selected{" "}
+                        row{selectedRows.length === 1 ? "" : "s"}. This action
+                        cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isBulkDeleting}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        disabled={isBulkDeleting}
+                        className="bg-red-500 text-white hover:bg-red-600"
+                      >
+                        {isBulkDeleting ? "Deleting..." : "Delete selected"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </div>
         </div>
@@ -375,7 +452,7 @@ export default function DataTable<T extends { id: string | number }>({
                         <Checkbox
                           checked={selectedIds.has(String(row.id))}
                           onCheckedChange={(checked) =>
-                            toggleRow(row.id, checked === true)
+                            toggleRow(row, checked === true)
                           }
                           aria-label={`Select row ${row.id}`}
                           disabled={
@@ -428,11 +505,10 @@ export default function DataTable<T extends { id: string | number }>({
               if (pageNumber === "dots") {
                 return (
                   <PaginationItem key={`dots-${index}`}>
-                    <span className="px-3 text-gray-400 select-none">…</span>
+                    <span className="px-3 text-gray-400 select-none">...</span>
                   </PaginationItem>
                 );
               }
-
               return (
                 <PaginationItem key={pageNumber}>
                   <PaginationLink

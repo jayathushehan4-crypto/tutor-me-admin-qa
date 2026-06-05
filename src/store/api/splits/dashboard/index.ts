@@ -32,7 +32,14 @@ export type DashboardRecentActivityItem =
       type: "tutorRequest";
       id: string;
       name: string;
-      grade: string;
+      grade:
+        | string
+        | {
+            id?: string;
+            title?: string;
+            name?: string;
+          }
+        | null;
       medium: string;
       status: string;
       timestamp: string;

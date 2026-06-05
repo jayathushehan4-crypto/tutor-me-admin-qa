@@ -2,6 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardRecentActivityItem } from "@/store/api/splits/dashboard";
+import { useFetchGradesQuery } from "@/store/api/splits/grades";
 import {
   Activity,
   AlertTriangle,
@@ -59,7 +60,38 @@ const normalizeRequestStatus = (status: string) => {
   return status || "Pending";
 };
 
-const toDisplayItem = (item: DashboardRecentActivityItem): ActivityDisplayItem => {
+type GradeReference = Extract<
+  DashboardRecentActivityItem,
+  { type: "tutorRequest" }
+>["grade"];
+
+const isObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value);
+
+const getGradeDisplayName = (
+  grade: GradeReference,
+  gradeTitlesById: Map<string, string>,
+) => {
+  if (!grade) return "";
+
+  if (typeof grade === "object") {
+    const title = (grade.title || grade.name || "").trim();
+    if (title) return title;
+
+    const id = (grade.id || "").trim();
+    return gradeTitlesById.get(id) ?? (isObjectId(id) ? "" : id);
+  }
+
+  const gradeValue = grade.trim();
+  return (
+    gradeTitlesById.get(gradeValue) ??
+    (isObjectId(gradeValue) ? "" : gradeValue)
+  );
+};
+
+const toDisplayItem = (
+  item: DashboardRecentActivityItem,
+  gradeTitlesById: Map<string, string>,
+): ActivityDisplayItem => {
   if (item.type === "tutor") {
     return {
       id: `tutor-${item.id}`,
@@ -76,11 +108,13 @@ const toDisplayItem = (item: DashboardRecentActivityItem): ActivityDisplayItem =
   }
 
   if (item.type === "tutorRequest") {
+    const gradeName = getGradeDisplayName(item.grade, gradeTitlesById);
+
     return {
       id: `request-${item.id}`,
       title: item.name || "New tutor request",
       description:
-        [item.grade, item.medium].filter(Boolean).join(" - ") ||
+        [gradeName, item.medium].filter(Boolean).join(" - ") ||
         "Tutor request submitted.",
       href: "/request-tutor",
       timestamp: item.timestamp,
@@ -110,10 +144,30 @@ export default function RecentActivityFeed({
 }: {
   analytics: DashboardAnalytics;
 }) {
+  const { data: gradesData } = useFetchGradesQuery({
+    page: 1,
+    limit: 10000,
+    sortBy: "title:asc",
+  });
+  const gradeTitlesById = useMemo(() => {
+    const gradeMap = new Map<string, string>();
+
+    for (const grade of gradesData?.results ?? []) {
+      if (grade.id) {
+        gradeMap.set(grade.id, grade.title || String(grade.id));
+      }
+    }
+
+    return gradeMap;
+  }, [gradesData?.results]);
+
   // Backend already returns the 8 most-recent items merged and sorted
   const activities = useMemo(
-    () => analytics.recentActivity.map(toDisplayItem),
-    [analytics.recentActivity],
+    () =>
+      analytics.recentActivity.map((activity) =>
+        toDisplayItem(activity, gradeTitlesById),
+      ),
+    [analytics.recentActivity, gradeTitlesById],
   );
 
   const isLoading = analytics.isRecentLoading;
