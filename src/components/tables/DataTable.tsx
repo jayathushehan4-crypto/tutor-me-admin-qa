@@ -587,52 +587,71 @@ export default function DataTable<T extends { id: string | number }>({
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-              {rowsToRender.map((row: any) => (
-                <TableRow key={row.id}>
-                  {hasRowSelection && (
-                    <TableCell className="w-[52px] min-w-[52px] px-4 py-3">
-                      {isLoading ? (
-                        <Skeleton className="h-4 w-4" />
-                      ) : (
-                        <Checkbox
-                          checked={selectedIds.has(String(row.id))}
-                          onCheckedChange={(checked) =>
-                            toggleRow(row, checked === true)
-                          }
-                          aria-label={`Select row ${row.id}`}
-                          disabled={
-                            !(
-                              (bulkDelete?.isRowSelectable?.(row) ?? true) &&
-                              (bulkStatusUpdate?.isRowSelectable?.(row) ??
-                                true)
-                            )
-                          }
-                        />
-                      )}
-                    </TableCell>
-                  )}
-                  {columns.map((col) => (
-                    <TableCell
-                      key={col.key}
-                      className={`px-4 py-3 text-gray-500 text-theme-sm dark:text-white/90 max-w-[15.5vw] ${col.align ? `text-${col.align}` : "text-start"} ${col.className ?? ""} ${col.bodyClassName ?? ""}`}
-                    >
-                      {isLoading ? (
-                        <Skeleton className="h-4 w-[120px]" />
-                      ) : col.render ? (
-                        <div
-                          className={`flex items-center ${col.align ? `justify-${col.align}` : "justify-start"}`}
-                        >
-                          {col.render(row)}
-                        </div>
-                      ) : (
-                        <div className="overflow-hidden whitespace-nowrap overflow-ellipsis fade-out">
-                          {(row as Record<string, string>)[col.key]}
-                        </div>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {rowsToRender.map((row: any, rowIndex) => {
+                const rowSurfaceClass =
+                  rowIndex % 2 === 0
+                    ? "bg-white dark:bg-gray-900"
+                    : "bg-[#F4F7FF] dark:bg-white/[0.03]";
+
+                return (
+                  <TableRow key={row.id}>
+                    {hasRowSelection && (
+                      <TableCell
+                        className={cn(
+                          "w-[52px] min-w-[52px] px-4 py-3",
+                          rowSurfaceClass,
+                        )}
+                      >
+                        {isLoading ? (
+                          <Skeleton className="h-4 w-4" />
+                        ) : (
+                          <Checkbox
+                            checked={selectedIds.has(String(row.id))}
+                            onCheckedChange={(checked) =>
+                              toggleRow(row, checked === true)
+                            }
+                            aria-label={`Select row ${row.id}`}
+                            disabled={
+                              !(
+                                (bulkDelete?.isRowSelectable?.(row) ??
+                                  true) &&
+                                (bulkStatusUpdate?.isRowSelectable?.(row) ??
+                                  true)
+                              )
+                            }
+                          />
+                        )}
+                      </TableCell>
+                    )}
+                    {columns.map((col) => (
+                      <TableCell
+                        key={col.key}
+                        className={cn(
+                          "max-w-[15.5vw] px-4 py-3 text-gray-500 text-theme-sm transition-colors dark:text-white/90",
+                          col.align ? `text-${col.align}` : "text-start",
+                          col.className,
+                          col.bodyClassName,
+                          rowSurfaceClass,
+                        )}
+                      >
+                        {isLoading ? (
+                          <Skeleton className="h-4 w-[120px]" />
+                        ) : col.render ? (
+                          <div
+                            className={`flex items-center ${col.align ? `justify-${col.align}` : "justify-start"}`}
+                          >
+                            {col.render(row)}
+                          </div>
+                        ) : (
+                          <div className="overflow-hidden whitespace-nowrap overflow-ellipsis fade-out">
+                            {(row as Record<string, string>)[col.key]}
+                          </div>
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
