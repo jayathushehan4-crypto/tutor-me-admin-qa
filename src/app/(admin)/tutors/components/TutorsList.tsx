@@ -44,6 +44,7 @@ import {
   XCircle,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { assignedTutorMatches, DeleteTutor } from "./DeleteTutor";
 import { EditTutor } from "./edit-tutor/EditTutor";
@@ -279,18 +280,21 @@ function Modal({
   children: React.ReactNode;
 }) {
   if (!open) return null;
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[900000] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[1px]"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6"
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -20,7 +20,7 @@ export const statCards: Array<{
   href: string;
 }> = [
   {
-    label: "Registered Tutors",
+    label: "Approved Tutors",
     key: "registeredTutors",
     icon: GraduationCap,
     iconBg: "bg-blue-50 dark:bg-blue-500/10",
@@ -38,7 +38,7 @@ export const statCards: Array<{
     href: "/request-tutor",
   },
   {
-    label: "Register as Tutor Requests",
+    label: "Pending Tutor Applications",
     key: "registerAsTutorRequests",
     icon: UserPlus,
     iconBg: "bg-orange-50 dark:bg-orange-500/10",

@@ -51,6 +51,50 @@ export interface BulkDeleteConfig<T> {
   isRowSelectable?: (row: T) => boolean;
 }
 
+const hasStickyLeftClass = (className?: string) =>
+  Boolean(className?.match(/(^|\s)sticky(\s|$)/) && className.includes("left-"));
+
+const CHECKBOX_COLUMN_WIDTH = 52;
+const DEFAULT_STICKY_COLUMN_WIDTH = 180;
+
+const getPxValueFromClass = (className: string, prefix: string) => {
+  const match = className.match(new RegExp(`(?:^|\\s)${prefix}-\\[(\\d+)px\\]`));
+  return match ? Number(match[1]) : null;
+};
+
+const getStickyColumnWidth = (className: string) => {
+  const width = getPxValueFromClass(className, "w");
+  const minWidth = getPxValueFromClass(className, "min-w");
+  const maxWidth = getPxValueFromClass(className, "max-w");
+
+  if (width) return width;
+  if (minWidth && maxWidth && minWidth === maxWidth) return minWidth;
+  if (minWidth && maxWidth) return DEFAULT_STICKY_COLUMN_WIDTH;
+  return minWidth ?? maxWidth ?? DEFAULT_STICKY_COLUMN_WIDTH;
+};
+
+const getRowSurfaceClass = (isSelected: boolean, rowIndex: number) => {
+  if (isSelected) return "bg-blue-50 dark:bg-blue-500/20";
+  return rowIndex % 2 === 0
+    ? "bg-slate-50 dark:bg-white/[0.03]"
+    : "bg-white dark:bg-gray-900";
+};
+
+const getBulkStatusBadgeClass = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200";
+    case "pending":
+      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200";
+    case "rejected":
+      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200";
+    case "suspended":
+      return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200";
+    default:
+      return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200";
+  }
+};
+
 export interface BulkStatusUpdateConfig<T> {
   entityName: string;
   options: Array<{
@@ -148,9 +192,8 @@ export default function DataTable<T extends { id: string | number }>({
   const [selectedRowsById, setSelectedRowsById] = useState<Map<string, T>>(
     new Map(),
   );
-  const [bulkStatusValue, setBulkStatusValue] = useState(
-    bulkStatusUpdate?.options[0]?.value ?? "",
-  );
+  const [bulkStatusValue, setBulkStatusValue] = useState("");
+  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkStatusUpdating, setIsBulkStatusUpdating] = useState(false);
   const hasRowSelection = Boolean(bulkDelete || bulkStatusUpdate);
@@ -167,6 +210,42 @@ export default function DataTable<T extends { id: string | number }>({
     () => (preserveDataOrder ? data : sortByLatestTimestampDesc(data)),
     [data, preserveDataOrder],
   );
+  const stickyColumnMeta = useMemo(() => {
+    let nextLeft = hasRowSelection ? CHECKBOX_COLUMN_WIDTH : 0;
+    const metaByColumn = columns.map((col) => {
+      const className = `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`;
+      const isLeftSticky = hasStickyLeftClass(className);
+
+      if (!isLeftSticky) {
+        return {
+          isLeftSticky,
+          isLastLeftSticky: false,
+          left: 0,
+          width: undefined,
+        };
+      }
+
+      const width = getStickyColumnWidth(className);
+      const meta = {
+        isLeftSticky,
+        isLastLeftSticky: false,
+        left: nextLeft,
+        width,
+      };
+      nextLeft += width;
+      return meta;
+    });
+
+    let lastLeftStickyIndex = -1;
+    metaByColumn.forEach((meta, index) => {
+      if (meta.isLeftSticky) lastLeftStickyIndex = index;
+    });
+
+    return metaByColumn.map((meta, index) => ({
+      ...meta,
+      isLastLeftSticky: index === lastLeftStickyIndex,
+    }));
+  }, [columns, hasRowSelection]);
   const selectableRows = useMemo(
     () =>
       hasRowSelection
@@ -185,6 +264,9 @@ export default function DataTable<T extends { id: string | number }>({
   const selectedRows = useMemo(
     () => [...selectedRowsById.values()],
     [selectedRowsById],
+  );
+  const selectedBulkStatusOption = bulkStatusUpdate?.options.find(
+    (option) => option.value === bulkStatusValue,
   );
   const allRowsSelected =
     selectableRows.length > 0 &&
@@ -233,8 +315,8 @@ export default function DataTable<T extends { id: string | number }>({
   ]);
 
   useEffect(() => {
-    const firstStatusValue = bulkStatusUpdate?.options[0]?.value ?? "";
-    setBulkStatusValue((current) => current || firstStatusValue);
+    setBulkStatusValue("");
+    setIsBulkStatusDialogOpen(false);
   }, [bulkStatusUpdate?.options]);
 
   useEffect(() => {
@@ -245,6 +327,13 @@ export default function DataTable<T extends { id: string | number }>({
       return next.size === current.size ? current : next;
     });
   }, [selectedRowsById]);
+
+  useEffect(() => {
+    if (selectedRows.length === 0) {
+      setBulkStatusValue("");
+      setIsBulkStatusDialogOpen(false);
+    }
+  }, [selectedRows.length]);
 
   const toggleAllRows = (checked: boolean) => {
     setSelectedIds((current) => {
@@ -289,6 +378,19 @@ export default function DataTable<T extends { id: string | number }>({
     setSelectedRowsById(new Map());
   };
 
+  const resetBulkStatusSelection = () => {
+    setBulkStatusValue("");
+    setIsBulkStatusDialogOpen(false);
+  };
+
+  const handleBulkStatusSelect = (status: string) => {
+    setBulkStatusValue(status);
+
+    if (status && selectedRows.length > 0) {
+      setIsBulkStatusDialogOpen(true);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (!bulkDelete || selectedRows.length === 0) return;
 
@@ -330,15 +432,12 @@ export default function DataTable<T extends { id: string | number }>({
       return;
     }
 
-    const selectedOption = bulkStatusUpdate.options.find(
-      (option) => option.value === bulkStatusValue,
-    );
-
     setIsBulkStatusUpdating(true);
     const results = await Promise.allSettled(
       selectedRows.map((row) => bulkStatusUpdate.updateRow(row, bulkStatusValue)),
     );
     setIsBulkStatusUpdating(false);
+    resetBulkStatusSelection();
 
     const succeededCount = results.filter(
       (result) => result.status === "fulfilled",
@@ -347,7 +446,7 @@ export default function DataTable<T extends { id: string | number }>({
 
     if (succeededCount > 0) {
       toast.success(
-        `${succeededCount} ${bulkStatusUpdate.entityName}${succeededCount === 1 ? "" : "s"} updated to ${selectedOption?.label ?? bulkStatusValue}`,
+        `${succeededCount} ${bulkStatusUpdate.entityName}${succeededCount === 1 ? "" : "s"} updated to ${selectedBulkStatusOption?.label ?? bulkStatusValue}`,
       );
       bulkStatusUpdate.onCompleted?.();
     }
@@ -432,7 +531,9 @@ export default function DataTable<T extends { id: string | number }>({
                   <div className="flex items-center gap-2">
                     <select
                       value={bulkStatusValue}
-                      onChange={(event) => setBulkStatusValue(event.target.value)}
+                      onChange={(event) =>
+                        handleBulkStatusSelect(event.target.value)
+                      }
                       aria-label={`Bulk ${bulkStatusUpdate.entityName} status`}
                       disabled={
                         selectedRows.length === 0 ||
@@ -441,27 +542,28 @@ export default function DataTable<T extends { id: string | number }>({
                       }
                       className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                     >
+                      <option value="" disabled>
+                        Update status
+                      </option>
                       {bulkStatusUpdate.options.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
                     </select>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button
-                          type="button"
-                          disabled={
-                            selectedRows.length === 0 ||
-                            !bulkStatusValue ||
-                            isBulkDeleting ||
-                            isBulkStatusUpdating
-                          }
-                          className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-blue-200 bg-white px-3 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white dark:border-blue-500/30 dark:bg-transparent dark:text-blue-400 dark:hover:bg-blue-500/10 dark:disabled:border-gray-700 dark:disabled:text-gray-600 dark:disabled:hover:bg-transparent"
-                        >
-                          Update status
-                        </button>
-                      </AlertDialogTrigger>
+                    <AlertDialog
+                      open={isBulkStatusDialogOpen}
+                      onOpenChange={(open) => {
+                        if (isBulkStatusUpdating) return;
+
+                        if (!open) {
+                          resetBulkStatusSelection();
+                          return;
+                        }
+
+                        setIsBulkStatusDialogOpen(open);
+                      }}
+                    >
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>
@@ -473,19 +575,31 @@ export default function DataTable<T extends { id: string | number }>({
                             You are about to update {selectedRows.length}{" "}
                             selected row{selectedRows.length === 1 ? "" : "s"}{" "}
                             to{" "}
-                            {bulkStatusUpdate.options.find(
-                              (option) => option.value === bulkStatusValue,
-                            )?.label ?? bulkStatusValue}
+                            <span
+                              className={cn(
+                                "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold align-middle",
+                                getBulkStatusBadgeClass(bulkStatusValue),
+                              )}
+                            >
+                              {selectedBulkStatusOption?.label ??
+                                bulkStatusValue}
+                            </span>
                             . Existing individual row edit actions will remain
                             available after this bulk update.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel disabled={isBulkStatusUpdating}>
+                          <AlertDialogCancel
+                            disabled={isBulkStatusUpdating}
+                            onClick={resetBulkStatusSelection}
+                          >
                             Cancel
                           </AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={handleBulkStatusUpdate}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              void handleBulkStatusUpdate();
+                            }}
                             disabled={isBulkStatusUpdating}
                           >
                             {isBulkStatusUpdating
@@ -546,16 +660,22 @@ export default function DataTable<T extends { id: string | number }>({
           </div>
         </div>
       )}
-      <div className="custom-scrollbar max-w-full overflow-x-auto">
+      <div className="custom-scrollbar relative isolate max-w-full overflow-x-auto">
         <div className="min-w-[600px]">
-          <Table>
+          <Table className="w-full border-separate border-spacing-0">
             {/* Table Header */}
             <TableHeader className="border-b border-gray-100 dark:border-white/5 dark:text-white/90">
               <TableRow>
                 {hasRowSelection && (
                   <TableCell
                     isHeader
-                    className="w-[52px] min-w-[52px] px-4 py-3"
+                    className="sticky left-0 z-50 w-[52px] min-w-[52px] max-w-[52px] overflow-hidden bg-white px-4 py-3 dark:bg-gray-900"
+                    style={{
+                      left: 0,
+                      width: CHECKBOX_COLUMN_WIDTH,
+                      minWidth: CHECKBOX_COLUMN_WIDTH,
+                      maxWidth: CHECKBOX_COLUMN_WIDTH,
+                    }}
                   >
                     <Checkbox
                       checked={
@@ -573,66 +693,138 @@ export default function DataTable<T extends { id: string | number }>({
                     />
                   </TableCell>
                 )}
-                {columns.map((col) => (
-                  <TableCell
-                    key={col.key}
-                    isHeader
-                    className={`px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-white/90 ${col.align ? `text-${col.align}` : "text-start"} ${col.className ?? ""} ${col.headClassName ?? ""}`}
-                  >
-                    {col.header}
-                  </TableCell>
-                ))}
+                {columns.map((col, colIndex) => {
+                  const stickyMeta = stickyColumnMeta[colIndex];
+
+                  return (
+                    <TableCell
+                      key={col.key}
+                      isHeader
+                      className={cn(
+                        "px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-white/90",
+                        col.align ? `text-${col.align}` : "text-start",
+                        col.className,
+                        col.headClassName,
+                        stickyMeta?.isLeftSticky &&
+                          "sticky z-50 overflow-hidden whitespace-nowrap bg-white dark:bg-gray-900",
+                      )}
+                      style={
+                        stickyMeta?.isLeftSticky
+                          ? {
+                              left: stickyMeta.left,
+                              width: stickyMeta.width,
+                              minWidth: stickyMeta.width,
+                              maxWidth: stickyMeta.width,
+                            }
+                          : undefined
+                      }
+                    >
+                      {col.header}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             </TableHeader>
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-              {rowsToRender.map((row: any) => (
-                <TableRow key={row.id}>
-                  {hasRowSelection && (
-                    <TableCell className="w-[52px] min-w-[52px] px-4 py-3">
-                      {isLoading ? (
-                        <Skeleton className="h-4 w-4" />
-                      ) : (
-                        <Checkbox
-                          checked={selectedIds.has(String(row.id))}
-                          onCheckedChange={(checked) =>
-                            toggleRow(row, checked === true)
+              {rowsToRender.map((row: any, rowIndex) => {
+                const isRowSelected = selectedIds.has(String(row.id));
+                const rowSurfaceClass = getRowSurfaceClass(
+                  isRowSelected,
+                  rowIndex,
+                );
+
+                return (
+                  <TableRow key={row.id} className="group">
+                    {hasRowSelection && (
+                      <TableCell
+                        className={cn(
+                          "relative sticky left-0 z-40 w-[52px] min-w-[52px] max-w-[52px] overflow-hidden px-4 py-3 transition-colors",
+                          rowSurfaceClass,
+                          isRowSelected &&
+                            "after:absolute after:left-0 after:top-0 after:h-full after:w-1 after:bg-blue-600 after:content-[''] dark:after:bg-blue-400",
+                        )}
+                        style={{
+                          left: 0,
+                          width: CHECKBOX_COLUMN_WIDTH,
+                          minWidth: CHECKBOX_COLUMN_WIDTH,
+                          maxWidth: CHECKBOX_COLUMN_WIDTH,
+                        }}
+                      >
+                        {isLoading ? (
+                          <Skeleton className="h-4 w-4" />
+                        ) : (
+                          <Checkbox
+                            checked={selectedIds.has(String(row.id))}
+                            onCheckedChange={(checked) =>
+                              toggleRow(row, checked === true)
+                            }
+                            aria-label={`Select row ${row.id}`}
+                            disabled={
+                              !(
+                                (bulkDelete?.isRowSelectable?.(row) ??
+                                  true) &&
+                                (bulkStatusUpdate?.isRowSelectable?.(row) ??
+                                  true)
+                              )
+                            }
+                          />
+                        )}
+                      </TableCell>
+                    )}
+                    {columns.map((col, colIndex) => {
+                      const stickyMeta = stickyColumnMeta[colIndex];
+
+                      return (
+                        <TableCell
+                          key={col.key}
+                          className={cn(
+                            "relative z-0 max-w-[15.5vw] px-4 py-3 text-gray-500 text-theme-sm transition-colors dark:text-white/90",
+                            col.align ? `text-${col.align}` : "text-start",
+                            col.className,
+                            col.bodyClassName,
+                            rowSurfaceClass,
+                            stickyMeta?.isLeftSticky &&
+                              "sticky z-30 overflow-hidden whitespace-nowrap",
+                          )}
+                          style={
+                            stickyMeta?.isLeftSticky
+                              ? {
+                                  left: stickyMeta.left,
+                                  width: stickyMeta.width,
+                                  minWidth: stickyMeta.width,
+                                  maxWidth: stickyMeta.width,
+                                }
+                              : undefined
                           }
-                          aria-label={`Select row ${row.id}`}
-                          disabled={
-                            !(
-                              (bulkDelete?.isRowSelectable?.(row) ?? true) &&
-                              (bulkStatusUpdate?.isRowSelectable?.(row) ??
-                                true)
-                            )
-                          }
-                        />
-                      )}
-                    </TableCell>
-                  )}
-                  {columns.map((col) => (
-                    <TableCell
-                      key={col.key}
-                      className={`px-4 py-3 text-gray-500 text-theme-sm dark:text-white/90 max-w-[15.5vw] ${col.align ? `text-${col.align}` : "text-start"} ${col.className ?? ""} ${col.bodyClassName ?? ""}`}
-                    >
-                      {isLoading ? (
-                        <Skeleton className="h-4 w-[120px]" />
-                      ) : col.render ? (
-                        <div
-                          className={`flex items-center ${col.align ? `justify-${col.align}` : "justify-start"}`}
                         >
-                          {col.render(row)}
-                        </div>
-                      ) : (
-                        <div className="overflow-hidden whitespace-nowrap overflow-ellipsis fade-out">
-                          {(row as Record<string, string>)[col.key]}
-                        </div>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+                          {isLoading ? (
+                            <Skeleton className="h-4 w-[120px]" />
+                          ) : col.render ? (
+                            <div
+                              className={cn(
+                                "flex items-center",
+                                col.align
+                                  ? `justify-${col.align}`
+                                  : "justify-start",
+                                stickyMeta?.isLeftSticky &&
+                                  "w-full min-w-0 max-w-full overflow-hidden whitespace-nowrap text-ellipsis",
+                              )}
+                            >
+                              {col.render(row)}
+                            </div>
+                          ) : (
+                            <div className="overflow-hidden whitespace-nowrap overflow-ellipsis fade-out">
+                              {(row as Record<string, string>)[col.key]}
+                            </div>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
