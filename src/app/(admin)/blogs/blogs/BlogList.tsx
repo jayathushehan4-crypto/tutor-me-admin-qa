@@ -54,6 +54,9 @@ const normalizeMongoId = (value?: string | { $oid?: string }) => {
   return value.$oid || "";
 };
 
+const canDeleteBlog = (blog: BlogRow) =>
+  blog.status?.toLowerCase() === "rejected";
+
 export default function BlogsTable() {
   const [page, setPage] = useState<number>(TABLE_CONFIG.DEFAULT_PAGE);
   const [deleteBlog] = useDeleteBlogMutation();
@@ -195,7 +198,14 @@ export default function BlogsTable() {
       isLoading={isLoading}
       bulkDelete={{
         entityName: "blog",
-        deleteRow: (row) => deleteBlog(String(row.id)).unwrap(),
+        isRowSelectable: canDeleteBlog,
+        deleteRow: (row) => {
+          if (!canDeleteBlog(row)) {
+            throw new Error("Only rejected blogs can be deleted");
+          }
+
+          return deleteBlog(String(row.id)).unwrap();
+        },
       }}
     />
   );
