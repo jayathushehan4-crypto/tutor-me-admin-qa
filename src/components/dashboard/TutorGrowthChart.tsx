@@ -81,8 +81,8 @@ const metricConfigs: MetricConfig[] = [
   },
   {
     key: "tutorApplications",
-    label: "Register as Tutor Requests",
-    shortLabel: "Applications",
+    label: "Pending Tutor Applications",
+    shortLabel: "Pending",
     color: "#F97316",
     activeClassName:
       "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/40 dark:bg-orange-500/10 dark:text-orange-300",
