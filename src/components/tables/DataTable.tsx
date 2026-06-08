@@ -590,8 +590,8 @@ export default function DataTable<T extends { id: string | number }>({
               {rowsToRender.map((row: any, rowIndex) => {
                 const rowSurfaceClass =
                   rowIndex % 2 === 0
-                    ? "bg-white dark:bg-gray-900"
-                    : "bg-[#F4F7FF] dark:bg-white/[0.03]";
+                    ? "bg-[#F4F7FF] dark:bg-white/[0.03]"
+                    : "bg-white dark:bg-gray-900";
 
                 return (
                   <TableRow key={row.id}>
