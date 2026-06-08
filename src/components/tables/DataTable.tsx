@@ -588,18 +588,23 @@ export default function DataTable<T extends { id: string | number }>({
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
               {rowsToRender.map((row: any, rowIndex) => {
+                const isRowSelected = selectedIds.has(String(row.id));
                 const rowSurfaceClass =
                   rowIndex % 2 === 0
                     ? "bg-[#F4F7FF] dark:bg-white/[0.03]"
                     : "bg-white dark:bg-gray-900";
+                const selectedRowSurfaceClass =
+                  "bg-blue-100/80 dark:bg-blue-500/20";
 
                 return (
                   <TableRow key={row.id}>
                     {hasRowSelection && (
                       <TableCell
                         className={cn(
-                          "w-[52px] min-w-[52px] px-4 py-3",
+                          "w-[52px] min-w-[52px] border-l-4 border-transparent px-4 py-3 transition-colors",
                           rowSurfaceClass,
+                          isRowSelected &&
+                            "border-blue-600 bg-blue-100/80 dark:border-blue-400 dark:bg-blue-500/20",
                         )}
                       >
                         {isLoading ? (
@@ -632,6 +637,7 @@ export default function DataTable<T extends { id: string | number }>({
                           col.className,
                           col.bodyClassName,
                           rowSurfaceClass,
+                          isRowSelected && selectedRowSurfaceClass,
                         )}
                       >
                         {isLoading ? (
