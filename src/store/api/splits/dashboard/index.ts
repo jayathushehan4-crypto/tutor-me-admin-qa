@@ -87,12 +87,14 @@ export const DashboardApi = baseApi.injectEndpoints({
         url: Endpoints.DashboardSummary,
         method: "GET",
       }),
+      providesTags: ["Dashboard"],
     }),
     fetchFullDashboard: build.query<DashboardFullResponse, void>({
       query: () => ({
         url: Endpoints.DashboardFull,
         method: "GET",
       }),
+      providesTags: ["Dashboard"],
     }),
   }),
   overrideExisting: false,

@@ -53,7 +53,7 @@ export const TutorsApi = baseApi.injectEndpoints({
           body: payload,
         };
       },
-      invalidatesTags: ["FindATutor", "Users"],
+      invalidatesTags: ["FindATutor", "Users", "Dashboard"],
     }),
 
     updateTutor: build.mutation<
@@ -67,7 +67,7 @@ export const TutorsApi = baseApi.injectEndpoints({
           body: payload,
         };
       },
-      invalidatesTags: ["FindATutor", "Users"],
+      invalidatesTags: ["FindATutor", "Users", "Dashboard"],
     }),
 
     updateTutorStatus: build.mutation<
@@ -88,7 +88,7 @@ export const TutorsApi = baseApi.injectEndpoints({
           ...(rejectionMessage !== undefined ? { rejectionMessage } : {}),
         },
       }),
-      invalidatesTags: ["FindATutor", "Users"],
+      invalidatesTags: ["FindATutor", "Users", "Dashboard"],
     }),
 
     deleteTutor: build.mutation<void, string>({
@@ -96,7 +96,7 @@ export const TutorsApi = baseApi.injectEndpoints({
         url: `${Endpoints.FindATutor}/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["FindATutor", "Users"],
+      invalidatesTags: ["FindATutor", "Users", "Dashboard"],
     }),
 
     sendTempPasswordTutor: build.mutation<void, string>({

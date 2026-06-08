@@ -61,7 +61,7 @@ const dateRangeOptions: Array<{ value: DateRange; label: string }> = [
 const metricConfigs: MetricConfig[] = [
   {
     key: "tutors",
-    label: "Registered Tutors",
+    label: "Approved Tutors",
     shortLabel: "Tutors",
     color: "#465FFF",
     activeClassName:
