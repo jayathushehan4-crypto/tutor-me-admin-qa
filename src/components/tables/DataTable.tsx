@@ -51,6 +51,9 @@ export interface BulkDeleteConfig<T> {
   isRowSelectable?: (row: T) => boolean;
 }
 
+const hasStickyLeftClass = (className?: string) =>
+  Boolean(className?.match(/(^|\s)sticky(\s|$)/) && className.includes("left-"));
+
 export interface BulkStatusUpdateConfig<T> {
   entityName: string;
   options: Array<{
@@ -548,14 +551,14 @@ export default function DataTable<T extends { id: string | number }>({
       )}
       <div className="custom-scrollbar max-w-full overflow-x-auto">
         <div className="min-w-[600px]">
-          <Table>
+          <Table className="border-separate border-spacing-0">
             {/* Table Header */}
             <TableHeader className="border-b border-gray-100 dark:border-white/5 dark:text-white/90">
               <TableRow>
                 {hasRowSelection && (
                   <TableCell
                     isHeader
-                    className="w-[52px] min-w-[52px] px-4 py-3"
+                    className="sticky left-0 z-20 w-[52px] min-w-[52px] bg-white px-4 py-3 dark:bg-gray-900"
                   >
                     <Checkbox
                       checked={
@@ -573,15 +576,29 @@ export default function DataTable<T extends { id: string | number }>({
                     />
                   </TableCell>
                 )}
-                {columns.map((col) => (
-                  <TableCell
-                    key={col.key}
-                    isHeader
-                    className={`px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-white/90 ${col.align ? `text-${col.align}` : "text-start"} ${col.className ?? ""} ${col.headClassName ?? ""}`}
-                  >
-                    {col.header}
-                  </TableCell>
-                ))}
+                {columns.map((col, colIndex) => {
+                  const shouldOffsetFirstStickyColumn =
+                    hasRowSelection &&
+                    colIndex === 0 &&
+                    hasStickyLeftClass(`${col.className ?? ""} ${col.headClassName ?? ""}`);
+
+                  return (
+                    <TableCell
+                      key={col.key}
+                      isHeader
+                      className={cn(
+                        "px-5 py-3 font-medium text-gray-500 text-theme-xs dark:text-white/90",
+                        col.align ? `text-${col.align}` : "text-start",
+                        col.className,
+                        col.headClassName,
+                        shouldOffsetFirstStickyColumn &&
+                          "left-[52px] z-30 bg-white dark:bg-gray-900",
+                      )}
+                    >
+                      {col.header}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             </TableHeader>
 
@@ -601,10 +618,10 @@ export default function DataTable<T extends { id: string | number }>({
                     {hasRowSelection && (
                       <TableCell
                         className={cn(
-                          "w-[52px] min-w-[52px] border-l-4 border-transparent px-4 py-3 transition-colors",
+                          "relative sticky left-0 z-10 w-[52px] min-w-[52px] px-4 py-3 transition-colors",
                           rowSurfaceClass,
                           isRowSelected &&
-                            "border-blue-600 bg-blue-100/80 dark:border-blue-400 dark:bg-blue-500/20",
+                            "bg-blue-100/80 after:absolute after:left-0 after:top-0 after:h-full after:w-1 after:bg-blue-600 after:content-[''] dark:bg-blue-500/20 dark:after:bg-blue-400",
                         )}
                       >
                         {isLoading ? (
@@ -628,33 +645,42 @@ export default function DataTable<T extends { id: string | number }>({
                         )}
                       </TableCell>
                     )}
-                    {columns.map((col) => (
-                      <TableCell
-                        key={col.key}
-                        className={cn(
-                          "max-w-[15.5vw] px-4 py-3 text-gray-500 text-theme-sm transition-colors dark:text-white/90",
-                          col.align ? `text-${col.align}` : "text-start",
-                          col.className,
-                          col.bodyClassName,
-                          rowSurfaceClass,
-                          isRowSelected && selectedRowSurfaceClass,
-                        )}
-                      >
-                        {isLoading ? (
-                          <Skeleton className="h-4 w-[120px]" />
-                        ) : col.render ? (
-                          <div
-                            className={`flex items-center ${col.align ? `justify-${col.align}` : "justify-start"}`}
-                          >
-                            {col.render(row)}
-                          </div>
-                        ) : (
-                          <div className="overflow-hidden whitespace-nowrap overflow-ellipsis fade-out">
-                            {(row as Record<string, string>)[col.key]}
-                          </div>
-                        )}
-                      </TableCell>
-                    ))}
+                    {columns.map((col, colIndex) => {
+                      const shouldOffsetFirstStickyColumn =
+                        hasRowSelection &&
+                        colIndex === 0 &&
+                        hasStickyLeftClass(`${col.className ?? ""} ${col.bodyClassName ?? ""}`);
+
+                      return (
+                        <TableCell
+                          key={col.key}
+                          className={cn(
+                            "max-w-[15.5vw] px-4 py-3 text-gray-500 text-theme-sm transition-colors dark:text-white/90",
+                            col.align ? `text-${col.align}` : "text-start",
+                            col.className,
+                            col.bodyClassName,
+                            rowSurfaceClass,
+                            isRowSelected && selectedRowSurfaceClass,
+                            shouldOffsetFirstStickyColumn &&
+                              "left-[52px] z-30",
+                          )}
+                        >
+                          {isLoading ? (
+                            <Skeleton className="h-4 w-[120px]" />
+                          ) : col.render ? (
+                            <div
+                              className={`flex items-center ${col.align ? `justify-${col.align}` : "justify-start"}`}
+                            >
+                              {col.render(row)}
+                            </div>
+                          ) : (
+                            <div className="overflow-hidden whitespace-nowrap overflow-ellipsis fade-out">
+                              {(row as Record<string, string>)[col.key]}
+                            </div>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 );
               })}
