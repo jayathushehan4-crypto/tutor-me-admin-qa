@@ -376,11 +376,19 @@ export default function RequestForTutorsList() {
         if (typeof item === "string") return item.trim() !== "";
         if (!item || typeof item !== "object") return false;
 
-        return typeof (item as { id?: unknown }).id === "string";
+        const assignedTutor = item as { id?: unknown; _id?: unknown };
+        return (
+          typeof assignedTutor.id === "string" ||
+          typeof assignedTutor._id === "string"
+        );
       });
     }
     if (typeof assigned === "object") {
-      return typeof (assigned as { id?: unknown }).id === "string";
+      const assignedTutor = assigned as { id?: unknown; _id?: unknown };
+      return (
+        typeof assignedTutor.id === "string" ||
+        typeof assignedTutor._id === "string"
+      );
     }
 
     return false;
@@ -393,6 +401,12 @@ export default function RequestForTutorsList() {
       hasAssignedTutor(t.assignedTutor),
     ).length;
     return assignedCount === tutorBlocks.length;
+  }, []);
+
+  const hasAnyAssignedTutor = useCallback((row: RequestTutors) => {
+    return getSafeTutorBlocks(row.tutors).some((t) =>
+      hasAssignedTutor(t.assignedTutor),
+    );
   }, []);
 
   const getEffectiveStatus = useCallback(
@@ -933,14 +947,26 @@ export default function RequestForTutorsList() {
             { value: "Pending", label: "Pending" },
             { value: "Rejected", label: "Rejected" },
           ],
-          updateRow: (row, status) =>
-            updateRequestStatus({
+          canUpdateRow: (row) => !hasAnyAssignedTutor(row),
+          getBlockedStatusUpdateMessage: (blockedRows, status) =>
+            `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} already ${blockedRows.length === 1 ? "has" : "have"} assigned tutor${blockedRows.length === 1 ? "" : "s"}. Unassign all tutors before changing status to ${status}.`,
+          updateRow: (row, status) => {
+            if (hasAnyAssignedTutor(row)) {
+              return Promise.reject(
+                new Error(
+                  "Assigned tutor requests cannot be changed through bulk status update.",
+                ),
+              );
+            }
+
+            return updateRequestStatus({
               requestId: String(row.id),
               status: status as "Pending" | "Rejected",
               ...(status === "Rejected"
                 ? { rejectionReason: "Bulk status update by admin." }
                 : {}),
-            }).unwrap(),
+            }).unwrap();
+          },
           onCompleted: () => refetch(),
         }}
       />

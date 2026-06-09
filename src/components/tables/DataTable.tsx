@@ -108,6 +108,8 @@ export interface BulkStatusUpdateConfig<T> {
   }>;
   updateRow: (row: T, status: string) => Promise<unknown>;
   isRowSelectable?: (row: T) => boolean;
+  canUpdateRow?: (row: T, status: string) => boolean;
+  getBlockedStatusUpdateMessage?: (blockedRows: T[], status: string) => string;
   onCompleted?: () => void;
 }
 
@@ -388,7 +390,33 @@ export default function DataTable<T extends { id: string | number }>({
     setIsBulkStatusDialogOpen(false);
   };
 
+  const getBlockedBulkStatusRows = (status: string) => {
+    if (!bulkStatusUpdate?.canUpdateRow) return [];
+
+    return selectedRows.filter(
+      (row) => !bulkStatusUpdate.canUpdateRow?.(row, status),
+    );
+  };
+
+  const showBlockedBulkStatusMessage = (blockedRows: T[], status: string) => {
+    if (!bulkStatusUpdate || blockedRows.length === 0) return;
+
+    toast.error(
+      bulkStatusUpdate.getBlockedStatusUpdateMessage?.(blockedRows, status) ??
+        `${blockedRows.length} selected ${bulkStatusUpdate.entityName}${blockedRows.length === 1 ? "" : "s"} cannot be updated to ${status}.`,
+    );
+  };
+
   const handleBulkStatusSelect = (status: string) => {
+    const blockedRows = getBlockedBulkStatusRows(status);
+
+    if (blockedRows.length > 0) {
+      setBulkStatusValue("");
+      setIsBulkStatusDialogOpen(false);
+      showBlockedBulkStatusMessage(blockedRows, status);
+      return;
+    }
+
     setBulkStatusValue(status);
 
     if (status && selectedRows.length > 0) {
@@ -434,6 +462,14 @@ export default function DataTable<T extends { id: string | number }>({
 
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatusUpdate || selectedRows.length === 0 || !bulkStatusValue) {
+      return;
+    }
+
+    const blockedRows = getBlockedBulkStatusRows(bulkStatusValue);
+
+    if (blockedRows.length > 0) {
+      resetBulkStatusSelection();
+      showBlockedBulkStatusMessage(blockedRows, bulkStatusValue);
       return;
     }
 
