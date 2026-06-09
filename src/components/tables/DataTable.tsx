@@ -736,6 +736,9 @@ export default function DataTable<T extends { id: string | number }>({
                 )}
                 {columns.map((col, colIndex) => {
                   const stickyMeta = stickyColumnMeta[colIndex];
+                  const isRightStickyColumn = hasStickyRightClass(
+                    `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`,
+                  );
 
                   return (
                     <TableCell
@@ -747,6 +750,8 @@ export default function DataTable<T extends { id: string | number }>({
                         col.className,
                         col.headClassName,
                         stickyMeta?.isLeftSticky &&
+                          "sticky z-50 overflow-hidden whitespace-nowrap bg-white dark:bg-gray-900",
+                        isRightStickyColumn &&
                           "sticky z-50 overflow-hidden whitespace-nowrap bg-white dark:bg-gray-900",
                       )}
                       style={
@@ -816,11 +821,12 @@ export default function DataTable<T extends { id: string | number }>({
                     )}
                     {columns.map((col, colIndex) => {
                       const stickyMeta = stickyColumnMeta[colIndex];
+                      const isRightStickyColumn = hasStickyRightClass(
+                        `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`,
+                      );
                       const isStickyColumn = Boolean(
                         stickyMeta?.isLeftSticky ||
-                          hasStickyRightClass(
-                            `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`,
-                          ),
+                          isRightStickyColumn,
                       );
 
                       return (
@@ -834,6 +840,8 @@ export default function DataTable<T extends { id: string | number }>({
                             rowSurfaceClass,
                             stickyMeta?.isLeftSticky &&
                               "sticky z-30 overflow-hidden whitespace-nowrap",
+                            isRightStickyColumn &&
+                              "sticky z-40 overflow-hidden whitespace-nowrap",
                           )}
                           style={
                             stickyMeta?.isLeftSticky
