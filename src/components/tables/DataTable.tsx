@@ -54,6 +54,11 @@ export interface BulkDeleteConfig<T> {
 const hasStickyLeftClass = (className?: string) =>
   Boolean(className?.match(/(^|\s)sticky(\s|$)/) && className.includes("left-"));
 
+const hasStickyRightClass = (className?: string) =>
+  Boolean(
+    className?.match(/(^|\s)sticky(\s|$)/) && className.includes("right-"),
+  );
+
 const CHECKBOX_COLUMN_WIDTH = 52;
 const DEFAULT_STICKY_COLUMN_WIDTH = 180;
 
@@ -74,9 +79,9 @@ const getStickyColumnWidth = (className: string) => {
 };
 
 const getRowSurfaceClass = (isSelected: boolean, rowIndex: number) => {
-  if (isSelected) return "bg-blue-50 dark:bg-blue-500/20";
+  if (isSelected) return "bg-blue-50 dark:bg-blue-950";
   return rowIndex % 2 === 0
-    ? "bg-slate-50 dark:bg-white/[0.03]"
+    ? "bg-slate-50 dark:bg-gray-800"
     : "bg-white dark:bg-gray-900";
 };
 
@@ -775,6 +780,12 @@ export default function DataTable<T extends { id: string | number }>({
                     )}
                     {columns.map((col, colIndex) => {
                       const stickyMeta = stickyColumnMeta[colIndex];
+                      const isStickyColumn = Boolean(
+                        stickyMeta?.isLeftSticky ||
+                          hasStickyRightClass(
+                            `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`,
+                          ),
+                      );
 
                       return (
                         <TableCell
@@ -808,7 +819,7 @@ export default function DataTable<T extends { id: string | number }>({
                                 col.align
                                   ? `justify-${col.align}`
                                   : "justify-start",
-                                stickyMeta?.isLeftSticky &&
+                                isStickyColumn &&
                                   "w-full min-w-0 max-w-full overflow-hidden whitespace-nowrap text-ellipsis",
                               )}
                             >
