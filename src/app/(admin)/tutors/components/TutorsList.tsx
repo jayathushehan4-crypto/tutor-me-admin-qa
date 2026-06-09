@@ -91,6 +91,11 @@ type TutorSort = {
   direction: SortDirection;
 } | null;
 
+const STATUS_MENU_WIDTH = 176;
+const STATUS_MENU_HEIGHT = 112;
+const STATUS_MENU_GAP = 8;
+const STATUS_MENU_VIEWPORT_PADDING = 8;
+
 type FilterOption = {
   value: string;
   label: string;
@@ -487,16 +492,72 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
   const status = (tutor.status || "pending").toLowerCase();
 
-  const openDropdown = () => {
+  const updateMenuPosition = useCallback(() => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+      const hasSpaceBelow =
+        rect.bottom + STATUS_MENU_GAP + STATUS_MENU_HEIGHT <=
+        window.innerHeight - STATUS_MENU_VIEWPORT_PADDING;
+      const top = hasSpaceBelow
+        ? rect.bottom + STATUS_MENU_GAP
+        : Math.max(
+            STATUS_MENU_VIEWPORT_PADDING,
+            rect.top - STATUS_MENU_GAP - STATUS_MENU_HEIGHT,
+          );
+      const left = Math.min(
+        Math.max(
+          STATUS_MENU_VIEWPORT_PADDING,
+          rect.right - STATUS_MENU_WIDTH,
+        ),
+        window.innerWidth - STATUS_MENU_WIDTH - STATUS_MENU_VIEWPORT_PADDING,
+      );
+
+      setMenuPos({ top, left });
     }
+  }, []);
+
+  const openDropdown = () => {
+    updateMenuPosition();
     setDropdownOpen((o) => !o);
   };
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+
+    const closeDropdown = () => setDropdownOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        menuRef.current?.contains(target) ||
+        btnRef.current?.contains(target)
+      ) {
+        return;
+      }
+
+      closeDropdown();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeDropdown();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("scroll", updateMenuPosition, true);
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dropdownOpen, updateMenuPosition]);
 
   const handleApprove = async () => {
     setDropdownOpen(false);
@@ -556,18 +617,15 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
       </div>
 
       {/* Fixed-position dropdown — rendered outside any overflow:hidden parent */}
-      {dropdownOpen && (
-        <>
+      {dropdownOpen &&
+        createPortal(
+          <>
           {/* Click-away overlay */}
-          <div
-            className="fixed inset-0 z-[9998]"
-            onClick={() => setDropdownOpen(false)}
-          />
-
           {/* Menu — fixed so it escapes table overflow clipping */}
           <div
+            ref={menuRef}
             style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-[9999] w-44 rounded-lg border border-gray-200
+            className="fixed z-[900001] w-44 rounded-lg border border-gray-200
                        dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl
                        py-1 overflow-hidden"
           >
@@ -610,8 +668,9 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
               </button>
             )}
           </div>
-        </>
-      )}
+          </>,
+          document.body,
+        )}
 
       {showReject && (
         <RejectDialog tutor={tutor} onClose={() => setShowReject(false)} />
