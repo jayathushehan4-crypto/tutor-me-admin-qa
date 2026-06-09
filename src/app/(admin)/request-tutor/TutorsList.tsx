@@ -409,6 +409,21 @@ export default function RequestForTutorsList() {
     );
   }, []);
 
+  const canBulkUpdateRequestStatus = useCallback(
+    (row: RequestTutors, status: string) => {
+      if (status === "Rejected") {
+        return !hasAnyAssignedTutor(row);
+      }
+
+      if (status === "Pending") {
+        return !isRequestFullyAssigned(row);
+      }
+
+      return true;
+    },
+    [hasAnyAssignedTutor, isRequestFullyAssigned],
+  );
+
   const getEffectiveStatus = useCallback(
     (row: RequestTutors): "Pending" | "Rejected" | "Tutor Assigned" => {
       if (row.status === "Rejected") return "Rejected";
@@ -947,11 +962,20 @@ export default function RequestForTutorsList() {
             { value: "Pending", label: "Pending" },
             { value: "Rejected", label: "Rejected" },
           ],
-          canUpdateRow: (row) => !hasAnyAssignedTutor(row),
-          getBlockedStatusUpdateMessage: (blockedRows, status) =>
-            `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} already ${blockedRows.length === 1 ? "has" : "have"} assigned tutor${blockedRows.length === 1 ? "" : "s"}. Unassign all tutors before changing status to ${status}.`,
+          canUpdateRow: canBulkUpdateRequestStatus,
+          getBlockedStatusUpdateMessage: (blockedRows, status) => {
+            if (status === "Pending") {
+              return `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} ${blockedRows.length === 1 ? "is" : "are"} fully assigned. Unassign one or more tutors before changing status to Pending.`;
+            }
+
+            if (status === "Rejected") {
+              return `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} already ${blockedRows.length === 1 ? "has" : "have"} assigned tutor${blockedRows.length === 1 ? "" : "s"}. Unassign all tutors before rejecting.`;
+            }
+
+            return `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} cannot be updated to ${status}.`;
+          },
           updateRow: (row, status) => {
-            if (hasAnyAssignedTutor(row)) {
+            if (!canBulkUpdateRequestStatus(row, status)) {
               return Promise.reject(
                 new Error(
                   "Assigned tutor requests cannot be changed through bulk status update.",
