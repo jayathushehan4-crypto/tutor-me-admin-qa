@@ -93,7 +93,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${cls}`}
+      className={`inline-block min-w-[5.5rem] text-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${cls}`}
     >
       {normalizedStatus}
     </span>

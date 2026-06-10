@@ -284,7 +284,7 @@ function StatusBadge({ status }: { status: string }) {
     TUTOR_STATUS_BADGE_CLASSES[status] ?? TUTOR_STATUS_BADGE_CLASSES["pending"];
   return (
     <span
-      className={`inline-block text-xs font-semibold capitalize rounded-full px-2.5 py-0.5 border ${cls}`}
+      className={`inline-flex h-6 w-20 items-center justify-center rounded-full border px-2.5 text-xs font-semibold capitalize ${cls}`}
     >
       {status}
     </span>
