@@ -376,11 +376,19 @@ export default function RequestForTutorsList() {
         if (typeof item === "string") return item.trim() !== "";
         if (!item || typeof item !== "object") return false;
 
-        return typeof (item as { id?: unknown }).id === "string";
+        const assignedTutor = item as { id?: unknown; _id?: unknown };
+        return (
+          typeof assignedTutor.id === "string" ||
+          typeof assignedTutor._id === "string"
+        );
       });
     }
     if (typeof assigned === "object") {
-      return typeof (assigned as { id?: unknown }).id === "string";
+      const assignedTutor = assigned as { id?: unknown; _id?: unknown };
+      return (
+        typeof assignedTutor.id === "string" ||
+        typeof assignedTutor._id === "string"
+      );
     }
 
     return false;
@@ -394,6 +402,27 @@ export default function RequestForTutorsList() {
     ).length;
     return assignedCount === tutorBlocks.length;
   }, []);
+
+  const hasAnyAssignedTutor = useCallback((row: RequestTutors) => {
+    return getSafeTutorBlocks(row.tutors).some((t) =>
+      hasAssignedTutor(t.assignedTutor),
+    );
+  }, []);
+
+  const canBulkUpdateRequestStatus = useCallback(
+    (row: RequestTutors, status: string) => {
+      if (status === "Rejected") {
+        return !hasAnyAssignedTutor(row);
+      }
+
+      if (status === "Pending") {
+        return !isRequestFullyAssigned(row);
+      }
+
+      return true;
+    },
+    [hasAnyAssignedTutor, isRequestFullyAssigned],
+  );
 
   const getEffectiveStatus = useCallback(
     (row: RequestTutors): "Pending" | "Rejected" | "Tutor Assigned" => {
@@ -571,14 +600,15 @@ export default function RequestForTutorsList() {
       {
         key: "grade",
         header: "Grade",
-        className: "min-w-[280px] max-w-[360px] whitespace-normal",
+        className:
+          "min-w-[280px] w-[320px] max-w-[360px] overflow-hidden whitespace-normal",
         render: (row: RequestTutors) => {
           const gradeName = getSafeValue(row.grade, "No grade");
 
           return gradeName !== "No grade" ? (
             <span
               title={gradeName}
-              className="block whitespace-normal break-words leading-5"
+              className="block max-w-full whitespace-normal break-words leading-5"
             >
               {gradeName}
             </span>
@@ -592,7 +622,8 @@ export default function RequestForTutorsList() {
         header: "View",
         align: "center",
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[440px] z-20 bg-white dark:bg-gray-900",
+          "w-[80px] min-w-[80px] max-w-[80px] sticky right-[440px] z-20 bg-white dark:bg-gray-900",
+        bodyClassName: "overflow-hidden whitespace-nowrap",
         render: (row: RequestTutors) => <ViewTutorRequests tutorId={row.id} />,
       },
       {
@@ -600,7 +631,8 @@ export default function RequestForTutorsList() {
         header: "Change Status",
         align: "center",
         className:
-          "min-w-[190px] max-w-[190px] sticky right-[250px] z-20 bg-white dark:bg-gray-900",
+          "w-[190px] min-w-[190px] max-w-[190px] sticky right-[250px] z-20 bg-white dark:bg-gray-900",
+        bodyClassName: "overflow-hidden whitespace-nowrap",
         render: (row: RequestTutors) => {
           const effectiveStatus = getEffectiveStatus(row);
           const isAssignedOrPartial =
@@ -652,7 +684,8 @@ export default function RequestForTutorsList() {
         header: "Assign Tutor",
         align: "center",
         className:
-          "min-w-[170px] max-w-[170px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+          "w-[170px] min-w-[170px] max-w-[170px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+        bodyClassName: "overflow-hidden whitespace-nowrap",
         render: (row: RequestTutors) => (
           <AssignTutorDialog
             row={{
@@ -685,7 +718,8 @@ export default function RequestForTutorsList() {
         header: "Delete",
         align: "center",
         className:
-          "min-w-[80px] max-w-[80px] sticky right-0 z-20 bg-white dark:bg-gray-900",
+          "w-[80px] min-w-[80px] max-w-[80px] sticky right-0 z-20 bg-white dark:bg-gray-900",
+        bodyClassName: "overflow-hidden whitespace-nowrap",
         render: (row: RequestTutors) => <DeleteTutorRequest tutorId={row.id} />,
       },
     ],
@@ -928,14 +962,35 @@ export default function RequestForTutorsList() {
             { value: "Pending", label: "Pending" },
             { value: "Rejected", label: "Rejected" },
           ],
-          updateRow: (row, status) =>
-            updateRequestStatus({
+          canUpdateRow: canBulkUpdateRequestStatus,
+          getBlockedStatusUpdateMessage: (blockedRows, status) => {
+            if (status === "Pending") {
+              return `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} ${blockedRows.length === 1 ? "is" : "are"} fully assigned. Unassign one or more tutors before changing status to Pending.`;
+            }
+
+            if (status === "Rejected") {
+              return `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} already ${blockedRows.length === 1 ? "has" : "have"} assigned tutor${blockedRows.length === 1 ? "" : "s"}. Unassign all tutors before rejecting.`;
+            }
+
+            return `${blockedRows.length} selected tutor request${blockedRows.length === 1 ? "" : "s"} cannot be updated to ${status}.`;
+          },
+          updateRow: (row, status) => {
+            if (!canBulkUpdateRequestStatus(row, status)) {
+              return Promise.reject(
+                new Error(
+                  "Assigned tutor requests cannot be changed through bulk status update.",
+                ),
+              );
+            }
+
+            return updateRequestStatus({
               requestId: String(row.id),
               status: status as "Pending" | "Rejected",
               ...(status === "Rejected"
                 ? { rejectionReason: "Bulk status update by admin." }
                 : {}),
-            }).unwrap(),
+            }).unwrap();
+          },
           onCompleted: () => refetch(),
         }}
       />

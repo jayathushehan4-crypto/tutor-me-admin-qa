@@ -54,6 +54,11 @@ export interface BulkDeleteConfig<T> {
 const hasStickyLeftClass = (className?: string) =>
   Boolean(className?.match(/(^|\s)sticky(\s|$)/) && className.includes("left-"));
 
+const hasStickyRightClass = (className?: string) =>
+  Boolean(
+    className?.match(/(^|\s)sticky(\s|$)/) && className.includes("right-"),
+  );
+
 const CHECKBOX_COLUMN_WIDTH = 52;
 const DEFAULT_STICKY_COLUMN_WIDTH = 180;
 
@@ -74,9 +79,9 @@ const getStickyColumnWidth = (className: string) => {
 };
 
 const getRowSurfaceClass = (isSelected: boolean, rowIndex: number) => {
-  if (isSelected) return "bg-blue-50 dark:bg-blue-500/20";
+  if (isSelected) return "bg-blue-50 dark:bg-blue-950";
   return rowIndex % 2 === 0
-    ? "bg-slate-50 dark:bg-white/[0.03]"
+    ? "bg-slate-50 dark:bg-gray-800"
     : "bg-white dark:bg-gray-900";
 };
 
@@ -103,6 +108,8 @@ export interface BulkStatusUpdateConfig<T> {
   }>;
   updateRow: (row: T, status: string) => Promise<unknown>;
   isRowSelectable?: (row: T) => boolean;
+  canUpdateRow?: (row: T, status: string) => boolean;
+  getBlockedStatusUpdateMessage?: (blockedRows: T[], status: string) => string;
   onCompleted?: () => void;
 }
 
@@ -383,7 +390,33 @@ export default function DataTable<T extends { id: string | number }>({
     setIsBulkStatusDialogOpen(false);
   };
 
+  const getBlockedBulkStatusRows = (status: string) => {
+    if (!bulkStatusUpdate?.canUpdateRow) return [];
+
+    return selectedRows.filter(
+      (row) => !bulkStatusUpdate.canUpdateRow?.(row, status),
+    );
+  };
+
+  const showBlockedBulkStatusMessage = (blockedRows: T[], status: string) => {
+    if (!bulkStatusUpdate || blockedRows.length === 0) return;
+
+    toast.error(
+      bulkStatusUpdate.getBlockedStatusUpdateMessage?.(blockedRows, status) ??
+        `${blockedRows.length} selected ${bulkStatusUpdate.entityName}${blockedRows.length === 1 ? "" : "s"} cannot be updated to ${status}.`,
+    );
+  };
+
   const handleBulkStatusSelect = (status: string) => {
+    const blockedRows = getBlockedBulkStatusRows(status);
+
+    if (blockedRows.length > 0) {
+      setBulkStatusValue("");
+      setIsBulkStatusDialogOpen(false);
+      showBlockedBulkStatusMessage(blockedRows, status);
+      return;
+    }
+
     setBulkStatusValue(status);
 
     if (status && selectedRows.length > 0) {
@@ -429,6 +462,14 @@ export default function DataTable<T extends { id: string | number }>({
 
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatusUpdate || selectedRows.length === 0 || !bulkStatusValue) {
+      return;
+    }
+
+    const blockedRows = getBlockedBulkStatusRows(bulkStatusValue);
+
+    if (blockedRows.length > 0) {
+      resetBulkStatusSelection();
+      showBlockedBulkStatusMessage(blockedRows, bulkStatusValue);
       return;
     }
 
@@ -695,6 +736,9 @@ export default function DataTable<T extends { id: string | number }>({
                 )}
                 {columns.map((col, colIndex) => {
                   const stickyMeta = stickyColumnMeta[colIndex];
+                  const isRightStickyColumn = hasStickyRightClass(
+                    `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`,
+                  );
 
                   return (
                     <TableCell
@@ -706,6 +750,8 @@ export default function DataTable<T extends { id: string | number }>({
                         col.className,
                         col.headClassName,
                         stickyMeta?.isLeftSticky &&
+                          "sticky z-50 overflow-hidden whitespace-nowrap bg-white dark:bg-gray-900",
+                        isRightStickyColumn &&
                           "sticky z-50 overflow-hidden whitespace-nowrap bg-white dark:bg-gray-900",
                       )}
                       style={
@@ -775,6 +821,13 @@ export default function DataTable<T extends { id: string | number }>({
                     )}
                     {columns.map((col, colIndex) => {
                       const stickyMeta = stickyColumnMeta[colIndex];
+                      const isRightStickyColumn = hasStickyRightClass(
+                        `${col.className ?? ""} ${col.headClassName ?? ""} ${col.bodyClassName ?? ""}`,
+                      );
+                      const isStickyColumn = Boolean(
+                        stickyMeta?.isLeftSticky ||
+                          isRightStickyColumn,
+                      );
 
                       return (
                         <TableCell
@@ -787,6 +840,8 @@ export default function DataTable<T extends { id: string | number }>({
                             rowSurfaceClass,
                             stickyMeta?.isLeftSticky &&
                               "sticky z-30 overflow-hidden whitespace-nowrap",
+                            isRightStickyColumn &&
+                              "sticky z-40 overflow-hidden whitespace-nowrap",
                           )}
                           style={
                             stickyMeta?.isLeftSticky
@@ -808,7 +863,7 @@ export default function DataTable<T extends { id: string | number }>({
                                 col.align
                                   ? `justify-${col.align}`
                                   : "justify-start",
-                                stickyMeta?.isLeftSticky &&
+                                isStickyColumn &&
                                   "w-full min-w-0 max-w-full overflow-hidden whitespace-nowrap text-ellipsis",
                               )}
                             >

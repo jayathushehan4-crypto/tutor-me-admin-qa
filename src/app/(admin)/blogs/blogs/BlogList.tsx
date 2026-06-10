@@ -84,27 +84,19 @@ export default function BlogsTable() {
       key: "title",
       header: "Title",
       className:
-        "truncate overflow-hidden min-w-[200px] sticky left-0 z-20 bg-white dark:bg-gray-900",
-      bodyClassName: "!max-w-none",
+        "w-full min-w-[360px] truncate overflow-hidden",
+      bodyClassName: "!max-w-none overflow-hidden",
       render: (row: BlogRow) => {
         const safeTitle = getSafeValue(row.title, "No title provided");
         return (
           <span
             title={`Title: ${safeTitle}`}
-            className={`truncate block ${!row.title ? "text-gray-400 italic" : ""}`}
-            style={{ width: "inherit" }}
+            className={`block max-w-full truncate ${!row.title ? "text-gray-400 italic" : ""}`}
           >
             {safeTitle}
           </span>
         );
       },
-    },
-    {
-      key: "spacer",
-      header: "",
-      className: "w-full",
-      bodyClassName: "!max-w-none",
-      render: () => null,
     },
     {
       key: "view",
@@ -113,8 +105,9 @@ export default function BlogsTable() {
           View
         </span>
       ),
-      className:
-        "lg:min-w-[80px] lg:max-w-[80px] min-w-[80px] max-w-[80px] sticky right-[270px] z-20 bg-white dark:bg-gray-900",
+      className: "w-[80px] min-w-[80px] max-w-[80px]",
+      bodyClassName: "overflow-hidden whitespace-nowrap",
+      align: "center" as const,
       render: (row: BlogRow) => {
         const authorId = normalizeMongoId(row.author?.id);
 
@@ -148,12 +141,13 @@ export default function BlogsTable() {
     {
       key: "changeStatus",
       header: (
-        <span className="truncate block w-full" title="Status">
+        <span className="truncate text-center block w-full" title="Status">
           Status
         </span>
       ),
-      className:
-        "min-w-[190px] max-w-[190px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+      className: "w-[190px] min-w-[190px] max-w-[190px]",
+      bodyClassName: "overflow-hidden whitespace-nowrap",
+      align: "center" as const,
       render: (row: BlogRow) => (
         <div className="flex items-center justify-center gap-2">
           <BlogStatusBadge status={row.status ?? "pending"} />
@@ -172,8 +166,9 @@ export default function BlogsTable() {
           Delete
         </span>
       ),
-      className:
-        "lg:min-w-[80px] lg:max-w-[80px] min-w-[80px] max-w-[80px] sticky right-0 z-20 bg-white dark:bg-gray-900",
+      className: "w-[80px] min-w-[80px] max-w-[80px]",
+      bodyClassName: "overflow-hidden whitespace-nowrap",
+      align: "center" as const,
       render: (row: BlogRow) => (
         <div className="w-full flex items-center justify-center">
           <DeleteBlog

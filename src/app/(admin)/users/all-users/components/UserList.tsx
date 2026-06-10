@@ -33,6 +33,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { DeleteUser } from "./DeleteUser";
 import { UpdateUser } from "./edit-user/UpdateUser";
@@ -71,6 +72,11 @@ type UserSort = {
   field: UserSortField;
   direction: SortDirection;
 } | null;
+
+const STATUS_MENU_WIDTH = 176;
+const STATUS_MENU_HEIGHT = 148;
+const STATUS_MENU_GAP = 6;
+const STATUS_MENU_VIEWPORT_PADDING = 8;
 
 const USER_STATUS_BADGE_CLASSES: Record<UserStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -136,20 +142,72 @@ function UserStatusActions({ user }: { user: User }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const status = (user.status || "pending").toLowerCase() as UserStatus;
   const isTutor = user.role === "tutor";
 
+  const updateMenuPosition = useCallback(() => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const hasSpaceBelow =
+        rect.bottom + STATUS_MENU_GAP + STATUS_MENU_HEIGHT <=
+        window.innerHeight - STATUS_MENU_VIEWPORT_PADDING;
+      const top = hasSpaceBelow
+        ? rect.bottom + STATUS_MENU_GAP
+        : Math.max(
+            STATUS_MENU_VIEWPORT_PADDING,
+            rect.top - STATUS_MENU_GAP - STATUS_MENU_HEIGHT,
+          );
+      const left = Math.min(
+        Math.max(STATUS_MENU_VIEWPORT_PADDING, rect.left),
+        window.innerWidth - STATUS_MENU_WIDTH - STATUS_MENU_VIEWPORT_PADDING,
+      );
+
+      setMenuPos({ top, left });
+    }
+  }, []);
+
   const openDropdown = () => {
     if (isTutor || isLoading) return;
 
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.left });
-    }
-
+    updateMenuPosition();
     setDropdownOpen((current) => !current);
   };
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+
+    const closeDropdown = () => setDropdownOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        menuRef.current?.contains(target) ||
+        btnRef.current?.contains(target)
+      ) {
+        return;
+      }
+
+      closeDropdown();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeDropdown();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("scroll", updateMenuPosition, true);
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dropdownOpen, updateMenuPosition]);
 
   const updateStatus = async (nextStatus: UserStatus) => {
     setDropdownOpen(false);
@@ -208,63 +266,62 @@ function UserStatusActions({ user }: { user: User }) {
         </button>
       </div>
 
-      {dropdownOpen && !isTutor && (
-        <>
-          <div
-            className="fixed inset-0 z-[9998]"
-            onClick={() => setDropdownOpen(false)}
-          />
+      {dropdownOpen &&
+        !isTutor &&
+        createPortal(
+          <>
+            <div
+              ref={menuRef}
+              style={{ top: menuPos.top, left: menuPos.left }}
+              className="fixed z-[9999] w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-900"
+            >
+              {status !== "approved" && (
+                <button
+                  type="button"
+                  onClick={() => updateStatus("approved")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-green-700 transition hover:bg-green-50 dark:hover:bg-green-950/40"
+                >
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  Approved
+                </button>
+              )}
 
-          <div
-            style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-[9999] w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-900"
-          >
-            {status !== "approved" && (
-              <button
-                type="button"
-                onClick={() => updateStatus("approved")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-green-700 transition hover:bg-green-50 dark:hover:bg-green-950/40"
-              >
-                <CheckCircle className="h-4 w-4 shrink-0" />
-                Approved
-              </button>
-            )}
+              {status !== "pending" && (
+                <button
+                  type="button"
+                  onClick={() => updateStatus("pending")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-yellow-700 transition hover:bg-yellow-50 dark:hover:bg-yellow-950/40"
+                >
+                  <ShieldOff className="h-4 w-4 shrink-0" />
+                  Pending
+                </button>
+              )}
 
-            {status !== "pending" && (
-              <button
-                type="button"
-                onClick={() => updateStatus("pending")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-yellow-700 transition hover:bg-yellow-50 dark:hover:bg-yellow-950/40"
-              >
-                <ShieldOff className="h-4 w-4 shrink-0" />
-                Pending
-              </button>
-            )}
+              {status !== "rejected" && (
+                <button
+                  type="button"
+                  onClick={() => updateStatus("rejected")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/40"
+                >
+                  <XCircle className="h-4 w-4 shrink-0" />
+                  Rejected
+                </button>
+              )}
 
-            {status !== "rejected" && (
-              <button
-                type="button"
-                onClick={() => updateStatus("rejected")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/40"
-              >
-                <XCircle className="h-4 w-4 shrink-0" />
-                Rejected
-              </button>
-            )}
-
-            {status !== "suspended" && (
-              <button
-                type="button"
-                onClick={() => updateStatus("suspended")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-              >
-                <ShieldOff className="h-4 w-4 shrink-0" />
-                Suspended
-              </button>
-            )}
-          </div>
-        </>
-      )}
+              {status !== "suspended" && (
+                <button
+                  type="button"
+                  onClick={() => updateStatus("suspended")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  <ShieldOff className="h-4 w-4 shrink-0" />
+                  Suspended
+                </button>
+              )}
+            </div>
+          </>,
+          document.body,
+        )}
     </>
   );
 }

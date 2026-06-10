@@ -91,9 +91,32 @@ type TutorSort = {
   direction: SortDirection;
 } | null;
 
+const STATUS_MENU_WIDTH = 176;
+const STATUS_MENU_HEIGHT = 112;
+const STATUS_MENU_GAP = 8;
+const STATUS_MENU_VIEWPORT_PADDING = 8;
+const CLASS_TYPE_CLIENT_FILTER_LIMIT = 10000;
+
 type FilterOption = {
   value: string;
   label: string;
+};
+
+const normalizeClassType = (value?: string | null) =>
+  value?.trim().toLowerCase() ?? "";
+
+const getTutorClassTypes = (classType?: Tutor["classType"] | string) => {
+  if (!classType) return [];
+  return Array.isArray(classType) ? classType : [classType];
+};
+
+const tutorMatchesClassType = (tutor: Tutor, selectedClassType: string) => {
+  if (selectedClassType === "all") return true;
+
+  const normalizedSelected = normalizeClassType(selectedClassType);
+  return getTutorClassTypes(tutor.classType).some(
+    (classType) => normalizeClassType(classType) === normalizedSelected,
+  );
 };
 
 function SearchableFilterSelect({
@@ -487,16 +510,72 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
   const status = (tutor.status || "pending").toLowerCase();
 
-  const openDropdown = () => {
+  const updateMenuPosition = useCallback(() => {
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+      const hasSpaceBelow =
+        rect.bottom + STATUS_MENU_GAP + STATUS_MENU_HEIGHT <=
+        window.innerHeight - STATUS_MENU_VIEWPORT_PADDING;
+      const top = hasSpaceBelow
+        ? rect.bottom + STATUS_MENU_GAP
+        : Math.max(
+            STATUS_MENU_VIEWPORT_PADDING,
+            rect.top - STATUS_MENU_GAP - STATUS_MENU_HEIGHT,
+          );
+      const left = Math.min(
+        Math.max(
+          STATUS_MENU_VIEWPORT_PADDING,
+          rect.right - STATUS_MENU_WIDTH,
+        ),
+        window.innerWidth - STATUS_MENU_WIDTH - STATUS_MENU_VIEWPORT_PADDING,
+      );
+
+      setMenuPos({ top, left });
     }
+  }, []);
+
+  const openDropdown = () => {
+    updateMenuPosition();
     setDropdownOpen((o) => !o);
   };
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+
+    const closeDropdown = () => setDropdownOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        menuRef.current?.contains(target) ||
+        btnRef.current?.contains(target)
+      ) {
+        return;
+      }
+
+      closeDropdown();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeDropdown();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("scroll", updateMenuPosition, true);
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dropdownOpen, updateMenuPosition]);
 
   const handleApprove = async () => {
     setDropdownOpen(false);
@@ -556,18 +635,15 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
       </div>
 
       {/* Fixed-position dropdown — rendered outside any overflow:hidden parent */}
-      {dropdownOpen && (
-        <>
+      {dropdownOpen &&
+        createPortal(
+          <>
           {/* Click-away overlay */}
-          <div
-            className="fixed inset-0 z-[9998]"
-            onClick={() => setDropdownOpen(false)}
-          />
-
           {/* Menu — fixed so it escapes table overflow clipping */}
           <div
+            ref={menuRef}
             style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-[9999] w-44 rounded-lg border border-gray-200
+            className="fixed z-[900001] w-44 rounded-lg border border-gray-200
                        dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl
                        py-1 overflow-hidden"
           >
@@ -610,8 +686,9 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
               </button>
             )}
           </div>
-        </>
-      )}
+          </>,
+          document.body,
+        )}
 
       {showReject && (
         <RejectDialog tutor={tutor} onClose={() => setShowReject(false)} />
@@ -640,6 +717,7 @@ export default function TutorsList() {
   const [sortCriteria, setSortCriteria] = useState<TutorSort>(null);
   const [limit, setLimit] = useState<number>(TABLE_CONFIG.DEFAULT_LIMIT);
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  const isClassTypeFilterActive = classTypeFilter !== "all";
 
   useEffect(() => {
     setPage(TABLE_CONFIG.DEFAULT_PAGE);
@@ -656,8 +734,8 @@ export default function TutorsList() {
 
   const queryParams = useMemo(
     () => ({
-      page,
-      limit,
+      page: isClassTypeFilterActive ? TABLE_CONFIG.DEFAULT_PAGE : page,
+      limit: isClassTypeFilterActive ? CLASS_TYPE_CLIENT_FILTER_LIMIT : limit,
       sortBy: sortCriteria
         ? `${sortCriteria.field}:${sortCriteria.direction}`
         : "createdAt:desc",
@@ -666,7 +744,6 @@ export default function TutorsList() {
         : {}),
       ...(statusFilter !== "all" ? { status: statusFilter } : {}),
       ...(tutorTypeFilter !== "all" ? { tutorType: tutorTypeFilter } : {}),
-      ...(classTypeFilter !== "all" ? { classType: classTypeFilter } : {}),
       ...(locationFilter !== "all"
         ? { preferredLocations: locationFilter }
         : {}),
@@ -677,6 +754,7 @@ export default function TutorsList() {
       classTypeFilter,
       debouncedSearchTerm,
       gradeFilter,
+      isClassTypeFilterActive,
       limit,
       locationFilter,
       page,
@@ -702,9 +780,28 @@ export default function TutorsList() {
     sortBy: "title:asc",
   });
 
-  const tutors = data?.results || [];
-  const totalPages = data?.totalPages || 1;
-  const totalResults = data?.totalResults || tutors.length;
+  const fetchedTutors = data?.results || [];
+  const classTypeFilteredTutors = useMemo(
+    () =>
+      isClassTypeFilterActive
+        ? fetchedTutors.filter((tutor) =>
+            tutorMatchesClassType(tutor, classTypeFilter),
+          )
+        : fetchedTutors,
+    [classTypeFilter, fetchedTutors, isClassTypeFilterActive],
+  );
+  const tutors = useMemo(() => {
+    if (!isClassTypeFilterActive) return classTypeFilteredTutors;
+
+    const startIndex = (page - 1) * limit;
+    return classTypeFilteredTutors.slice(startIndex, startIndex + limit);
+  }, [classTypeFilteredTutors, isClassTypeFilterActive, limit, page]);
+  const totalResults = isClassTypeFilterActive
+    ? classTypeFilteredTutors.length
+    : data?.totalResults || tutors.length;
+  const totalPages = isClassTypeFilterActive
+    ? Math.max(1, Math.ceil(totalResults / limit))
+    : data?.totalPages || 1;
 
   const deleteTutorForBulk = useCallback(
     async (tutor: Tutor) => {
