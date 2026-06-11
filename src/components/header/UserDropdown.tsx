@@ -30,8 +30,7 @@ export default function UserDropdown() {
     setIsImageError(false);
   }, [user?.avatar]);
 
-  const avatarSrc =
-    isImageError || !user.avatar ? "/images/user/user.png" : user.avatar;
+  const initial = (user.name?.[0] || "A").toUpperCase();
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement>) {
     e.stopPropagation();
@@ -62,12 +61,18 @@ export default function UserDropdown() {
         className="dropdown-toggle flex min-w-0 items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-1.5 pr-2.5 text-gray-700 shadow-theme-xs transition hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-700 dark:hover:bg-gray-800"
       >
         <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-900">
-          <img
-            src={avatarSrc}
-            alt="User"
-            className="h-full w-full object-cover"
-            onError={() => setIsImageError(true)}
-          />
+          {!isImageError && user.avatar ? (
+            <img
+              src={user.avatar}
+              alt="User"
+              className="h-full w-full object-cover"
+              onError={() => setIsImageError(true)}
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center bg-blue-600 text-sm font-bold text-white select-none">
+              {initial}
+            </span>
+          )}
         </span>
 
         <span className="hidden max-w-36 truncate text-theme-sm font-medium sm:block">
@@ -87,13 +92,19 @@ export default function UserDropdown() {
         className="right-0 mt-3 flex w-[min(calc(100vw-2rem),18rem)] flex-col rounded-xl border border-gray-200 bg-white p-2 shadow-theme-xl dark:border-gray-800 dark:bg-gray-dark"
       >
         <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
-          <span className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <img
-              src={avatarSrc}
-              alt="User"
-              className="h-full w-full object-cover"
-              onError={() => setIsImageError(true)}
-            />
+          <span className="h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200 dark:ring-gray-800">
+            {!isImageError && user.avatar ? (
+              <img
+                src={user.avatar}
+                alt="User"
+                className="h-full w-full object-cover"
+                onError={() => setIsImageError(true)}
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center bg-blue-600 text-base font-bold text-white select-none">
+                {initial}
+              </span>
+            )}
           </span>
 
           <span className="min-w-0">
