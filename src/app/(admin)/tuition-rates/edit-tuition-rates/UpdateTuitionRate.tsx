@@ -221,7 +221,7 @@ export function UpdateTuitionRate({
           onSubmit={handleSubmit(onSubmit)}
         >
           <div className="grid gap-1">
-            <Label>Grade</Label>
+            <Label>Grade <span className="text-red-500">*</span></Label>
             <Controller
               name="grade"
               control={control}
@@ -240,7 +240,7 @@ export function UpdateTuitionRate({
           </div>
 
           <div className="grid gap-1">
-            <Label>Subject</Label>
+            <Label>Subject <span className="text-red-500">*</span></Label>
             <Controller
               name="subject"
               control={control}
@@ -280,7 +280,8 @@ export function UpdateTuitionRate({
                     ? "Part-Time Tutor Rate"
                     : key === "fullTimeTutorRate"
                       ? "Full-Time Tutor Rate"
-                      : "Ex/Current MOE Teacher Rate"}
+                      : "Ex/Current MOE Teacher Rate"}{" "}
+                <span className="text-red-500">*</span>
               </Label>
 
               <Input

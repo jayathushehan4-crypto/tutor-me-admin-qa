@@ -103,7 +103,7 @@ export function AddInquiry() {
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             {/* Sender Name */}
             <div className="grid gap-3">
-              <Label htmlFor="senderName">Sender Name</Label>
+              <Label htmlFor="senderName">Sender Name <span className="text-red-500">*</span></Label>
               <Input
                 className="dark:bg-gray-900 dark:placeholder:text-white/30"
                 id="senderName"
@@ -127,7 +127,7 @@ export function AddInquiry() {
 
             {/* Sender Email */}
             <div className="grid gap-3">
-              <Label htmlFor="senderEmail">Sender Email</Label>
+              <Label htmlFor="senderEmail">Sender Email <span className="text-red-500">*</span></Label>
               <Input
                 className="dark:bg-gray-900 dark:placeholder:text-white/30"
                 id="senderEmail"
@@ -152,7 +152,7 @@ export function AddInquiry() {
 
             {/* Inquiry Message */}
             <div className="grid gap-3">
-              <Label htmlFor="message">Inquiry</Label>
+              <Label htmlFor="message">Inquiry <span className="text-red-500">*</span></Label>
               <TextArea
                 className="dark:bg-gray-900 dark:placeholder:text-white/30"
                 id="message"

@@ -108,7 +108,7 @@ export function AddGrade() {
 
           <div className="grid gap-4">
             <div className="grid gap-3">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
               <Input
                 id="title"
                 placeholder="Title"
@@ -134,7 +134,7 @@ export function AddGrade() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
               <Input
                 id="description"
                 placeholder="Description"
@@ -155,7 +155,7 @@ export function AddGrade() {
               )}
             </div>
             <div className="grid gap-3">
-              <Label>Subjects</Label>
+              <Label>Subjects <span className="text-red-500">*</span></Label>
               <Controller
                 name="subjects"
                 control={createGradeForm.control}
