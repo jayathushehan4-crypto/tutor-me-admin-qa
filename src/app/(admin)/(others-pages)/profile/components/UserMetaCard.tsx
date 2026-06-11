@@ -28,8 +28,6 @@ export default function UserMetaCard() {
     return <p>User not found.</p>;
   }
 
-  const avatarSrc =
-    isImageError || !user.avatar ? "/images/user/user.png" : user.avatar;
   const status = user.status?.toLowerCase();
   const statusStyles =
     status === "approved" || status === "active"
@@ -67,12 +65,20 @@ export default function UserMetaCard() {
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
           <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-            <img
-              src={avatarSrc}
-              alt="user"
-              className="h-full w-full object-cover"
-              onError={() => setIsImageError(true)}
-            />
+            {!isImageError && user.avatar ? (
+              <img
+                src={user.avatar}
+                alt="user"
+                className="h-full w-full object-cover"
+                onError={() => setIsImageError(true)}
+              />
+            ) : (
+              <div className="h-full w-full bg-blue-600 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white select-none">
+                  {(user.name?.[0] || "A").toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
           <div className="order-3 xl:order-2">
             <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">

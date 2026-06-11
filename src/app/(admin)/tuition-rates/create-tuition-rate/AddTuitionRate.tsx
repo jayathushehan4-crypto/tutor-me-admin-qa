@@ -160,7 +160,7 @@ export function AddTuitionRate() {
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-6 grid gap-4">
             <div className="grid gap-3">
-              <Label htmlFor="grade">Grade</Label>
+              <Label htmlFor="grade">Grade <span className="text-red-500">*</span></Label>
               <FormSelect
                 options={gradeOptions}
                 value={watch("grade") || undefined}
@@ -182,7 +182,7 @@ export function AddTuitionRate() {
               )}
             </div>
             <div className="grid gap-3">
-              <Label htmlFor="subject">Subject</Label>
+              <Label htmlFor="subject">Subject <span className="text-red-500">*</span></Label>
               <Select
                 onValueChange={(value) =>
                   setValue("subject", value, {
@@ -232,7 +232,8 @@ export function AddTuitionRate() {
                       ? "Part-Time Tutor Rate"
                       : key === "fullTimeTutorRate"
                         ? "Full-Time Tutor Rate"
-                        : "Ex/Current MOE Teacher Rate"}
+                        : "Ex/Current MOE Teacher Rate"}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
 
                 <Input
