@@ -105,7 +105,7 @@ export default function BlogsTable() {
           View
         </span>
       ),
-      className: "w-[80px] min-w-[80px] max-w-[80px]",
+      className: "w-[80px] min-w-[80px] max-w-[80px] sticky right-[270px]",
       bodyClassName: "overflow-hidden whitespace-nowrap",
       align: "center" as const,
       render: (row: BlogRow) => {
@@ -145,7 +145,7 @@ export default function BlogsTable() {
           Status
         </span>
       ),
-      className: "w-[190px] min-w-[190px] max-w-[190px]",
+      className: "w-[190px] min-w-[190px] max-w-[190px] sticky right-[80px]",
       bodyClassName: "overflow-hidden whitespace-nowrap",
       align: "center" as const,
       render: (row: BlogRow) => (
@@ -166,7 +166,7 @@ export default function BlogsTable() {
           Delete
         </span>
       ),
-      className: "w-[80px] min-w-[80px] max-w-[80px]",
+      className: "w-[80px] min-w-[80px] max-w-[80px] sticky right-0",
       bodyClassName: "overflow-hidden whitespace-nowrap",
       align: "center" as const,
       render: (row: BlogRow) => (
