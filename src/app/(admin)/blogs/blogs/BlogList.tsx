@@ -30,7 +30,7 @@ function BlogStatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${className}`}
+      className={`inline-flex w-[82px] items-center justify-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${className}`}
     >
       {label}
     </span>
@@ -105,7 +105,7 @@ export default function BlogsTable() {
           View
         </span>
       ),
-      className: "w-[80px] min-w-[80px] max-w-[80px] sticky right-[270px]",
+      className: "w-[80px] min-w-[80px] max-w-[80px] sticky right-[150px]",
       bodyClassName: "overflow-hidden whitespace-nowrap",
       align: "center" as const,
       render: (row: BlogRow) => {
@@ -145,7 +145,7 @@ export default function BlogsTable() {
           Status
         </span>
       ),
-      className: "w-[190px] min-w-[190px] max-w-[190px] sticky right-[80px]",
+      className: "w-[150px] min-w-[150px] max-w-[150px] sticky right-[80px]",
       bodyClassName: "overflow-hidden whitespace-nowrap",
       align: "center" as const,
       render: (row: BlogRow) => (
