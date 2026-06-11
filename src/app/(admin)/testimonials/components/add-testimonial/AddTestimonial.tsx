@@ -199,6 +199,7 @@ export function AddTestimonial() {
 
               <div className="min-w-0 max-w-full overflow-hidden">
                 <FileUploadDropzone
+                  imageOnly
                   onUploaded={(url) => {
                     setValue("owner.avatar", url, {
                       shouldDirty: true,
