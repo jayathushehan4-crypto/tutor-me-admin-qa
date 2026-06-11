@@ -204,7 +204,7 @@ export default function UpdateUser() {
         >
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-xl font-semibold">Edit Profile</h2>
-            <p className="text-sm text-gray-600 italic">* Required</p>
+            <p className="text-sm text-gray-600 italic"><span className="text-red-500">*</span> Required</p>
           </div>
 
           <div className="max-h-[75vh] overflow-y-auto scrollbar-thin space-y-4 px-4 ">
@@ -213,7 +213,7 @@ export default function UpdateUser() {
             </Label>
 
             <div className="grid gap-3">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 {...register("name", {
@@ -228,7 +228,7 @@ export default function UpdateUser() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 type="email"
@@ -240,7 +240,7 @@ export default function UpdateUser() {
             </div>
 
             <div className="grid gap-3">
-              <Label className="font-semibold">Profile Image *</Label>
+              <Label className="font-semibold">Profile Image <span className="text-red-500">*</span></Label>
 
               <FileUploadDropzone
                 key={dropzoneKey}
@@ -314,7 +314,7 @@ export default function UpdateUser() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <Label htmlFor="gender" className="mb-3">
-                  Gender *
+                  Gender <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   options={[
@@ -339,7 +339,7 @@ export default function UpdateUser() {
 
               <div className="flex flex-col">
                 <Label htmlFor="phoneNumber" className="mb-3">
-                  Contact Number *
+                  Contact Number <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="phoneNumber"
@@ -361,7 +361,7 @@ export default function UpdateUser() {
               </div>
               <div className="flex flex-col">
                 <Label htmlFor="birthday" className="mb-3">
-                  Date of Birth *
+                  Date of Birth <span className="text-red-500">*</span>
                 </Label>
                 <DatePicker
                   value={watch("birthday")}
@@ -390,7 +390,7 @@ export default function UpdateUser() {
             </Label>
 
             <div className="grid gap-3">
-              <Label htmlFor="address">Address *</Label>
+              <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
               <Input
                 id="address"
                 {...register("address", {
@@ -413,7 +413,7 @@ export default function UpdateUser() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <Label htmlFor="city" className="mb-3">
-                  City *
+                  City <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="city"
@@ -434,7 +434,7 @@ export default function UpdateUser() {
 
               <div className="flex flex-col">
                 <Label htmlFor="country" className="mb-3">
-                  Country *
+                  Country <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="country"
@@ -455,7 +455,7 @@ export default function UpdateUser() {
 
               <div className="flex flex-col">
                 <Label htmlFor="zip" className="mb-3">
-                  Zip / Postal Code *
+                  Zip / Postal Code <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="zip"
@@ -476,7 +476,7 @@ export default function UpdateUser() {
 
               <div className="flex flex-col">
                 <Label htmlFor="state" className="mb-3">
-                  State *
+                  State <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="state"
@@ -497,7 +497,7 @@ export default function UpdateUser() {
 
               <div className="flex flex-col md:col-span-2">
                 <Label htmlFor="region" className="mb-3">
-                  Region *
+                  Region <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="region"
