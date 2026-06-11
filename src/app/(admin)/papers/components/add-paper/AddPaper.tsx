@@ -71,6 +71,7 @@ export function AddPaper() {
 
   const { data: gradeData, isLoading: isGradesLoading } = useFetchGradesQuery({
     title: debouncedGradeSearch,
+    limit: 100,
   });
 
   const filteredSubjects = gradeDetails?.subjects?.filter((subject) =>

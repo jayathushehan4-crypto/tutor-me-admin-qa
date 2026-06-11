@@ -95,7 +95,9 @@ export function EditPaper({
   const [updatePaper, { isLoading }] = useUpdatePaperMutation();
 
   const { data: gradeData } = useFetchGradesQuery(
-    debouncedGradeSearch ? { title: debouncedGradeSearch } : {},
+    debouncedGradeSearch
+      ? { title: debouncedGradeSearch, limit: 100 }
+      : { limit: 100 },
   );
 
   const { data: gradeDetails, isLoading: isGradeDetailsLoading } =
