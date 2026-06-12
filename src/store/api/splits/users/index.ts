@@ -4,6 +4,7 @@ import {
   FetchUserRequest,
   UpdatePasswordRequest,
   UpdateUserRequest,
+  UpdateUserStatusRequest,
 } from "@/types/request-types";
 import {
   PaginatedResponse,
@@ -73,6 +74,23 @@ export const UsersApi = baseApi.injectEndpoints({
       ],
     }),
 
+    updateUserStatus: build.mutation<Users, UpdateUserStatusRequest>({
+      query: ({ id, status, rejectionMessage }) => ({
+        url: `${Endpoints.Users}/${id}`,
+        method: "PATCH",
+        body: {
+          status,
+          ...(rejectionMessage !== undefined ? { rejectionMessage } : {}),
+        },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Users", id },
+        { type: "Users", id: "LIST" },
+        "FindATutor",
+        "Dashboard",
+      ],
+    }),
+
     deleteUser: build.mutation<void, string>({
       query: (id) => ({
         url: `${Endpoints.Users}/${id}`,
@@ -118,6 +136,7 @@ export const {
   useLazyFetchUserByIdQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
+  useUpdateUserStatusMutation,
   useDeleteUserMutation,
   useSendUserTempPasswordMutation,
   useUpdateUserPasswordMutation,

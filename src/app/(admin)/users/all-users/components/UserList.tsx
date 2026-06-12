@@ -17,6 +17,7 @@ import {
   useDeleteUserMutation,
   useFetchUsersQuery,
   useUpdateUserMutation,
+  useUpdateUserStatusMutation,
 } from "@/store/api/splits/users";
 import { getErrorInApiResult } from "@/utils/api";
 import {
@@ -140,6 +141,8 @@ function SortableHeader({
 function UserStatusActions({ user }: { user: User }) {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showReject, setShowReject] = useState(false);
+  const [showSuspend, setShowSuspend] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -212,6 +215,15 @@ function UserStatusActions({ user }: { user: User }) {
   const updateStatus = async (nextStatus: UserStatus) => {
     setDropdownOpen(false);
 
+    if (nextStatus === "rejected") {
+      setShowReject(true);
+      return;
+    }
+    if (nextStatus === "suspended") {
+      setShowSuspend(true);
+      return;
+    }
+
     const result = await updateUser({
       id: user.id,
       status: nextStatus,
@@ -223,8 +235,11 @@ function UserStatusActions({ user }: { user: User }) {
       return;
     }
 
+    const label = user.name || user.email || "User";
     toast.success(
-      `${user.name || user.email || "User"} status changed to ${nextStatus}.`,
+      nextStatus === "approved"
+        ? `"${label}" has been approved and notified by email.`
+        : `${label} status changed to ${nextStatus}.`,
     );
   };
 
@@ -275,7 +290,7 @@ function UserStatusActions({ user }: { user: User }) {
               style={{ top: menuPos.top, left: menuPos.left }}
               className="fixed z-[9999] w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-900"
             >
-              {status !== "approved" && (
+              {(status === "rejected" || status === "suspended") && (
                 <button
                   type="button"
                   onClick={() => updateStatus("approved")}
@@ -283,17 +298,6 @@ function UserStatusActions({ user }: { user: User }) {
                 >
                   <CheckCircle className="h-4 w-4 shrink-0" />
                   Approved
-                </button>
-              )}
-
-              {status !== "pending" && (
-                <button
-                  type="button"
-                  onClick={() => updateStatus("pending")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-yellow-700 transition hover:bg-yellow-50 dark:hover:bg-yellow-950/40"
-                >
-                  <ShieldOff className="h-4 w-4 shrink-0" />
-                  Pending
                 </button>
               )}
 
@@ -322,7 +326,185 @@ function UserStatusActions({ user }: { user: User }) {
           </>,
           document.body,
         )}
+
+      {showReject && (
+        <RejectDialog user={user} onClose={() => setShowReject(false)} />
+      )}
+      {showSuspend && (
+        <SuspendDialog user={user} onClose={() => setShowSuspend(false)} />
+      )}
     </>
+  );
+}
+
+// ─── Shared modal wrapper ─────────────────────────────────────────────────────
+
+function Modal({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[900000] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[1px]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ─── Reject dialog ────────────────────────────────────────────────────────────
+
+function RejectDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const [updateUserStatus, { isLoading }] = useUpdateUserStatusMutation();
+  const [message, setMessage] = useState("");
+
+  const handleReject = async () => {
+    const result = await updateUserStatus({
+      id: user.id,
+      status: "rejected",
+      rejectionMessage: message.trim(),
+    });
+    const error = getErrorInApiResult(result);
+    if (error) {
+      toast.error(`Failed to reject: ${error}`);
+      return;
+    }
+    toast.success(`"${user.name || user.email}" has been rejected and notified by email.`);
+    onClose();
+  };
+
+  return (
+    <Modal open onClose={onClose}>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+          <XCircle className="w-5 h-5 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            Reject Admin Account
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {user.name} · {user.email}
+          </p>
+        </div>
+      </div>
+
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+        Reason / Message{" "}
+        <span className="text-gray-400 font-normal">(optional — sent in the email)</span>
+      </label>
+      <textarea
+        rows={4}
+        maxLength={1000}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="e.g. Your account details could not be verified. Please contact support."
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800
+                   text-sm text-gray-900 dark:text-gray-100 p-3 resize-none
+                   focus:outline-none focus:ring-2 focus:ring-red-400 transition"
+      />
+      <p className="text-xs text-gray-400 text-right mt-1">{message.length}/1000</p>
+
+      <div className="flex justify-end gap-3 mt-5">
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                     text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800
+                     disabled:opacity-50 transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleReject}
+          disabled={isLoading}
+          className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold
+                     disabled:opacity-50 transition flex items-center gap-2"
+        >
+          {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          Reject
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Suspend dialog ───────────────────────────────────────────────────────────
+
+function SuspendDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const [updateUserStatus, { isLoading }] = useUpdateUserStatusMutation();
+
+  const handleSuspend = async () => {
+    const result = await updateUserStatus({
+      id: user.id,
+      status: "suspended",
+    });
+    const error = getErrorInApiResult(result);
+    if (error) {
+      toast.error(`Failed to suspend: ${error}`);
+      return;
+    }
+    toast.success(`"${user.name || user.email}" has been suspended and notified by email.`);
+    onClose();
+  };
+
+  return (
+    <Modal open onClose={onClose}>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+          <ShieldOff className="w-5 h-5 text-gray-600" />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            Suspend Admin Account
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {user.name} · {user.email}
+          </p>
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        This will suspend <strong>{user.name || user.email}</strong> and send them an email notification.
+        They will not be able to log in until the account is reinstated.
+      </p>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                     text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800
+                     disabled:opacity-50 transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSuspend}
+          disabled={isLoading}
+          className="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-800 text-white font-semibold
+                     disabled:opacity-50 transition flex items-center gap-2"
+        >
+          {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          Suspend
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -564,11 +746,19 @@ export default function UsersTable() {
       ),
       className:
         "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
-      render: (row: User) => (
-        <div className="w-full flex justify-center">
-          <ResetPassword userId={row.id} />
-        </div>
-      ),
+      render: (row: User) => {
+        const isApproved = row.status?.toLowerCase() === "approved";
+        return (
+          <div className="flex justify-center items-center w-full">
+            <div
+              className={!isApproved ? "cursor-not-allowed opacity-50" : ""}
+              title={!isApproved ? "Password reset is only available for approved admins" : ""}
+            >
+              <ResetPassword userId={row.id} disabled={!isApproved} />
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: "delete",
