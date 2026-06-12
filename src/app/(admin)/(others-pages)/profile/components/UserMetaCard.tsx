@@ -64,7 +64,7 @@ export default function UserMetaCard() {
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
-          <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
+          <span className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 ring-2 ring-white dark:ring-gray-900">
             {!isImageError && user.avatar ? (
               <img
                 src={user.avatar}
@@ -73,13 +73,11 @@ export default function UserMetaCard() {
                 onError={() => setIsImageError(true)}
               />
             ) : (
-              <div className="h-full w-full bg-blue-600 flex items-center justify-center">
-                <span className="text-2xl font-bold text-white select-none">
-                  {(user.name?.[0] || "A").toUpperCase()}
-                </span>
-              </div>
+              <span className="flex h-full w-full items-center justify-center bg-blue-600 text-2xl font-bold text-white select-none">
+                {(user.name?.[0] || "A").toUpperCase()}
+              </span>
             )}
-          </div>
+          </span>
           <div className="order-3 xl:order-2">
             <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
               {user.name}
