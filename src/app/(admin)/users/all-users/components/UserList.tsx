@@ -564,11 +564,19 @@ export default function UsersTable() {
       ),
       className:
         "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
-      render: (row: User) => (
-        <div className="w-full flex justify-center">
-          <ResetPassword userId={row.id} />
-        </div>
-      ),
+      render: (row: User) => {
+        const isApproved = row.status?.toLowerCase() === "approved";
+        return (
+          <div className="flex justify-center items-center w-full">
+            <div
+              className={!isApproved ? "cursor-not-allowed opacity-50" : ""}
+              title={!isApproved ? "Password reset is only available for approved admins" : ""}
+            >
+              <ResetPassword userId={row.id} disabled={!isApproved} />
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: "delete",
