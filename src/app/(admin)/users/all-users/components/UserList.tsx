@@ -301,17 +301,6 @@ function UserStatusActions({ user }: { user: User }) {
                 </button>
               )}
 
-              {status !== "pending" && (
-                <button
-                  type="button"
-                  onClick={() => updateStatus("pending")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-yellow-700 transition hover:bg-yellow-50 dark:hover:bg-yellow-950/40"
-                >
-                  <ShieldOff className="h-4 w-4 shrink-0" />
-                  Pending
-                </button>
-              )}
-
               {status !== "rejected" && (
                 <button
                   type="button"
