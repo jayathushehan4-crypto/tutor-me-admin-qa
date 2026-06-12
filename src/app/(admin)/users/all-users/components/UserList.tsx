@@ -235,8 +235,11 @@ function UserStatusActions({ user }: { user: User }) {
       return;
     }
 
+    const label = user.name || user.email || "User";
     toast.success(
-      `${user.name || user.email || "User"} status changed to ${nextStatus}.`,
+      nextStatus === "approved"
+        ? `"${label}" has been approved and notified by email.`
+        : `${label} status changed to ${nextStatus}.`,
     );
   };
 
@@ -287,7 +290,7 @@ function UserStatusActions({ user }: { user: User }) {
               style={{ top: menuPos.top, left: menuPos.left }}
               className="fixed z-[9999] w-44 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-900"
             >
-              {status !== "approved" && (
+              {(status === "rejected" || status === "suspended") && (
                 <button
                   type="button"
                   onClick={() => updateStatus("approved")}
