@@ -89,10 +89,10 @@ export default function UserDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="right-0 mt-3 flex w-[min(calc(100vw-2rem),18rem)] flex-col rounded-xl border border-gray-200 bg-white p-2 shadow-theme-xl dark:border-gray-800 dark:bg-gray-dark"
+        className="right-0 mt-3 flex w-[min(calc(100vw-2rem),18rem)] flex-col rounded-2xl border border-gray-200 bg-white p-2.5 shadow-theme-xl ring-1 ring-black/5 dark:!border-white/10 dark:!bg-[#202532] dark:shadow-[0_22px_55px_rgba(0,0,0,0.46)] dark:ring-white/5"
       >
-        <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
-          <span className="h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200 dark:ring-gray-800">
+        <div className="flex items-center gap-3 rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100 dark:bg-brand-500/[0.12] dark:ring-brand-400/20">
+          <span className="h-11 w-11 shrink-0 overflow-hidden rounded-full ring-2 ring-white dark:ring-white/15">
             {!isImageError && user.avatar ? (
               <img
                 src={user.avatar}
@@ -124,9 +124,9 @@ export default function UserDropdown() {
               onItemClick={closeDropdown}
               tag="a"
               href="/profile"
-              className="flex w-full items-center gap-[18px] rounded-lg px-3 py-2.5 text-left text-theme-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-theme-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-[#2a3040] dark:hover:text-white"
             >
-              <span className="ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-500 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-800">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-500 ring-1 ring-gray-200 dark:bg-white/[0.08] dark:text-gray-300 dark:ring-white/10">
                 <UserRound className="h-4 w-4" />
               </span>
               <span>User profile</span>
@@ -137,9 +137,9 @@ export default function UserDropdown() {
         <button
           type="button"
           onClick={handleSignOutClick}
-          className="mt-2 flex w-full items-center gap-[18px] rounded-lg px-3 py-2.5 text-left text-theme-sm font-medium text-error-600 transition hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
+          className="mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-theme-sm font-medium text-error-600 transition hover:bg-error-50 dark:text-error-300 dark:hover:bg-error-500/[0.12]"
         >
-          <span className="ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-error-50 text-error-500 ring-1 ring-error-100 dark:bg-error-500/10 dark:ring-error-500/20">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-error-50 text-error-500 ring-1 ring-error-100 dark:bg-error-500/15 dark:ring-error-400/25">
             <LogOut className="h-4 w-4" />
           </span>
           <span>Sign out</span>
