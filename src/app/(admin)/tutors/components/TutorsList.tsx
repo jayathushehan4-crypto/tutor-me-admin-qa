@@ -37,6 +37,7 @@ import {
   ArrowUp,
   CheckCircle,
   ChevronsUpDown,
+  Copy,
   Loader2,
   Search,
   ShieldOff,
@@ -49,6 +50,7 @@ import toast from "react-hot-toast";
 import { assignedTutorMatches, DeleteTutor } from "./DeleteTutor";
 import { EditTutor } from "./edit-tutor/EditTutor";
 import { ResetPassword } from "./ResetPassword";
+import { SendReferralCode } from "./SendReferralCode";
 import { ViewTutor } from "./ViewTutor";
 
 interface Tutor {
@@ -76,6 +78,7 @@ interface Tutor {
   agreeAssignmentInfo: boolean;
   certificatesAndQualifications: { id?: string; type: string; url: string }[];
   createdAt?: string;
+  referralCode?: string;
 }
 
 type TutorStatusFilter =
@@ -974,6 +977,36 @@ export default function TutorsList() {
         ),
       },
 
+      {
+        key: "referralCode",
+        header: "Referral Code",
+        className: "min-w-[160px] max-w-[200px] overflow-hidden cursor-default",
+        render: (row: Tutor) => {
+          if (!row.referralCode) {
+            return <span className="text-gray-400 italic text-sm">No code</span>;
+          }
+          return (
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-sm text-gray-800 dark:text-gray-100 tracking-wider">
+                {row.referralCode}
+              </span>
+              <button
+                type="button"
+                title="Copy referral code"
+                onClick={() => {
+                  navigator.clipboard.writeText(row.referralCode!).then(() => {
+                    toast.success("Referral code copied!");
+                  });
+                }}
+                className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          );
+        },
+      },
+
       // Status + actions
       {
         key: "status",
@@ -987,7 +1020,7 @@ export default function TutorsList() {
         key: "view",
         header: <div className="text-center w-full">View</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[360px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <ViewTutor tutor={row} />
@@ -1000,7 +1033,7 @@ export default function TutorsList() {
         key: "edit",
         header: <div className="text-center w-full">Edit</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <EditTutor id={row.id} />
@@ -1020,7 +1053,7 @@ export default function TutorsList() {
           </span>
         ),
         className:
-          "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[120px] max-w-[120px] sticky right-[160px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => {
           const isApproved = row.status?.toLowerCase() === "approved";
 
@@ -1035,6 +1068,38 @@ export default function TutorsList() {
                 }
               >
                 <ResetPassword userId={row.id} disabled={!isApproved} />
+              </div>
+            </div>
+          );
+        },
+      },
+
+      // Send Referral Code
+      {
+        key: "sendReferralCode",
+        header: (
+          <span
+            className="block w-full text-center leading-tight"
+            title="Send Referral Code"
+          >
+            Send Code
+          </span>
+        ),
+        className:
+          "min-w-[80px] max-w-[80px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+        render: (row: Tutor) => {
+          const isApproved = row.status?.toLowerCase() === "approved";
+          return (
+            <div className="flex justify-center items-center w-full">
+              <div
+                className={!isApproved ? "cursor-not-allowed opacity-50" : ""}
+                title={!isApproved ? "Send code is only available for approved tutors" : ""}
+              >
+                <SendReferralCode
+                  tutorId={row.id}
+                  disabled={!isApproved}
+                  sent={!!row.referralCode}
+                />
               </div>
             </div>
           );
