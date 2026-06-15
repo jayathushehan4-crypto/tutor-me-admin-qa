@@ -338,6 +338,28 @@ export type Tutor = BaseEntity & {
   agreeTerms: boolean;
   agreeAssignmentInfo: boolean;
   certificatesAndQualifications: CertificateItem[];
+  referralCode?: string;
+  referredByCode?: string;
+};
+
+export type ReferralSummary = {
+  referrerTutorId: string;
+  referrerName: string;
+  referrerEmail: string;
+  referralCode: string;
+  totalReferrals: number;
+  pendingRewards: number;
+};
+
+export type ReferralReward = BaseEntity & {
+  referrerTutorId: string;
+  referredTutorId: {
+    id: string;
+    fullName: string;
+    email: string;
+    createdAt: string;
+  };
+  rewardSent: boolean;
 };
 
 export type TutorEmailAvailabilityResponse = {
