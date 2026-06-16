@@ -25,7 +25,9 @@ import {
   ArrowUp,
   CheckCircle,
   ChevronsUpDown,
+  Copy,
   Loader2,
+  Mail,
   Search,
   ShieldOff,
   SquarePen,
@@ -39,6 +41,7 @@ import toast from "react-hot-toast";
 import { DeleteUser } from "./DeleteUser";
 import { UpdateUser } from "./edit-user/UpdateUser";
 import { ResetPassword } from "./ResetPassword";
+import { SendReferralCode } from "./SendReferralCode";
 import { UserDetails } from "./ViewDetails";
 interface User {
   id: string;
@@ -63,6 +66,7 @@ interface User {
   gender?: "male" | "female" | "other";
   avatar?: string;
   createdAt?: string;
+  referralCode?: string;
 }
 
 type UserRoleFilter = "all" | "admin" | "tutor";
@@ -637,33 +641,32 @@ export default function UsersTable() {
       render: (row: User) => <UserStatusActions user={row} />,
     },
     {
-      key: "createdAt",
-      header: "Created At",
-      className:
-        "min-w-[140px] max-w-[140px] truncate overflow-hidden cursor-default",
-      bodyClassName: "text-[0.75rem] font-mono",
+      key: "referralCode",
+      header: "Referral Code",
+      className: "min-w-[160px] max-w-[200px] overflow-hidden cursor-default",
       render: (row: User) => {
-        try {
-          const date = new Date(row.createdAt || "");
-          if (isNaN(date.getTime())) {
-            return <span className="text-gray-400 italic">Invalid date</span>;
-          }
-
-          return (
-            <span title={date.toISOString()}>
-              {date.toLocaleString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}
-            </span>
-          );
-        } catch {
-          return <span className="text-gray-400 italic">Invalid date</span>;
+        if (!row.referralCode) {
+          return <span className="text-gray-400 italic text-sm">No code</span>;
         }
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-sm text-gray-800 dark:text-gray-100 tracking-wider">
+              {row.referralCode}
+            </span>
+            <button
+              type="button"
+              title="Copy referral code"
+              onClick={() => {
+                navigator.clipboard.writeText(row.referralCode!).then(() => {
+                  toast.success("Referral code copied!");
+                });
+              }}
+              className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
       },
     },
 
@@ -671,7 +674,7 @@ export default function UsersTable() {
       key: "view",
       header: <div className="flex justify-center w-full">View</div>,
       className:
-        "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-[360px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => (
         <div className="w-full flex justify-center ">
           <UserDetails
@@ -691,6 +694,7 @@ export default function UsersTable() {
             region={row.region}
             gender={row.gender}
             avatar={row.avatar}
+            referralCode={row.referralCode}
           />
         </div>
       ),
@@ -699,7 +703,7 @@ export default function UsersTable() {
       key: "edit",
       header: <div className="flex justify-center w-full">Edit</div>,
       className:
-        "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => {
         const isTutor = row.role === "tutor";
 
@@ -745,7 +749,7 @@ export default function UsersTable() {
         </span>
       ),
       className:
-        "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+        "min-w-[120px] max-w-[120px] sticky right-[160px] z-20 bg-white dark:bg-gray-900",
       render: (row: User) => {
         const isApproved = row.status?.toLowerCase() === "approved";
         return (
@@ -755,6 +759,54 @@ export default function UsersTable() {
               title={!isApproved ? "Password reset is only available for approved admins" : ""}
             >
               <ResetPassword userId={row.id} disabled={!isApproved} />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "sendReferralCode",
+      header: (
+        <span
+          className="block w-full text-center leading-tight"
+          title="Send Referral Code"
+        >
+          Send Code
+        </span>
+      ),
+      className:
+        "min-w-[80px] max-w-[80px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
+      render: (row: User) => {
+        const isTutor = row.role === "tutor";
+        const isAdmin = row.role === "admin";
+        const isApproved = row.status?.toLowerCase() === "approved";
+        const tutorId = row.tutorId ?? row.tutor?.id ?? row.tutor?._id;
+
+        if (!isTutor && !isAdmin) {
+          return (
+            <div className="flex justify-center items-center w-full">
+              <Mail
+                title="Referral codes are only available for tutors and admins"
+                className="text-gray-300 dark:text-gray-600"
+              />
+            </div>
+          );
+        }
+
+        const disabled = isTutor ? !isApproved || !tutorId : !isApproved;
+
+        return (
+          <div className="flex justify-center items-center w-full">
+            <div
+              className={disabled ? "cursor-not-allowed opacity-50" : ""}
+              title={!isApproved ? "Send code is only available for approved accounts" : ""}
+            >
+              <SendReferralCode
+                id={isTutor ? tutorId || "" : row.id}
+                recipientType={isTutor ? "tutor" : "admin"}
+                disabled={disabled}
+                sent={!!row.referralCode}
+              />
             </div>
           </div>
         );
