@@ -17,9 +17,7 @@ export function ViewSlipModal({ transactionId, onClose }: Props) {
     fetchSlip(transactionId);
   }, [fetchSlip, transactionId]);
 
-  const srcUrl = data
-    ? `data:${data.mimeType};base64,${data.data}`
-    : null;
+  const srcUrl = data ? `data:${data.mimeType};base64,${data.data}` : null;
 
   return createPortal(
     <div
@@ -88,6 +86,6 @@ export function ViewSlipModal({ transactionId, onClose }: Props) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

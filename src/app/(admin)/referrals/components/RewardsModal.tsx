@@ -17,9 +17,9 @@ interface RewardsModalProps {
 
 export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
   const [showAll, setShowAll] = useState(false);
-  const [pendingUpdates, setPendingUpdates] = useState<
-    Record<string, boolean>
-  >({});
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const { data, isFetching, refetch } = useFetchRewardsForReferrerQuery({
     tutorId: referrer.referrerTutorId,
@@ -58,7 +58,10 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
       return;
     }
 
-    const result = await batchUpdateRewards({ updates, referrerTutorId: referrer.referrerTutorId });
+    const result = await batchUpdateRewards({
+      updates,
+      referrerTutorId: referrer.referrerTutorId,
+    });
     if ("error" in result) {
       toast.error("Failed to save changes.");
       return;
@@ -88,7 +91,9 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               {referrer.referrerName} · Code:{" "}
-              <span className="font-mono font-medium">{referrer.referralCode}</span>
+              <span className="font-mono font-medium">
+                {referrer.referralCode}
+              </span>
             </p>
           </div>
           <button

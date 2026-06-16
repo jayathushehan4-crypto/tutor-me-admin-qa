@@ -148,7 +148,9 @@ export function AddPaper() {
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 py-4 grid gap-4">
             <div className="grid gap-3">
-              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+              <Label htmlFor="title">
+                Title <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="title"
                 placeholder="Title"
@@ -169,7 +171,9 @@ export function AddPaper() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="medium">Medium <span className="text-red-500">*</span></Label>
+              <Label htmlFor="medium">
+                Medium <span className="text-red-500">*</span>
+              </Label>
 
               <Select
                 value={watch("medium")}
@@ -209,7 +213,9 @@ export function AddPaper() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="grade">Grade <span className="text-red-500">*</span></Label>
+              <Label htmlFor="grade">
+                Grade <span className="text-red-500">*</span>
+              </Label>
 
               <Select
                 value={watch("grade")}
@@ -264,7 +270,9 @@ export function AddPaper() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="subject">Subject <span className="text-red-500">*</span></Label>
+              <Label htmlFor="subject">
+                Subject <span className="text-red-500">*</span>
+              </Label>
 
               <Select
                 value={watch("subject")}
@@ -320,7 +328,9 @@ export function AddPaper() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="year">Year <span className="text-red-500">*</span></Label>
+              <Label htmlFor="year">
+                Year <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="year"
                 placeholder="Year"
@@ -342,7 +352,9 @@ export function AddPaper() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="url">Paper File <span className="text-red-500">*</span></Label>
+              <Label htmlFor="url">
+                Paper File <span className="text-red-500">*</span>
+              </Label>
 
               <FileUploadDropzone
                 onUploaded={(url) => {

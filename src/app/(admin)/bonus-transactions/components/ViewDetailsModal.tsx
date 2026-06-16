@@ -121,6 +121,6 @@ export function ViewDetailsModal({ transactionId, onClose }: Props) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

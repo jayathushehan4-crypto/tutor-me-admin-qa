@@ -529,10 +529,7 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
             rect.top - STATUS_MENU_GAP - STATUS_MENU_HEIGHT,
           );
       const left = Math.min(
-        Math.max(
-          STATUS_MENU_VIEWPORT_PADDING,
-          rect.right - STATUS_MENU_WIDTH,
-        ),
+        Math.max(STATUS_MENU_VIEWPORT_PADDING, rect.right - STATUS_MENU_WIDTH),
         window.innerWidth - STATUS_MENU_WIDTH - STATUS_MENU_VIEWPORT_PADDING,
       );
 
@@ -640,54 +637,54 @@ function TutorStatusActions({ tutor }: { tutor: Tutor }) {
       {dropdownOpen &&
         createPortal(
           <>
-          {/* Click-away overlay */}
-          {/* Menu — fixed so it escapes table overflow clipping */}
-          <div
-            ref={menuRef}
-            style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-[900001] w-44 rounded-lg border border-gray-200
+            {/* Click-away overlay */}
+            {/* Menu — fixed so it escapes table overflow clipping */}
+            <div
+              ref={menuRef}
+              style={{ top: menuPos.top, left: menuPos.left }}
+              className="fixed z-[900001] w-44 rounded-lg border border-gray-200
                        dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl
                        py-1 overflow-hidden"
-          >
-            {status !== "approved" && (
-              <button
-                onClick={handleApprove}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-700
+            >
+              {status !== "approved" && (
+                <button
+                  onClick={handleApprove}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-700
                            hover:bg-green-50 dark:hover:bg-green-950/40 transition"
-              >
-                <CheckCircle className="w-4 h-4 shrink-0" />
-                Approve
-              </button>
-            )}
+                >
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  Approve
+                </button>
+              )}
 
-            {status !== "rejected" && (
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  setShowReject(true);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600
+              {status !== "rejected" && (
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setShowReject(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600
                            hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-              >
-                <XCircle className="w-4 h-4 shrink-0" />
-                Reject
-              </button>
-            )}
+                >
+                  <XCircle className="w-4 h-4 shrink-0" />
+                  Reject
+                </button>
+              )}
 
-            {status !== "suspended" && (
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  setShowSuspend(true);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600
+              {status !== "suspended" && (
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setShowSuspend(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600
                            dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              >
-                <ShieldOff className="w-4 h-4 shrink-0" />
-                Suspend
-              </button>
-            )}
-          </div>
+                >
+                  <ShieldOff className="w-4 h-4 shrink-0" />
+                  Suspend
+                </button>
+              )}
+            </div>
           </>,
           document.body,
         )}
@@ -982,7 +979,9 @@ export default function TutorsList() {
         className: "min-w-[160px] max-w-[200px] overflow-hidden cursor-default",
         render: (row: Tutor) => {
           if (!row.referralCode) {
-            return <span className="text-gray-400 italic text-sm">No code</span>;
+            return (
+              <span className="text-gray-400 italic text-sm">No code</span>
+            );
           }
           return (
             <div className="flex items-center gap-1.5">

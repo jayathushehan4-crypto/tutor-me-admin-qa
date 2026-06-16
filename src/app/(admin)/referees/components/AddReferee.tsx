@@ -280,7 +280,9 @@ export function AddReferee() {
                   maxLength={10}
                   value={watch("contactNumber") ?? ""}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    const digits = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
                     setValue("contactNumber", digits, { shouldValidate: true });
                   }}
                 />

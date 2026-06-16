@@ -388,7 +388,9 @@ function RejectDialog({ user, onClose }: { user: User; onClose: () => void }) {
       toast.error(`Failed to reject: ${error}`);
       return;
     }
-    toast.success(`"${user.name || user.email}" has been rejected and notified by email.`);
+    toast.success(
+      `"${user.name || user.email}" has been rejected and notified by email.`,
+    );
     onClose();
   };
 
@@ -410,7 +412,9 @@ function RejectDialog({ user, onClose }: { user: User; onClose: () => void }) {
 
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
         Reason / Message{" "}
-        <span className="text-gray-400 font-normal">(optional — sent in the email)</span>
+        <span className="text-gray-400 font-normal">
+          (optional — sent in the email)
+        </span>
       </label>
       <textarea
         rows={4}
@@ -422,7 +426,9 @@ function RejectDialog({ user, onClose }: { user: User; onClose: () => void }) {
                    text-sm text-gray-900 dark:text-gray-100 p-3 resize-none
                    focus:outline-none focus:ring-2 focus:ring-red-400 transition"
       />
-      <p className="text-xs text-gray-400 text-right mt-1">{message.length}/1000</p>
+      <p className="text-xs text-gray-400 text-right mt-1">
+        {message.length}/1000
+      </p>
 
       <div className="flex justify-end gap-3 mt-5">
         <button
@@ -463,7 +469,9 @@ function SuspendDialog({ user, onClose }: { user: User; onClose: () => void }) {
       toast.error(`Failed to suspend: ${error}`);
       return;
     }
-    toast.success(`"${user.name || user.email}" has been suspended and notified by email.`);
+    toast.success(
+      `"${user.name || user.email}" has been suspended and notified by email.`,
+    );
     onClose();
   };
 
@@ -484,8 +492,9 @@ function SuspendDialog({ user, onClose }: { user: User; onClose: () => void }) {
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-        This will suspend <strong>{user.name || user.email}</strong> and send them an email notification.
-        They will not be able to log in until the account is reinstated.
+        This will suspend <strong>{user.name || user.email}</strong> and send
+        them an email notification. They will not be able to log in until the
+        account is reinstated.
       </p>
 
       <div className="flex justify-end gap-3">
@@ -756,7 +765,11 @@ export default function UsersTable() {
           <div className="flex justify-center items-center w-full">
             <div
               className={!isApproved ? "cursor-not-allowed opacity-50" : ""}
-              title={!isApproved ? "Password reset is only available for approved admins" : ""}
+              title={
+                !isApproved
+                  ? "Password reset is only available for approved admins"
+                  : ""
+              }
             >
               <ResetPassword userId={row.id} disabled={!isApproved} />
             </div>
@@ -799,7 +812,11 @@ export default function UsersTable() {
           <div className="flex justify-center items-center w-full">
             <div
               className={disabled ? "cursor-not-allowed opacity-50" : ""}
-              title={!isApproved ? "Send code is only available for approved accounts" : ""}
+              title={
+                !isApproved
+                  ? "Send code is only available for approved accounts"
+                  : ""
+              }
             >
               <SendReferralCode
                 id={isTutor ? tutorId || "" : row.id}
