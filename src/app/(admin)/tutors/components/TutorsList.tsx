@@ -50,7 +50,6 @@ import toast from "react-hot-toast";
 import { assignedTutorMatches, DeleteTutor } from "./DeleteTutor";
 import { EditTutor } from "./edit-tutor/EditTutor";
 import { ResetPassword } from "./ResetPassword";
-import { SendReferralCode } from "./SendReferralCode";
 import { ViewTutor } from "./ViewTutor";
 
 interface Tutor {
@@ -1020,7 +1019,7 @@ export default function TutorsList() {
         key: "view",
         header: <div className="text-center w-full">View</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[360px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <ViewTutor tutor={row} />
@@ -1033,7 +1032,7 @@ export default function TutorsList() {
         key: "edit",
         header: <div className="text-center w-full">Edit</div>,
         className:
-          "min-w-[80px] max-w-[80px] sticky right-[280px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[80px] max-w-[80px] sticky right-[200px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => (
           <div className="flex justify-center items-center w-full">
             <EditTutor id={row.id} />
@@ -1053,7 +1052,7 @@ export default function TutorsList() {
           </span>
         ),
         className:
-          "min-w-[120px] max-w-[120px] sticky right-[160px] z-20 bg-white dark:bg-gray-900",
+          "min-w-[120px] max-w-[120px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => {
           const isApproved = row.status?.toLowerCase() === "approved";
 
@@ -1068,38 +1067,6 @@ export default function TutorsList() {
                 }
               >
                 <ResetPassword userId={row.id} disabled={!isApproved} />
-              </div>
-            </div>
-          );
-        },
-      },
-
-      // Send Referral Code
-      {
-        key: "sendReferralCode",
-        header: (
-          <span
-            className="block w-full text-center leading-tight"
-            title="Send Referral Code"
-          >
-            Send Code
-          </span>
-        ),
-        className:
-          "min-w-[80px] max-w-[80px] sticky right-[80px] z-20 bg-white dark:bg-gray-900",
-        render: (row: Tutor) => {
-          const isApproved = row.status?.toLowerCase() === "approved";
-          return (
-            <div className="flex justify-center items-center w-full">
-              <div
-                className={!isApproved ? "cursor-not-allowed opacity-50" : ""}
-                title={!isApproved ? "Send code is only available for approved tutors" : ""}
-              >
-                <SendReferralCode
-                  tutorId={row.id}
-                  disabled={!isApproved}
-                  sent={!!row.referralCode}
-                />
               </div>
             </div>
           );
