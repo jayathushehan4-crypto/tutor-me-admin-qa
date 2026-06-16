@@ -34,14 +34,14 @@ export const ReferralsApi = baseApi.injectEndpoints({
 
     batchUpdateRewards: build.mutation<
       void,
-      { updates: { id: string; rewardSent: boolean }[] }
+      { updates: { id: string; rewardSent: boolean }[]; referrerTutorId?: string }
     >({
       query: (payload) => ({
         url: `${Endpoints.Referrals}/rewards/batch`,
         method: "PATCH",
         body: payload,
       }),
-      invalidatesTags: ["Referrals"],
+      invalidatesTags: ["Referrals", "BonusTransactions"],
     }),
   }),
   overrideExisting: false,

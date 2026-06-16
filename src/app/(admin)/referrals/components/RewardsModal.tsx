@@ -58,7 +58,7 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
       return;
     }
 
-    const result = await batchUpdateRewards({ updates });
+    const result = await batchUpdateRewards({ updates, referrerTutorId: referrer.referrerTutorId });
     if ("error" in result) {
       toast.error("Failed to save changes.");
       return;
