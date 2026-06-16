@@ -112,6 +112,8 @@ export type Users = BaseEntity & {
   zip: string;
   address: string;
   avatar?: string;
+  tutorId?: string;
+  referralCode?: string;
 };
 
 // Grade
@@ -360,6 +362,26 @@ export type ReferralReward = BaseEntity & {
     createdAt: string;
   };
   rewardSent: boolean;
+};
+
+export type BonusTransaction = BaseEntity & {
+  referrerTutorId: string;
+  referrerName: string;
+  referrerEmail: string;
+  adminId: string;
+  adminEmail: string;
+  rewardIds: string[] | BonusRewardDetail[];
+  rewardCount: number;
+  hasSlip: boolean;
+  slip?: { fileName: string; mimeType: string; data?: string };
+  createdAt: string;
+};
+
+export type BonusRewardDetail = {
+  id: string;
+  rewardSent: boolean;
+  createdAt: string;
+  referredTutorId: { fullName: string; email: string };
 };
 
 export type TutorEmailAvailabilityResponse = {

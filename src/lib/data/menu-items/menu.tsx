@@ -9,6 +9,7 @@ import {
   TextSearch,
   User,
   Gift,
+  Coins,
 } from "lucide-react";
 
 const NavItems = [
@@ -75,6 +76,11 @@ const NavItems = [
     icon: <Gift />,
     name: "Referrals",
     path: "/referrals",
+  },
+  {
+    icon: <Coins />,
+    name: "Bonus Transactions",
+    path: "/bonus-transactions",
   },
   {
     name: "Admin Management",
