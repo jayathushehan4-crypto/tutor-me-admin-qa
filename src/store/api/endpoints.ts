@@ -27,4 +27,5 @@ export const Endpoints = {
   DashboardFull: "/v1/dashboard/full",
   Referrals: "/v1/referrals",
   ValidateReferralCode: "/v1/tutors/validate-referral",
+  BonusTransactions: "/v1/bonus-transactions",
 };

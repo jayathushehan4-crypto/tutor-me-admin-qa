@@ -101,6 +101,7 @@ export const baseApi = createApi({
     "Admins",
     "Dashboard",
     "Referrals",
+    "BonusTransactions",
   ],
   baseQuery: baseQueryWithAuth,
   endpoints: () => ({}),
