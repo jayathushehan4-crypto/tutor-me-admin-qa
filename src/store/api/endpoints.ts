@@ -28,4 +28,6 @@ export const Endpoints = {
   Referrals: "/v1/referrals",
   ValidateReferralCode: "/v1/tutors/validate-referral",
   BonusTransactions: "/v1/bonus-transactions",
+  Referees: "/v1/referees",
+  RefereeEmailAvailability: "/v1/referees/email-availability",
 };

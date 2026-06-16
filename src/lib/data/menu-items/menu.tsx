@@ -70,6 +70,7 @@ const NavItems = [
     subItems: [
       { name: "Tutors", path: "/tutors", pro: false },
       { name: "Users", path: "/users/all-users", pro: false },
+      { name: "Referees", path: "/referees", pro: false },
     ],
   },
   {

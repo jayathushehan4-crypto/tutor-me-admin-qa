@@ -364,6 +364,21 @@ export type ReferralReward = BaseEntity & {
   rewardSent: boolean;
 };
 
+export type Referee = BaseEntity & {
+  name: string;
+  email: string;
+  contactNumber: string;
+  gender: string;
+  avatar?: string;
+  referralCode: string;
+  referralCount: number;
+};
+
+export type RefereeEmailAvailabilityResponse = {
+  available: boolean;
+  message: string;
+};
+
 export type BonusTransaction = BaseEntity & {
   referrerTutorId: string;
   referrerName: string;
