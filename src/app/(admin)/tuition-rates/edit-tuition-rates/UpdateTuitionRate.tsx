@@ -113,13 +113,13 @@ export function UpdateTuitionRate({
     });
 
   const subjectOptions =
-    gradeDetails?.subjects?.map((s) => ({ value: s.id, label: s.title })) ||
-    [];
-  const gradeOptions =
-    sortBySchoolGradeOrder(gradesData?.results || []).map((g) => ({
+    gradeDetails?.subjects?.map((s) => ({ value: s.id, label: s.title })) || [];
+  const gradeOptions = sortBySchoolGradeOrder(gradesData?.results || []).map(
+    (g) => ({
       value: g.id,
       label: g.title,
-    }));
+    }),
+  );
 
   const displayLoading = isGradeDetailsLoading || isGradesLoading;
 
@@ -221,7 +221,9 @@ export function UpdateTuitionRate({
           onSubmit={handleSubmit(onSubmit)}
         >
           <div className="grid gap-1">
-            <Label>Grade <span className="text-red-500">*</span></Label>
+            <Label>
+              Grade <span className="text-red-500">*</span>
+            </Label>
             <Controller
               name="grade"
               control={control}
@@ -240,7 +242,9 @@ export function UpdateTuitionRate({
           </div>
 
           <div className="grid gap-1">
-            <Label>Subject <span className="text-red-500">*</span></Label>
+            <Label>
+              Subject <span className="text-red-500">*</span>
+            </Label>
             <Controller
               name="subject"
               control={control}

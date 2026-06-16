@@ -21,7 +21,10 @@ interface ResetPasswordProps {
   disabled?: boolean;
 }
 
-export function ResetPassword({ userId, disabled = false }: ResetPasswordProps) {
+export function ResetPassword({
+  userId,
+  disabled = false,
+}: ResetPasswordProps) {
   const [open, setOpen] = useState(false);
   const [resendPassword, { isLoading }] = useSendUserTempPasswordMutation();
 
@@ -51,7 +54,11 @@ export function ResetPassword({ userId, disabled = false }: ResetPasswordProps) 
         <button
           type="button"
           disabled={disabled}
-          title={disabled ? "Password reset is only available for approved admins" : "Reset password"}
+          title={
+            disabled
+              ? "Password reset is only available for approved admins"
+              : "Reset password"
+          }
           className="disabled:cursor-not-allowed"
         >
           <Send

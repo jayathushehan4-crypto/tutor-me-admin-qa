@@ -60,9 +60,13 @@ export const liveTextInputRegisterOptions = <T extends FieldValues>(
     }
   },
   onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setValue(name, collapseTextSpaces(event.target.value) as PathValue<T, Path<T>>, {
-      shouldValidate: true,
-    });
+    setValue(
+      name,
+      collapseTextSpaces(event.target.value) as PathValue<T, Path<T>>,
+      {
+        shouldValidate: true,
+      },
+    );
   },
 });
 

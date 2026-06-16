@@ -262,7 +262,9 @@ export function EditPaper({
 
           <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-thin px-6 py-4 grid min-w-0 gap-4">
             <div className="grid min-w-0 gap-3">
-              <Label>Title <span className="text-red-500">*</span></Label>
+              <Label>
+                Title <span className="text-red-500">*</span>
+              </Label>
               <Input
                 {...register(
                   "title",
@@ -278,7 +280,9 @@ export function EditPaper({
             </div>
 
             <div className="grid min-w-0 gap-3">
-              <Label>Medium <span className="text-red-500">*</span></Label>
+              <Label>
+                Medium <span className="text-red-500">*</span>
+              </Label>
 
               <Select
                 value={watch("medium")}
@@ -314,7 +318,9 @@ export function EditPaper({
             </div>
 
             <div className="grid min-w-0 gap-3">
-              <Label>Grade <span className="text-red-500">*</span></Label>
+              <Label>
+                Grade <span className="text-red-500">*</span>
+              </Label>
               <Select
                 value={watch("grade") || ""}
                 onValueChange={handleGradeChange}
@@ -363,7 +369,9 @@ export function EditPaper({
             </div>
 
             <div className="grid min-w-0 gap-3">
-              <Label>Subject <span className="text-red-500">*</span></Label>
+              <Label>
+                Subject <span className="text-red-500">*</span>
+              </Label>
               <Select
                 value={watch("subject") || ""}
                 onValueChange={(value) =>
@@ -415,7 +423,9 @@ export function EditPaper({
             </div>
 
             <div className="grid min-w-0 gap-3">
-              <Label>Year <span className="text-red-500">*</span></Label>
+              <Label>
+                Year <span className="text-red-500">*</span>
+              </Label>
               <Input
                 type="text"
                 {...register(
@@ -432,7 +442,9 @@ export function EditPaper({
             </div>
 
             <div className="grid min-w-0 gap-3">
-              <Label>Paper File <span className="text-red-500">*</span></Label>
+              <Label>
+                Paper File <span className="text-red-500">*</span>
+              </Label>
 
               {previewUrl && (
                 <p className="w-full min-w-0 break-all text-sm text-gray-600 dark:text-gray-300">

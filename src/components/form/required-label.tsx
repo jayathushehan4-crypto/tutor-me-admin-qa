@@ -4,9 +4,7 @@ import { twMerge } from "tailwind-merge";
 const REQUIRED_MARKER_CLASS = "text-red-500";
 
 function RequiredMarker({ className }: { className?: string }) {
-  return (
-    <span className={twMerge(REQUIRED_MARKER_CLASS, className)}>*</span>
-  );
+  return <span className={twMerge(REQUIRED_MARKER_CLASS, className)}>*</span>;
 }
 
 function trimPreviousText(nodes: React.ReactNode[]) {
@@ -34,10 +32,9 @@ function renderRequiredText(text: string) {
     return text;
   }
 
-  return [
-    match[1].trimEnd(),
-    <RequiredMarker key="required-marker" />,
-  ].filter(Boolean);
+  return [match[1].trimEnd(), <RequiredMarker key="required-marker" />].filter(
+    Boolean,
+  );
 }
 
 function isRequiredMarkerElement(
