@@ -112,7 +112,7 @@ export const TutorsApi = baseApi.injectEndpoints({
         url: `${Endpoints.FindATutor}/send-referral-code/${id}`,
         method: "POST",
       }),
-      invalidatesTags: ["FindATutor"],
+      invalidatesTags: ["FindATutor", "Users"],
     }),
 
     fetchMatchingTutors: build.query<
