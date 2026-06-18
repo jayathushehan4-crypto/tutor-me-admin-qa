@@ -832,8 +832,9 @@ export default function UsersTable() {
     {
       key: "delete",
       header: <div className="text-center w-full">Delete</div>,
+      align: "center",
       className:
-        "min-w-[80px] max-w-[80px] flex justify-center sticky right-0 z-20 bg-white dark:bg-gray-900",
+        "min-w-[80px] max-w-[80px] sticky right-0 z-20 bg-white dark:bg-gray-900",
       render: (row: User) => {
         const isTutor = row.role === "tutor";
 
