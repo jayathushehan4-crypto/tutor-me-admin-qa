@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { Loader2, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useUploadSlipMutation } from "@/store/api/splits/bonus-transactions";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 interface Props {
   transactionId: string;
@@ -12,7 +13,9 @@ interface Props {
 }
 
 const ACCEPTED = "image/jpeg,image/png,image/webp,image/gif,application/pdf";
-const MAX_MB = 5;
+// Files are sent as base64 JSON (~37 % larger than the raw file).
+// Keep this well under the backend request-body limit to avoid silent failures.
+const MAX_MB = 1;
 
 export function AddSlipModal({ transactionId, onClose }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,24 +46,55 @@ export function AddSlipModal({ transactionId, onClose }: Props) {
 
   const handleUpload = async () => {
     if (!preview) return;
+
     const base64 = preview.dataUrl.split(",")[1];
+
+    // base64 string length in bytes ≈ raw file size × 4/3.
+    // Catch this before hitting the network so the user gets an immediate,
+    // specific message instead of a timeout after several retries.
+    const estimatedPayloadBytes = Math.ceil((base64.length * 3) / 4);
+    if (estimatedPayloadBytes > MAX_MB * 1024 * 1024) {
+      toast.error(`File is too large. Please upload a file under ${MAX_MB} MB.`);
+      return;
+    }
+
     const result = await uploadSlip({
       id: transactionId,
       data: base64,
       fileName: preview.name,
       mimeType: preview.mimeType,
     });
+
     if ("error" in result) {
-      toast.error("Failed to upload slip.");
+      const err = result.error as FetchBaseQueryError;
+      if (err.status === 413) {
+        toast.error(`File is too large. Please upload a file under ${MAX_MB} MB.`);
+      } else if (
+        err.status === "FETCH_ERROR" ||
+        err.status === "TIMEOUT_ERROR"
+      ) {
+        toast.error("Upload failed. The file may be too large or the connection was lost.");
+      } else if (
+        typeof err.status === "number" &&
+        "data" in err &&
+        err.data &&
+        typeof err.data === "object" &&
+        "message" in err.data
+      ) {
+        toast.error(String((err.data as { message: string }).message));
+      } else {
+        toast.error("Failed to upload slip. Please try again.");
+      }
       return;
     }
+
     toast.success("Slip uploaded successfully.");
     onClose();
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[900000] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[1px]"
+      className="fixed inset-0 z-900000 flex items-center justify-center bg-black/50 px-4 backdrop-blur-[1px]"
       onClick={onClose}
     >
       <div
