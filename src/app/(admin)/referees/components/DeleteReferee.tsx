@@ -40,7 +40,7 @@ export function DeleteReferee({ id, name }: { id: string; name: string }) {
         <button
           type="button"
           title="Delete referee"
-          className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
         >
           <Trash2 className="h-4 w-4" />
         </button>

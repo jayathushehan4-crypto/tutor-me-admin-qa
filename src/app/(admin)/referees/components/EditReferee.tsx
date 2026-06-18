@@ -208,7 +208,7 @@ export function EditReferee({ referee }: { referee: Referee }) {
           <button
             type="button"
             title="Edit referee"
-            className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
           >
             <SquarePen className="h-4 w-4" />
           </button>
