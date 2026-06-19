@@ -559,6 +559,14 @@ export default function UsersTable() {
     setPage(newPage);
   };
 
+  const hasFilters = Boolean(searchTerm || roleFilter !== "all");
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setRoleFilter("all");
+    setPage(TABLE_CONFIG.DEFAULT_PAGE);
+  };
+
   const getSafeValue = (value: string | undefined | null, fallback = "N/A") => {
     if (!value || value.trim() === "") return fallback;
     return value;
@@ -879,7 +887,7 @@ export default function UsersTable() {
           </div>
 
           <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[32rem]">
-            <div className="grid w-full gap-3 sm:grid-cols-2">
+            <div className="grid w-full gap-3 sm:grid-cols-[1fr_1fr_auto]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 
@@ -920,6 +928,16 @@ export default function UsersTable() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <button
+                type="button"
+                onClick={resetFilters}
+                disabled={!hasFilters}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5 sm:w-auto"
+              >
+                <X className="h-4 w-4" />
+                Clear filters
+              </button>
             </div>
           </div>
         </div>
