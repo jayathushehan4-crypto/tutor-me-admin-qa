@@ -644,12 +644,6 @@ export default function UsersTable() {
       },
     },
     {
-      key: "status",
-      header: "Status / Actions",
-      className: "w-[190px] min-w-[190px] max-w-[190px] overflow-visible",
-      render: (row: User) => <UserStatusActions user={row} />,
-    },
-    {
       key: "referralCode",
       header: "Referral Code",
       className: "min-w-[160px] max-w-[200px] overflow-hidden cursor-default",
@@ -677,6 +671,13 @@ export default function UsersTable() {
           </div>
         );
       },
+    },
+    {
+      key: "status",
+      header: "Status / Actions",
+      className:
+        "min-w-[190px] max-w-[190px] px-2 sticky right-[440px] z-20 bg-white dark:bg-gray-900",
+      render: (row: User) => <UserStatusActions user={row} />,
     },
 
     {
