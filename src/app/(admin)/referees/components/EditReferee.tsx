@@ -27,7 +27,11 @@ import {
 } from "@/store/api/splits/referees";
 import { Referee } from "@/types/response-types";
 import { getErrorInApiResult } from "@/utils/api";
-import { removeWhitespace } from "@/utils/form-normalizers";
+import {
+  normalizeTextSpaces,
+  removeWhitespace,
+  singleSpaceTextInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleCheck, CircleX, SquarePen } from "lucide-react";
 import NextImage from "next/image";
@@ -181,7 +185,7 @@ export function EditReferee({ referee }: { referee: Referee }) {
 
     const result = await updateReferee({
       id: referee.id,
-      name: data.name,
+      name: normalizeTextSpaces(data.name) as string,
       email: normalizedEmail,
       contactNumber: data.contactNumber,
       gender: data.gender,
@@ -226,7 +230,14 @@ export function EditReferee({ referee }: { referee: Referee }) {
                 <Input
                   id="name"
                   placeholder="e.g Nimal Perera"
-                  {...form.register("name")}
+                  {...form.register(
+                    "name",
+                    singleSpaceTextInputRegisterOptions<AddRefereeFormValues>(
+                      "name",
+                      setValue,
+                      formState.isSubmitted,
+                    ),
+                  )}
                 />
                 {formState.errors.name && (
                   <p className="text-sm text-red-500">
@@ -240,7 +251,8 @@ export function EditReferee({ referee }: { referee: Referee }) {
                 <div className="relative">
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
+                    inputMode="email"
                     placeholder="e.g johndoe@gmail.com"
                     autoComplete="email"
                     className={`pr-10 ${

@@ -26,7 +26,11 @@ import {
   useLazyGetRefereeEmailAvailabilityQuery,
 } from "@/store/api/splits/referees";
 import { getErrorInApiResult } from "@/utils/api";
-import { removeWhitespace } from "@/utils/form-normalizers";
+import {
+  normalizeTextSpaces,
+  removeWhitespace,
+  singleSpaceTextInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleCheck, CircleX, Plus } from "lucide-react";
 import NextImage from "next/image";
@@ -163,6 +167,7 @@ export function AddReferee() {
 
     const result = await createReferee({
       ...data,
+      name: normalizeTextSpaces(data.name) as string,
       email: normalizedEmail,
       avatar: data.avatar || undefined,
     });
@@ -206,7 +211,14 @@ export function AddReferee() {
                 <Input
                   id="name"
                   placeholder="e.g Nimal Perera"
-                  {...form.register("name")}
+                  {...form.register(
+                    "name",
+                    singleSpaceTextInputRegisterOptions<AddRefereeFormValues>(
+                      "name",
+                      setValue,
+                      formState.isSubmitted,
+                    ),
+                  )}
                 />
                 {formState.errors.name && (
                   <p className="text-sm text-red-500">
@@ -220,7 +232,8 @@ export function AddReferee() {
                 <div className="relative">
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
+                    inputMode="email"
                     placeholder="e.g johndoe@gmail.com"
                     autoComplete="email"
                     className={`pr-10 ${

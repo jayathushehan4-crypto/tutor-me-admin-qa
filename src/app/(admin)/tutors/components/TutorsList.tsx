@@ -1009,7 +1009,8 @@ export default function TutorsList() {
       {
         key: "status",
         header: "Status / Actions",
-        className: "min-w-[260px] overflow-visible",
+        className:
+          "min-w-[190px] max-w-[190px] px-2 sticky right-[360px] z-20 bg-white dark:bg-gray-900",
         render: (row: Tutor) => <TutorStatusActions tutor={row} />,
       },
 
