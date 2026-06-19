@@ -18,7 +18,6 @@ import { useDashboardAnalytics } from "./useDashboardAnalytics";
 
 const formatNumber = (value: number) => value.toLocaleString("en-US");
 
-
 type StatTrend = {
   today: number;
   label: string;
@@ -110,12 +109,27 @@ export default function DashboardOverview() {
 
   // Build stat-card trend labels from the pre-computed backend data
   const statTrends = useMemo<Record<SummaryKey, StatTrend>>(() => {
-    const empty = { today: 0, label: "No change vs previous 7 days", className: "text-gray-500 dark:text-gray-400" };
-    if (!analytics.trends) return { registeredTutors: empty, requestTutorRequests: empty, registerAsTutorRequests: empty };
+    const empty = {
+      today: 0,
+      label: "No change vs previous 7 days",
+      className: "text-gray-500 dark:text-gray-400",
+    };
+    if (!analytics.trends)
+      return {
+        registeredTutors: empty,
+        requestTutorRequests: empty,
+        registerAsTutorRequests: empty,
+      };
     return {
-      registeredTutors: buildStatTrendFromServer(analytics.trends.registeredTutors),
-      requestTutorRequests: buildStatTrendFromServer(analytics.trends.requestTutorRequests),
-      registerAsTutorRequests: buildStatTrendFromServer(analytics.trends.registerAsTutorRequests),
+      registeredTutors: buildStatTrendFromServer(
+        analytics.trends.registeredTutors,
+      ),
+      requestTutorRequests: buildStatTrendFromServer(
+        analytics.trends.requestTutorRequests,
+      ),
+      registerAsTutorRequests: buildStatTrendFromServer(
+        analytics.trends.registerAsTutorRequests,
+      ),
     };
   }, [analytics.trends]);
 

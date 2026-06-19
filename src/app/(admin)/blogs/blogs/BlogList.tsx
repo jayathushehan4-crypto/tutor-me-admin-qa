@@ -83,8 +83,7 @@ export default function BlogsTable() {
     {
       key: "title",
       header: "Title",
-      className:
-        "w-full min-w-[360px] truncate overflow-hidden",
+      className: "w-full min-w-[360px] truncate overflow-hidden",
       bodyClassName: "!max-w-none overflow-hidden",
       render: (row: BlogRow) => {
         const safeTitle = getSafeValue(row.title, "No title provided");

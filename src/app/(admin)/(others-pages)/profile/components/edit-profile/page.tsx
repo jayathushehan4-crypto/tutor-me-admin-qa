@@ -204,7 +204,9 @@ export default function UpdateUser() {
         >
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-xl font-semibold">Edit Profile</h2>
-            <p className="text-sm text-gray-600 italic"><span className="text-red-500">*</span> Required</p>
+            <p className="text-sm text-gray-600 italic">
+              <span className="text-red-500">*</span> Required
+            </p>
           </div>
 
           <div className="max-h-[75vh] overflow-y-auto scrollbar-thin space-y-4 px-4 ">
@@ -213,7 +215,9 @@ export default function UpdateUser() {
             </Label>
 
             <div className="grid gap-3">
-              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="name">
+                Name <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="name"
                 {...register("name", {
@@ -228,7 +232,9 @@ export default function UpdateUser() {
             </div>
 
             <div className="grid gap-3">
-              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Label htmlFor="email">
+                Email <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -240,13 +246,17 @@ export default function UpdateUser() {
             </div>
 
             <div className="grid gap-3">
-              <Label className="font-semibold">Profile Image <span className="text-red-500">*</span></Label>
+              <Label className="font-semibold">
+                Profile Image <span className="text-red-500">*</span>
+              </Label>
 
               <FileUploadDropzone
                 key={dropzoneKey}
                 imageOnly
                 onUploaded={(url) => {
-                  setValue("avatar", url || user.avatar || "", { shouldValidate: true });
+                  setValue("avatar", url || user.avatar || "", {
+                    shouldValidate: true,
+                  });
                   setHasImageError(false);
                 }}
               />
@@ -292,7 +302,9 @@ export default function UpdateUser() {
                       type="button"
                       title="Revert to saved"
                       onClick={() => {
-                        setValue("avatar", user.avatar || "", { shouldValidate: true });
+                        setValue("avatar", user.avatar || "", {
+                          shouldValidate: true,
+                        });
                         setHasImageError(false);
                         resetDropzone();
                       }}
@@ -390,7 +402,9 @@ export default function UpdateUser() {
             </Label>
 
             <div className="grid gap-3">
-              <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
+              <Label htmlFor="address">
+                Address <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="address"
                 {...register("address", {

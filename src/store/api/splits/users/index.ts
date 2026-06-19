@@ -125,6 +125,17 @@ export const UsersApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+
+    sendUserReferralCode: build.mutation<void, string>({
+      query: (id) => ({
+        url: `${Endpoints.Users}/send-referral-code/${id}`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "Users", id },
+        { type: "Users", id: "LIST" },
+      ],
+    }),
   }),
   overrideExisting: false,
 });
@@ -140,4 +151,5 @@ export const {
   useDeleteUserMutation,
   useSendUserTempPasswordMutation,
   useUpdateUserPasswordMutation,
+  useSendUserReferralCodeMutation,
 } = UsersApi;
