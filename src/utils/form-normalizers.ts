@@ -23,8 +23,6 @@ export const stripLeadingSpaces = (value: string) => value.replace(/^\s+/, "");
 export const collapseTextSpaces = (value: string) =>
   value.replace(/^\s+/, "").replace(/\s+/g, " ").trimEnd();
 
-// Strips leading spaces and collapses repeated spaces to a single one, while
-// keeping a single trailing space so the user can still type the next word.
 export const collapseRepeatedSpaces = (value: string) =>
   value.replace(/^\s+/, "").replace(/\s{2,}/g, " ");
 
