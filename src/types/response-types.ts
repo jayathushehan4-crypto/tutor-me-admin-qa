@@ -365,6 +365,7 @@ export type ReferralReward = BaseEntity & {
     createdAt: string;
   };
   rewardSent: boolean;
+  lockedInBatch: boolean;
 };
 
 export type Referee = BaseEntity & {
