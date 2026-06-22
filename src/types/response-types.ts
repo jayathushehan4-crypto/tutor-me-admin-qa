@@ -114,6 +114,9 @@ export type Users = BaseEntity & {
   avatar?: string;
   tutorId?: string;
   referralCode?: string;
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
 };
 
 // Grade
@@ -372,6 +375,9 @@ export type Referee = BaseEntity & {
   avatar?: string;
   referralCode: string;
   referralCount: number;
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
 };
 
 export type RefereeEmailAvailabilityResponse = {

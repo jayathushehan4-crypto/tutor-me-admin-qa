@@ -190,6 +190,9 @@ export type UpdateUserRequest = {
   status?: "pending" | "approved" | "rejected" | "suspended";
   gender?: string;
   avatar?: string;
+  accountName?: string | null;
+  accountNumber?: string | null;
+  bankName?: string | null;
 };
 
 export type UpdateUserStatusRequest = {
@@ -259,6 +262,7 @@ export type FetchUserRequest = {
   password?: string;
   name?: string;
   role?: string;
+  roles?: string;
   phoneNumber?: string;
   birthday?: string;
   status?: string;

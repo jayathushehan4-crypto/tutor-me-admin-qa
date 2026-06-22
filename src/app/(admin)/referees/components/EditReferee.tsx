@@ -65,6 +65,9 @@ export function EditReferee({ referee }: { referee: Referee }) {
     contactNumber: referee.contactNumber,
     gender: referee.gender as AddRefereeFormValues["gender"],
     avatar: referee.avatar || "",
+    accountName: referee.accountName || "",
+    accountNumber: referee.accountNumber || "",
+    bankName: referee.bankName || "",
   };
 
   const form = useForm<AddRefereeFormValues>({
@@ -190,6 +193,9 @@ export function EditReferee({ referee }: { referee: Referee }) {
       contactNumber: data.contactNumber,
       gender: data.gender,
       avatar: data.avatar || undefined,
+      accountName: data.accountName || undefined,
+      accountNumber: data.accountNumber || undefined,
+      bankName: data.bankName || undefined,
     });
 
     const error = getErrorInApiResult(result);
@@ -376,6 +382,53 @@ export function EditReferee({ referee }: { referee: Referee }) {
                     className="mt-2 h-24 w-24 object-cover rounded-full mx-auto"
                   />
                 )}
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
+                  Bank Details (Optional)
+                </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accountName">Account Name</Label>
+                    <Input
+                      id="accountName"
+                      placeholder="e.g. Nimal Perera"
+                      {...form.register("accountName")}
+                    />
+                    {formState.errors.accountName && (
+                      <p className="text-sm text-red-500">
+                        {formState.errors.accountName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Input
+                      id="accountNumber"
+                      placeholder="e.g. 0012345678"
+                      {...form.register("accountNumber")}
+                    />
+                    {formState.errors.accountNumber && (
+                      <p className="text-sm text-red-500">
+                        {formState.errors.accountNumber.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input
+                      id="bankName"
+                      placeholder="e.g. Commercial Bank of Ceylon"
+                      {...form.register("bankName")}
+                    />
+                    {formState.errors.bankName && (
+                      <p className="text-sm text-red-500">
+                        {formState.errors.bankName.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">

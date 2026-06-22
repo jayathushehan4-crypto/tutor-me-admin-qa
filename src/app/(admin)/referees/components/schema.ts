@@ -12,6 +12,9 @@ export const addRefereeSchema = z.object({
     error: "Gender is required",
   }),
   avatar: z.string().optional(),
+  accountName: z.string().max(100, "Account name too long").optional(),
+  accountNumber: z.string().max(30, "Account number too long").optional(),
+  bankName: z.string().max(100, "Bank name too long").optional(),
 });
 
 export type AddRefereeFormValues = z.infer<typeof addRefereeSchema>;
@@ -22,4 +25,7 @@ export const initialRefereeFormValues: AddRefereeFormValues = {
   contactNumber: "",
   gender: "" as AddRefereeFormValues["gender"],
   avatar: "",
+  accountName: "",
+  accountNumber: "",
+  bankName: "",
 };
