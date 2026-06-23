@@ -218,11 +218,11 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
                             className="rounded"
                           />
                           <span
-                            className={
+                            className={`inline-block w-14 ${
                               effectiveSent
                                 ? "text-green-600 dark:text-green-400 font-medium"
                                 : "text-gray-500"
-                            }
+                            }`}
                           >
                             {effectiveSent ? "Sent" : "Pending"}
                           </span>
