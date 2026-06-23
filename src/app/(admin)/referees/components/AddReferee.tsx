@@ -49,7 +49,7 @@ const EMAIL_FORMAT_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type EmailAvailabilityState = "available" | "unavailable" | null;
 
-export function AddReferee() {
+export function AddReferee({ disabled = false }: { disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [emailAvailability, setEmailAvailability] =
@@ -170,6 +170,9 @@ export function AddReferee() {
       name: normalizeTextSpaces(data.name) as string,
       email: normalizedEmail,
       avatar: data.avatar || undefined,
+      accountName: data.accountName || undefined,
+      accountNumber: data.accountNumber || undefined,
+      bankName: data.bankName || undefined,
     });
 
     const error = getErrorInApiResult(result);
@@ -189,10 +192,11 @@ export function AddReferee() {
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogTrigger asChild>
+        <DialogTrigger asChild disabled={disabled}>
           <Button
             variant="outline"
-            className="bg-blue-700 text-white hover:bg-blue-500"
+            disabled={disabled}
+            className="bg-blue-700 text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             <Plus className="h-4 w-4" />
             Add Member
@@ -332,6 +336,53 @@ export function AddReferee() {
                     {formState.errors.gender.message}
                   </p>
                 )}
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
+                  Bank Details (Optional)
+                </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accountName">Account Name</Label>
+                    <Input
+                      id="accountName"
+                      placeholder="e.g. Nimal Perera"
+                      {...form.register("accountName")}
+                    />
+                    {formState.errors.accountName && (
+                      <p className="text-sm text-red-500">
+                        {formState.errors.accountName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Input
+                      id="accountNumber"
+                      placeholder="e.g. 0012345678"
+                      {...form.register("accountNumber")}
+                    />
+                    {formState.errors.accountNumber && (
+                      <p className="text-sm text-red-500">
+                        {formState.errors.accountNumber.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input
+                      id="bankName"
+                      placeholder="e.g. Commercial Bank of Ceylon"
+                      {...form.register("bankName")}
+                    />
+                    {formState.errors.bankName && (
+                      <p className="text-sm text-red-500">
+                        {formState.errors.bankName.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="grid min-w-0 gap-3">
