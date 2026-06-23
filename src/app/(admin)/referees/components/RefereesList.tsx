@@ -26,6 +26,9 @@ import { RegisteredUsersTab } from "./RegisteredUsersTab";
 
 type TabValue = "manual" | "registered";
 
+const TH =
+  "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400";
+
 export default function RefereesList() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<TabValue>("manual");
@@ -42,9 +45,6 @@ export default function RefereesList() {
       toast.success("Referral code copied!");
     });
   };
-
-  const displayBankField = (value?: string) =>
-    value && value.trim() ? value : "—";
 
   return (
     <div className="max-w-full p-5 lg:p-6">
@@ -99,32 +99,13 @@ export default function RefereesList() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-white/5">
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Name
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Email
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Contact Number
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Referral Code
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Account Name
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Account Number
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          Bank Name
-                        </th>
+                        <th className={TH}>Name</th>
+                        <th className={TH}>Email</th>
+                        <th className={TH}>Contact Number</th>
+                        <th className={TH}>Gender</th>
+                        <th className={TH}>Referral Code</th>
                         <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                           Referral Count
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                          View Details
                         </th>
                         <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                           Actions
@@ -155,6 +136,12 @@ export default function RefereesList() {
                             </p>
                           </TableCell>
 
+                          <TableCell className="px-4 py-3 whitespace-nowrap">
+                            <p className="text-xs capitalize text-gray-700 dark:text-gray-300">
+                              {referee.gender || "—"}
+                            </p>
+                          </TableCell>
+
                           <TableCell className="px-4 py-3">
                             {referee.referralCode ? (
                               <div className="flex items-center gap-1.5">
@@ -177,24 +164,6 @@ export default function RefereesList() {
                             )}
                           </TableCell>
 
-                          <TableCell className="px-4 py-3">
-                            <p className="text-xs text-gray-700 dark:text-gray-300">
-                              {displayBankField(referee.accountName)}
-                            </p>
-                          </TableCell>
-
-                          <TableCell className="px-4 py-3">
-                            <p className="text-xs font-mono text-gray-700 dark:text-gray-300">
-                              {displayBankField(referee.accountNumber)}
-                            </p>
-                          </TableCell>
-
-                          <TableCell className="px-4 py-3">
-                            <p className="text-xs text-gray-700 dark:text-gray-300">
-                              {displayBankField(referee.bankName)}
-                            </p>
-                          </TableCell>
-
                           <TableCell className="px-4 py-3 text-center">
                             <span className="inline-flex items-center justify-center h-7 min-w-[1.75rem] rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-semibold px-2">
                               {referee.referralCount}
@@ -202,7 +171,7 @@ export default function RefereesList() {
                           </TableCell>
 
                           <TableCell className="px-4 py-3 text-center">
-                            <div className="flex justify-center">
+                            <div className="flex justify-center items-center gap-3">
                               <RefereeDetails
                                 name={referee.name}
                                 email={referee.email}
@@ -216,11 +185,6 @@ export default function RefereesList() {
                                 accountNumber={referee.accountNumber}
                                 bankName={referee.bankName}
                               />
-                            </div>
-                          </TableCell>
-
-                          <TableCell className="px-4 py-3 text-center">
-                            <div className="flex justify-center items-center gap-3">
                               <EditReferee referee={referee} />
                               <DeleteReferee
                                 id={referee.id}
