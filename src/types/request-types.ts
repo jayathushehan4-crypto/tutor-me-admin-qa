@@ -263,6 +263,7 @@ export type FetchUserRequest = {
   name?: string;
   role?: string;
   roles?: string;
+  hasReferralCode?: "true" | "false";
   phoneNumber?: string;
   birthday?: string;
   status?: string;

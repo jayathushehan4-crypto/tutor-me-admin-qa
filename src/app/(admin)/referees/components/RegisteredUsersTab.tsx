@@ -156,6 +156,7 @@ export function RegisteredUsersTab() {
     page,
     limit: LIMIT,
     roles: "tutor,admin",
+    hasReferralCode: "true",
     sortBy: "name:asc",
   });
 
