@@ -93,7 +93,7 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[900000] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[1px]"
+      className="fixed inset-0 z-900000 flex items-center justify-center bg-black/50 px-4 backdrop-blur-[1px]"
       onClick={onClose}
     >
       <div
