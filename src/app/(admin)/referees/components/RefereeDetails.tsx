@@ -24,6 +24,9 @@ interface RefereeDetailsProps {
   referralCode: string;
   referralCount: number;
   createdAt?: string;
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
 }
 
 function CopyableDisplayField({
@@ -83,6 +86,9 @@ export function RefereeDetails({
   referralCode,
   referralCount,
   createdAt,
+  accountName,
+  accountNumber,
+  bankName,
 }: RefereeDetailsProps) {
   const [open, setOpen] = useState(false);
 
@@ -215,6 +221,42 @@ export function RefereeDetails({
                       .toLocaleDateString("en-CA")
                       .replace(/-/g, "/")
                   : "-"}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+                Bank Details
+              </p>
+              <div className="grid gap-3">
+                <div className="grid gap-3">
+                  <Label>Account Name</Label>
+                  <CopyableDisplayField
+                    label="Account Name"
+                    value={accountName}
+                    className={cn(displayFieldClass, "min-h-[2.5rem]")}
+                  />
+                </div>
+                <div className="grid gap-3">
+                  <Label>Account Number</Label>
+                  <CopyableDisplayField
+                    label="Account Number"
+                    value={accountNumber}
+                    className={cn(
+                      displayFieldClass,
+                      "min-h-[2.5rem]",
+                      "font-mono tracking-wider",
+                    )}
+                  />
+                </div>
+                <div className="grid gap-3">
+                  <Label>Bank Name</Label>
+                  <CopyableDisplayField
+                    label="Bank Name"
+                    value={bankName}
+                    className={cn(displayFieldClass, "min-h-[2.5rem]")}
+                  />
+                </div>
               </div>
             </div>
           </div>
