@@ -161,16 +161,7 @@ export default function RefereesList() {
           </p>
         </div>
 
-        {activeTab === "manual" ? (
-          <AddReferee />
-        ) : (
-          <div
-            title="Referees on this tab come from registered platform users — use the Tutors page to manage them"
-            className="cursor-not-allowed"
-          >
-            <AddReferee disabled />
-          </div>
-        )}
+        {activeTab === "manual" && <AddReferee />}
       </div>
 
       <Tabs
