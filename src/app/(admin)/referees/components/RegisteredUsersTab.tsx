@@ -309,10 +309,13 @@ export function RegisteredUsersTab() {
     sortBy: "name:asc",
   });
 
-  const { data: summariesData } = useFetchReferralsSummaryQuery({
-    page: 1,
-    limit: 1000,
-  });
+  // refetchOnMountOrArgChange ensures counts are always fresh when the tab is
+  // opened, even if a tutor registered from the public form (no admin mutation
+  // fires to invalidate the cache in that case).
+  const { data: summariesData } = useFetchReferralsSummaryQuery(
+    { page: 1, limit: 1000 },
+    { refetchOnMountOrArgChange: true },
+  );
 
   const { countMap, pendingMap } = useMemo(() => {
     const countMap = new Map<string, number>();

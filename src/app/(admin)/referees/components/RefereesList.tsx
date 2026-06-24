@@ -26,7 +26,10 @@ export default function RefereesList() {
   const [limit, setLimit] = useState(TABLE_CONFIG.DEFAULT_LIMIT);
   const [activeTab, setActiveTab] = useState<TabValue>("manual");
 
-  const { data, isFetching } = useFetchRefereesQuery({ page, limit });
+  const { data, isFetching } = useFetchRefereesQuery(
+    { page, limit },
+    { refetchOnMountOrArgChange: true },
+  );
 
   const referees: Referee[] = data?.results ?? [];
   const totalPages = data?.totalPages ?? 1;
