@@ -100,50 +100,54 @@ export function DeleteReferee({ id, name }: { id: string; name: string }) {
           )}
 
           {step === "warn" && (
-            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3">
-                <p className="font-semibold text-amber-800 dark:text-amber-300">
-                  {pendingCount} pending reward
-                  {pendingCount !== 1 ? "s" : ""} tied to{" "}
-                  <strong>{name}</strong>
-                </p>
-                <p className="mt-1 text-amber-700 dark:text-amber-400">
-                  Please go to the <strong>Referrals</strong> page and settle
-                  all pending rewards for this referee before deleting. Deleting
-                  without settling may result in lost reward records.
+            <>
+              <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3">
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">
+                    {pendingCount} pending reward
+                    {pendingCount !== 1 ? "s" : ""} tied to{" "}
+                    <strong>{name}</strong>
+                  </p>
+                  <p className="mt-1 text-amber-700 dark:text-amber-400">
+                    This referee cannot be deleted while pending rewards remain.
+                    Please go to the <strong>Referrals</strong> page and settle
+                    all pending rewards first.
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Deletion will be available once all pending rewards reach 0.
                 </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                If you have already settled all rewards, you may proceed.
-              </p>
-            </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={close}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
           )}
 
           {step === "confirm" && (
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Are you sure you want to delete <strong>{name}</strong>? This
-              action cannot be undone.
-            </p>
-          )}
-
-          {(step === "warn" || step === "confirm") && (
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" onClick={close}>
-                  Cancel
+            <>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Are you sure you want to delete <strong>{name}</strong>? This
+                action cannot be undone.
+              </p>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" onClick={close}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  className="bg-red-600 text-white hover:bg-red-500"
+                  isLoading={isLoading}
+                  onClick={handleDelete}
+                >
+                  Delete
                 </Button>
-              </DialogClose>
-              <Button
-                type="button"
-                className="bg-red-600 text-white hover:bg-red-500"
-                isLoading={isLoading}
-                onClick={handleDelete}
-              >
-                {step === "warn"
-                  ? "I have settled rewards — Delete"
-                  : "Delete"}
-              </Button>
-            </DialogFooter>
+              </DialogFooter>
+            </>
           )}
         </DialogContent>
       </Dialog>
