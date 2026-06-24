@@ -38,16 +38,48 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
 
   const rewards = data?.results ?? [];
 
-  const handleToggle = (rewardId: string, current: boolean, locked: boolean) => {
-    if (locked) return; // locked rows are never interactive
+  const getEffectiveRewardSent = (rewardId: string, original: boolean) => {
+    return rewardId in pendingUpdates ? pendingUpdates[rewardId] : original;
+  };
+
+  // Bug fix: pass effectiveSent (current displayed state), not reward.rewardSent
+  // (original server state), so the toggle actually flips from the visible value.
+  const handleToggle = (rewardId: string, effectiveCurrent: boolean, locked: boolean) => {
+    if (locked) return;
     setPendingUpdates((prev) => ({
       ...prev,
-      [rewardId]: !current,
+      [rewardId]: !effectiveCurrent,
     }));
   };
 
-  const getEffectiveRewardSent = (rewardId: string, original: boolean) => {
-    return rewardId in pendingUpdates ? pendingUpdates[rewardId] : original;
+  const selectableRewards = rewards.filter((r) => !r.lockedInBatch);
+  const allSelectableSelected =
+    selectableRewards.length > 0 &&
+    selectableRewards.every((r) => getEffectiveRewardSent(r.id, r.rewardSent));
+  const someSelectableSelected = selectableRewards.some((r) =>
+    getEffectiveRewardSent(r.id, r.rewardSent),
+  );
+
+  const handleSelectAll = () => {
+    if (allSelectableSelected) {
+      // Deselect all: revert every selectable reward to its original server state
+      setPendingUpdates((prev) => {
+        const next = { ...prev };
+        selectableRewards.forEach((r) => {
+          delete next[r.id];
+        });
+        return next;
+      });
+    } else {
+      // Select all: mark every selectable reward as sent
+      setPendingUpdates((prev) => {
+        const next = { ...prev };
+        selectableRewards.forEach((r) => {
+          next[r.id] = true;
+        });
+        return next;
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -121,8 +153,8 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
           </button>
         </div>
 
-        {/* Filter toggle */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
+        {/* Filter toggle + Select All */}
+        <div className="flex items-center justify-between gap-3 px-6 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -132,6 +164,24 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
             />
             Show all (including sent rewards)
           </label>
+
+          {selectableRewards.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                ref={(el) => {
+                  if (el) {
+                    el.indeterminate =
+                      someSelectableSelected && !allSelectableSelected;
+                  }
+                }}
+                checked={allSelectableSelected}
+                onChange={handleSelectAll}
+                className="rounded"
+              />
+              Select all ({selectableRewards.length})
+            </label>
+          )}
         </div>
 
         {/* Body */}
@@ -213,7 +263,7 @@ export function RewardsModal({ referrer, onClose }: RewardsModalProps) {
                             type="checkbox"
                             checked={effectiveSent}
                             onChange={() =>
-                              handleToggle(rewardId, reward.rewardSent, locked)
+                              handleToggle(rewardId, effectiveSent, locked)
                             }
                             className="rounded"
                           />

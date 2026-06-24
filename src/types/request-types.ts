@@ -263,6 +263,7 @@ export type FetchUserRequest = {
   name?: string;
   role?: string;
   roles?: string;
+  hasReferralCode?: "true" | "false";
   phoneNumber?: string;
   birthday?: string;
   status?: string;
@@ -343,18 +344,18 @@ export type CreateTutorRequest = {
   confirmDateOfBirth: string;
   gender: string;
   age: number;
-  nationality: string;
-  race: string;
+  nationality?: string;
+  race?: string;
 
   tutoringLevels: string[];
   preferredLocations: string[];
   tutorType: string[];
   yearsExperience: number;
   highestEducation: string;
-  academicDetails: string;
-  teachingSummary: string;
-  studentResults: string;
-  sellingPoints: string;
+  academicDetails?: string;
+  teachingSummary?: string;
+  studentResults?: string;
+  sellingPoints?: string;
   agreeTerms: boolean;
   agreeAssignmentInfo: boolean;
   certificatesAndQualifications?: string[];

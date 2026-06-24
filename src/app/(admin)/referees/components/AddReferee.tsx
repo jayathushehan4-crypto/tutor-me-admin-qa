@@ -199,7 +199,7 @@ export function AddReferee({ disabled = false }: { disabled?: boolean }) {
             className="bg-blue-700 text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
           >
             <Plus className="h-4 w-4" />
-            Add Member
+            Add Referee
           </Button>
         </DialogTrigger>
 
