@@ -244,50 +244,53 @@ function RevokeReferralCode({
           )}
 
           {step === "warn" && (
-            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3">
-                <p className="font-semibold text-amber-800 dark:text-amber-300">
-                  Pending rewards tied to <strong>{user.name}</strong>
-                </p>
-                <p className="mt-1 text-amber-700 dark:text-amber-400">
-                  Please settle all pending rewards in the{" "}
-                  <strong>Referrals</strong> page before revoking this referral
-                  code. Revoking without settling may result in lost reward
-                  records.
+            <>
+              <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-3">
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">
+                    Pending rewards tied to <strong>{user.name}</strong>
+                  </p>
+                  <p className="mt-1 text-amber-700 dark:text-amber-400">
+                    This referral code cannot be revoked while pending rewards
+                    remain. Please go to the <strong>Referrals</strong> page
+                    and settle all pending rewards first.
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Revocation will be available once all pending rewards reach 0.
                 </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                If you have already settled all rewards, you may proceed.
-              </p>
-            </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={close}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
           )}
 
           {step === "confirm" && (
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Are you sure you want to revoke the referral code for{" "}
-              <strong>{user.name}</strong>? The Send Code option will become
-              available again in the Users page. This action cannot be undone.
-            </p>
-          )}
-
-          {(step === "warn" || step === "confirm") && (
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" onClick={close}>
-                  Cancel
+            <>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Are you sure you want to revoke the referral code for{" "}
+                <strong>{user.name}</strong>? The Send Code option will become
+                available again in the Users page. This action cannot be undone.
+              </p>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" onClick={close}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  className="bg-red-600 text-white hover:bg-red-500"
+                  isLoading={isLoading}
+                  onClick={handleRevoke}
+                >
+                  Revoke Code
                 </Button>
-              </DialogClose>
-              <Button
-                type="button"
-                className="bg-red-600 text-white hover:bg-red-500"
-                isLoading={isLoading}
-                onClick={handleRevoke}
-              >
-                {step === "warn"
-                  ? "I have settled rewards — Revoke"
-                  : "Revoke Code"}
-              </Button>
-            </DialogFooter>
+              </DialogFooter>
+            </>
           )}
         </DialogContent>
       </Dialog>
