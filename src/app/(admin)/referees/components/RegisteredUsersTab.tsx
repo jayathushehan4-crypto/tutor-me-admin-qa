@@ -95,81 +95,39 @@ function EditBankDetails({ user }: { user: Users }) {
       </button>
 
       <Dialog open={open} onOpenChange={(o) => !o && setOpen(false)}>
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800 dark:text-white/90 p-0 overflow-hidden [&>div:last-child]:flex [&>div:last-child]:min-h-0 [&>div:last-child]:flex-col [&>div:last-child]:overflow-hidden [&>div:last-child]:p-0">
+        <DialogContent className="sm:max-w-[420px] bg-white dark:bg-gray-800 dark:text-white/90 p-0 overflow-hidden [&>div:last-child]:flex [&>div:last-child]:min-h-0 [&>div:last-child]:flex-col [&>div:last-child]:overflow-hidden [&>div:last-child]:p-0">
           <DialogHeader className="shrink-0 bg-white dark:bg-gray-800 px-6 py-4 border-b">
-            <DialogTitle>Edit Referee Details</DialogTitle>
+            <DialogTitle>Edit Bank Details</DialogTitle>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {user.name} · <span className="capitalize">{user.role}</span>
             </p>
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin px-6 py-6 space-y-5">
-              {/* Read-only fields */}
-              <div className="space-y-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Referee Information (read-only)
-                </p>
-                {[
-                  { label: "Name", value: user.name },
-                  { label: "Email", value: user.email },
-                  { label: "Contact Number", value: user.phoneNumber || "—" },
-                  {
-                    label: "Gender",
-                    value: user.gender
-                      ? user.gender.charAt(0).toUpperCase() +
-                        user.gender.slice(1)
-                      : "—",
-                  },
-                  {
-                    label: "Role",
-                    value: user.role
-                      ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
-                      : "—",
-                  },
-                  { label: "Referral Code", value: user.referralCode || "—" },
-                ].map(({ label, value }) => (
-                  <div key={label} className="space-y-1.5">
-                    <Label className="text-xs text-gray-500">{label}</Label>
-                    <Input
-                      value={value}
-                      disabled
-                      readOnly
-                      className="cursor-not-allowed bg-gray-50 dark:bg-gray-700 text-gray-500"
-                    />
-                  </div>
-                ))}
+            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin px-6 py-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="accountName">Account Name</Label>
+                <Input
+                  id="accountName"
+                  placeholder="e.g. Nimal Perera"
+                  {...register("accountName")}
+                />
               </div>
-
-              {/* Editable bank details */}
-              <div className="space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Bank Details (editable)
-                </p>
-                <div className="space-y-2">
-                  <Label htmlFor="accountName">Account Name</Label>
-                  <Input
-                    id="accountName"
-                    placeholder="e.g. Nimal Perera"
-                    {...register("accountName")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Account Number</Label>
-                  <Input
-                    id="accountNumber"
-                    placeholder="e.g. 0012345678"
-                    {...register("accountNumber")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    placeholder="e.g. Commercial Bank of Ceylon"
-                    {...register("bankName")}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="accountNumber">Account Number</Label>
+                <Input
+                  id="accountNumber"
+                  placeholder="e.g. 0012345678"
+                  {...register("accountNumber")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bankName">Bank Name</Label>
+                <Input
+                  id="bankName"
+                  placeholder="e.g. Commercial Bank of Ceylon"
+                  {...register("bankName")}
+                />
               </div>
             </div>
 
