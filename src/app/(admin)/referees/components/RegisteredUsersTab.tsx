@@ -24,6 +24,10 @@ import {
 } from "@/store/api/splits/users";
 import { Users } from "@/types/response-types";
 import { getErrorInApiResult } from "@/utils/api";
+import {
+  accountNumberInputRegisterOptions,
+  bankNameInputRegisterOptions,
+} from "@/utils/form-normalizers";
 import { AlertTriangle, Copy, Loader2, SquarePen, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -50,7 +54,14 @@ function EditBankDetails({ user }: { user: Users }) {
   const [open, setOpen] = useState(false);
   const [updateUser, { isLoading }] = useUpdateUserMutation();
 
-  const { register, handleSubmit, reset } = useForm<BankFormValues>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState,
+  } = useForm<BankFormValues>({
+    mode: "onBlur",
     defaultValues: {
       accountName: user.accountName ?? "",
       accountNumber: user.accountNumber ?? "",
@@ -110,24 +121,70 @@ function EditBankDetails({ user }: { user: Users }) {
                 <Input
                   id="accountName"
                   placeholder="e.g. Nimal Perera"
-                  {...register("accountName")}
+                  {...register("accountName", {
+                    validate: (v) =>
+                      !v ||
+                      /^[A-Za-z' ()-]+$/.test(v) ||
+                      "Only letters, spaces, hyphens, apostrophes, and parentheses are allowed",
+                    ...bankNameInputRegisterOptions(
+                      "accountName",
+                      setValue,
+                      formState.isSubmitted,
+                    ),
+                  })}
                 />
+                {formState.errors.accountName && (
+                  <p className="text-sm text-red-500">
+                    {formState.errors.accountName.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="accountNumber">Account Number</Label>
                 <Input
                   id="accountNumber"
                   placeholder="e.g. 0012345678"
-                  {...register("accountNumber")}
+                  inputMode="numeric"
+                  {...register("accountNumber", {
+                    validate: (v) =>
+                      !v ||
+                      /^[0-9]+$/.test(v) ||
+                      "Account number must contain only digits",
+                    ...accountNumberInputRegisterOptions(
+                      "accountNumber",
+                      setValue,
+                      formState.isSubmitted,
+                    ),
+                  })}
                 />
+                {formState.errors.accountNumber && (
+                  <p className="text-sm text-red-500">
+                    {formState.errors.accountNumber.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankName">Bank Name</Label>
                 <Input
                   id="bankName"
                   placeholder="e.g. Commercial Bank of Ceylon"
-                  {...register("bankName")}
+                  {...register("bankName", {
+                    validate: (v) =>
+                      !v ||
+                      /^[A-Za-z' ()-]+$/.test(v) ||
+                      "Only letters, spaces, hyphens, apostrophes, and parentheses are allowed",
+                    ...bankNameInputRegisterOptions(
+                      "bankName",
+                      setValue,
+                      formState.isSubmitted,
+                    ),
+                  })}
                 />
+                {formState.errors.bankName && (
+                  <p className="text-sm text-red-500">
+                    {formState.errors.bankName.message}
+                  </p>
+                )}
               </div>
             </div>
 

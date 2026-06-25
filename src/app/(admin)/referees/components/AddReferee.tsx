@@ -27,6 +27,8 @@ import {
 } from "@/store/api/splits/referees";
 import { getErrorInApiResult } from "@/utils/api";
 import {
+  accountNumberInputRegisterOptions,
+  bankNameInputRegisterOptions,
   normalizeTextSpaces,
   removeWhitespace,
   singleSpaceTextInputRegisterOptions,
@@ -348,7 +350,14 @@ export function AddReferee({ disabled = false }: { disabled?: boolean }) {
                     <Input
                       id="accountName"
                       placeholder="e.g. Nimal Perera"
-                      {...form.register("accountName")}
+                      {...form.register(
+                        "accountName",
+                        bankNameInputRegisterOptions(
+                          "accountName",
+                          setValue,
+                          formState.isSubmitted,
+                        ),
+                      )}
                     />
                     {formState.errors.accountName && (
                       <p className="text-sm text-red-500">
@@ -361,7 +370,15 @@ export function AddReferee({ disabled = false }: { disabled?: boolean }) {
                     <Input
                       id="accountNumber"
                       placeholder="e.g. 0012345678"
-                      {...form.register("accountNumber")}
+                      inputMode="numeric"
+                      {...form.register(
+                        "accountNumber",
+                        accountNumberInputRegisterOptions(
+                          "accountNumber",
+                          setValue,
+                          formState.isSubmitted,
+                        ),
+                      )}
                     />
                     {formState.errors.accountNumber && (
                       <p className="text-sm text-red-500">
@@ -374,7 +391,14 @@ export function AddReferee({ disabled = false }: { disabled?: boolean }) {
                     <Input
                       id="bankName"
                       placeholder="e.g. Commercial Bank of Ceylon"
-                      {...form.register("bankName")}
+                      {...form.register(
+                        "bankName",
+                        bankNameInputRegisterOptions(
+                          "bankName",
+                          setValue,
+                          formState.isSubmitted,
+                        ),
+                      )}
                     />
                     {formState.errors.bankName && (
                       <p className="text-sm text-red-500">
