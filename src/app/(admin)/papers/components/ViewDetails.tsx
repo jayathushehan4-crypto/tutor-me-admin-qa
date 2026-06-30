@@ -55,7 +55,7 @@ export function PaperDetails({
 
           <div className="grid min-w-0 gap-3">
             <Label>Medium</Label>
-            <div className={cn(displayFieldClass, "min-h-20")}>{medium}</div>
+            <div className={cn(displayFieldClass)}>{medium}</div>
           </div>
 
           <div className="grid min-w-0 gap-3">
