@@ -1,7 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { CERTIFICATE_TYPE_VALUES } from "@/configs/app-constants";
+import {
+  MANDATORY_CERTIFICATE_TYPE_VALUES,
+  OPTIONAL_CERTIFICATE_TYPE_VALUES,
+} from "@/configs/app-constants";
 import { Loader2, Plus, X } from "lucide-react";
 import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -19,7 +22,30 @@ interface NewFileItem {
   type: string;
 }
 
-const CERTIFICATE_TYPE_OPTIONS = [...CERTIFICATE_TYPE_VALUES];
+// Required (educational) document types are grouped at the top and labelled
+// "(Required)" so admins can tell them apart from optional documents. At least
+// one required document must be uploaded — enforced by the form schema.
+const renderCertificateTypeOptions = () => (
+  <>
+    <option value="" disabled>
+      Document Type
+    </option>
+    <optgroup label="Required Documents">
+      {MANDATORY_CERTIFICATE_TYPE_VALUES.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt} (Required)
+        </option>
+      ))}
+    </optgroup>
+    <optgroup label="Optional Documents">
+      {OPTIONAL_CERTIFICATE_TYPE_VALUES.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </optgroup>
+  </>
+);
 
 interface SimpleUploadProps {
   mode?: "simple";
@@ -290,14 +316,7 @@ export default function MultiFileUploadDropzone(
                         onClick={(e) => e.stopPropagation()}
                         className="w-full max-w-[220px] rounded border bg-white px-2 py-1 text-xs text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
                       >
-                        <option value="" disabled>
-                          Document Type
-                        </option>
-                        {CERTIFICATE_TYPE_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
+                        {renderCertificateTypeOptions()}
                       </select>
                     )}
                   </div>
@@ -360,14 +379,7 @@ export default function MultiFileUploadDropzone(
                       onClick={(e) => e.stopPropagation()}
                       className="w-full max-w-[220px] rounded border bg-white px-2 py-1 text-xs text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
                     >
-                      <option value="" disabled>
-                        Document Type
-                      </option>
-                      {CERTIFICATE_TYPE_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
+                      {renderCertificateTypeOptions()}
                     </select>
                   )}
                 </div>
