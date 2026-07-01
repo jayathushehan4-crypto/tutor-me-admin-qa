@@ -150,8 +150,8 @@ export function EditTutor({ id }: EditTutorProps) {
       tutorMediums: [],
       grades: [],
       subjects: [],
-      nationality: "Sri Lankan",
-      race: "Sinhalese",
+      nationality: undefined,
+      race: undefined,
       status: "pending",
       classType: [],
       preferredLocations: [],
@@ -209,6 +209,16 @@ export function EditTutor({ id }: EditTutorProps) {
   ): T => {
     if (!value) return fallback;
     return enumValues.includes(value as T) ? (value as T) : fallback;
+  };
+
+  // Like safeEnumValue but leaves the field empty (undefined) when there is no
+  // saved value, so the Select shows its placeholder instead of a forced default.
+  const optionalEnumValue = <T extends string>(
+    value: string | undefined,
+    enumValues: readonly T[],
+  ): T | undefined => {
+    if (!value) return undefined;
+    return enumValues.includes(value as T) ? (value as T) : undefined;
   };
 
   const normalizeHighestEducation = (
@@ -383,12 +393,8 @@ export function EditTutor({ id }: EditTutorProps) {
       tutorMediums: data.tutorMediums || [],
       grades: data.grades || [],
       subjects: data.subjects || [],
-      nationality: safeEnumValue(
-        data.nationality,
-        NATIONALITY_VALUES,
-        "Sri Lankan",
-      ),
-      race: safeEnumValue(data.race, RACE_VALUES, "Sinhalese"),
+      nationality: optionalEnumValue(data.nationality, NATIONALITY_VALUES),
+      race: optionalEnumValue(data.race, RACE_VALUES),
       status: safeEnumValue(data.status, TUTOR_STATUS_VALUES, "pending"),
       classType: safeArrayEnumValue(data.classType, CLASS_TYPE_VALUES),
       preferredLocations: safeArrayEnumValue(
@@ -760,10 +766,10 @@ export function EditTutor({ id }: EditTutorProps) {
                         val as UpdateTutorSchema["nationality"],
                       )
                     }
-                    value={watch("nationality")}
+                    value={watch("nationality") ?? ""}
                   >
                     <SelectTrigger id="nationality">
-                      <SelectValue placeholder="Select nationality" />
+                      <SelectValue placeholder="Select Nationality" />
                     </SelectTrigger>
                     <SelectContent>
                       {NATIONALITY_VALUES.map((v) => (
@@ -786,10 +792,10 @@ export function EditTutor({ id }: EditTutorProps) {
                     onValueChange={(val) =>
                       setValue("race", val as UpdateTutorSchema["race"])
                     }
-                    value={watch("race")}
+                    value={watch("race") ?? ""}
                   >
                     <SelectTrigger id="race">
-                      <SelectValue placeholder="Select race" />
+                      <SelectValue placeholder="Select Ethnicity" />
                     </SelectTrigger>
                     <SelectContent>
                       {RACE_VALUES.map((v) => (
