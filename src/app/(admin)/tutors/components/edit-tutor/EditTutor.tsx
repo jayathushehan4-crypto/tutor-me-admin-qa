@@ -221,6 +221,11 @@ export function EditTutor({ id }: EditTutorProps) {
     return enumValues.includes(value as T) ? (value as T) : undefined;
   };
 
+  // Sentinel used by the optional Selects (Nationality/Race) so the user can
+  // clear a chosen value and fall back to the placeholder. Radix does not allow
+  // an empty-string item value, so a non-empty sentinel is required.
+  const CLEAR_VALUE = "__clear__";
+
   const normalizeHighestEducation = (
     value: string | undefined,
   ): EducationEditValue => {
@@ -763,7 +768,10 @@ export function EditTutor({ id }: EditTutorProps) {
                     onValueChange={(val) =>
                       setValue(
                         "nationality",
-                        val as UpdateTutorSchema["nationality"],
+                        val === CLEAR_VALUE
+                          ? null
+                          : (val as UpdateTutorSchema["nationality"]),
+                        { shouldDirty: true, shouldValidate: true },
                       )
                     }
                     value={watch("nationality") ?? ""}
@@ -772,6 +780,14 @@ export function EditTutor({ id }: EditTutorProps) {
                       <SelectValue placeholder="Select Nationality" />
                     </SelectTrigger>
                     <SelectContent>
+                      {watch("nationality") && (
+                        <SelectItem
+                          value={CLEAR_VALUE}
+                          className="text-gray-500 dark:text-gray-400"
+                        >
+                          Select Nationality
+                        </SelectItem>
+                      )}
                       {NATIONALITY_VALUES.map((v) => (
                         <SelectItem key={v} value={v}>
                           {v}
@@ -790,7 +806,13 @@ export function EditTutor({ id }: EditTutorProps) {
                   <Label htmlFor="race">Race</Label>
                   <Select
                     onValueChange={(val) =>
-                      setValue("race", val as UpdateTutorSchema["race"])
+                      setValue(
+                        "race",
+                        val === CLEAR_VALUE
+                          ? null
+                          : (val as UpdateTutorSchema["race"]),
+                        { shouldDirty: true, shouldValidate: true },
+                      )
                     }
                     value={watch("race") ?? ""}
                   >
@@ -798,6 +820,14 @@ export function EditTutor({ id }: EditTutorProps) {
                       <SelectValue placeholder="Select Ethnicity" />
                     </SelectTrigger>
                     <SelectContent>
+                      {watch("race") && (
+                        <SelectItem
+                          value={CLEAR_VALUE}
+                          className="text-gray-500 dark:text-gray-400"
+                        >
+                          Select Ethnicity
+                        </SelectItem>
+                      )}
                       {RACE_VALUES.map((v) => (
                         <SelectItem key={v} value={v}>
                           {v}
