@@ -54,7 +54,6 @@ function PreviewModal({
   onClose: () => void;
 }) {
   const [scale, setScale] = useState(1);
-  const overlayRef = useRef<HTMLDivElement>(null);
 
   const isImage = isImageSource(data);
   const isPdf = isPdfSource(data);
@@ -71,12 +70,18 @@ function PreviewModal({
 
   return (
     <div
-      ref={overlayRef}
-      onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
-      }}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
     >
+      <button
+        type="button"
+        onClick={onClose}
+        className="fixed right-4 top-4 z-[70] flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg transition hover:bg-red-50 hover:text-red-500 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        title="Close preview"
+        aria-label="Close preview"
+      >
+        <X size={20} />
+      </button>
+
       <div className="relative flex max-h-[90vh] w-[90vw] max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-900">
         <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 dark:border-gray-700">
           <p className="max-w-[70%] truncate text-sm font-medium text-gray-800 dark:text-gray-100">

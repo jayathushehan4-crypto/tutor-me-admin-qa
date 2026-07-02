@@ -112,7 +112,6 @@ export const TUTOR_TYPE_VALUES = [
   "International School Teacher",
   "Government School Teacher",
   "University Student",
-  "A/L Student",
   "Diploma Holder",
   "Part-time Tutor",
   "Full-time Tutor",
