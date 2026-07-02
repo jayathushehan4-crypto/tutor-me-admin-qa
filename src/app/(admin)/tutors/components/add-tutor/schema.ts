@@ -74,7 +74,7 @@ export const addTutorSchema = z
     yearsExperience: z
       .number()
       .int()
-      .min(1, "Years of Experience are required")
+      .min(0, "Years of Experience are required")
       .max(50),
 
     highestEducation: z.enum(EDUCATION_VALUES_ADD, {
